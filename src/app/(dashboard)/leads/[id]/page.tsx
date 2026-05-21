@@ -15,7 +15,8 @@ import LeadDetailActions from '@/components/leads/LeadDetailActions'
 import { Card } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
-import { formatDate, formatDateTime, formatPhone, formatBudgetRange, formatRelative } from '@/lib/utils'
+import { formatDate, formatDateTime, formatPhone, formatBudgetRange } from '@/lib/utils'
+import RelativeTime from '@/components/ui/RelativeTime'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/server'
 
@@ -52,7 +53,7 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
       <PageHeader
         backHref="/leads"
         title={<>{lead.full_name}<TemperatureBadge temperature={lead.temperature} /></>}
-        subtitle={`Lead #${lead.id.slice(0, 8).toUpperCase()} · Added ${formatRelative(lead.created_at)}`}
+        subtitle={<>Lead #{lead.id.slice(0, 8).toUpperCase()} · Added <RelativeTime date={lead.created_at} /></>}
         actions={
           <>
             <Button href={`tel:${lead.phone}`} variant="secondary" size="sm">
@@ -147,7 +148,7 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
               {lead.next_followup_at && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-500">Next Follow-up</span>
-                  <span className="text-xs text-slate-700">{formatRelative(lead.next_followup_at)}</span>
+                  <RelativeTime date={lead.next_followup_at} className="text-xs text-slate-700" />
                 </div>
               )}
             </div>
