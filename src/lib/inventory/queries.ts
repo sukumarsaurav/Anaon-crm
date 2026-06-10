@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import type {
   Project, Plot, PlotHoldLog, PremiumMatrix,
   ProjectDocument, PriceEscalation, ProjectStats, CostSheet,
@@ -125,8 +126,7 @@ export async function getPremiumMatrix(projectId: string): Promise<PremiumMatrix
 
 export async function getProjectDocuments(projectId: string): Promise<ProjectDocument[]> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user!.id).single()
+  const profile = (await getProfile())?.profile
 
   let query = supabase
     .from('project_documents')

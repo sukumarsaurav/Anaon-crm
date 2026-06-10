@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { getBrokerByAuthUser, getBrokerLeadRegistrations } from '@/lib/brokers/queries'
 import BrokerLeadForm from '@/components/broker-portal/BrokerLeadForm'
 import { formatDate } from '@/lib/utils'
@@ -9,7 +10,7 @@ import { LEAD_REG_STATUS_CONFIG } from '@/types/brokers'
 
 export default async function BrokerLeadsPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) redirect('/login')
 
   const broker = await getBrokerByAuthUser(user.id)

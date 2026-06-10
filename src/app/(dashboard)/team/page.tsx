@@ -1,5 +1,5 @@
 import { Target, CalendarDays, Plus } from 'lucide-react'
-import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { getTeamPerformanceSummary, getAnnouncements } from '@/lib/team/queries'
 import TeamOverviewStats from '@/components/team/TeamOverviewStats'
 import MemberCard from '@/components/team/MemberCard'
@@ -11,9 +11,7 @@ import Link from 'next/link'
 export const dynamic = 'force-dynamic'
 
 export default async function TeamPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('role, branch_id').eq('id', user!.id).single()
+  const profile = (await getProfile())?.profile
 
   const now = new Date()
   const month = now.getMonth() + 1

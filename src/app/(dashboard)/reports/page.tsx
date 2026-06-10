@@ -5,7 +5,7 @@ import { getExecDashboard, getDailyLeadTrend, getLeadsBySource, getBookingsByPro
 import KPICard from '@/components/reports/KPICard'
 import MiniBarChart from '@/components/reports/MiniBarChart'
 import SparkLine from '@/components/reports/SparkLine'
-import { BarChart3, Users, MapPin, BookOpen, IndianRupee, ArrowRight } from 'lucide-react'
+import { BarChart3, Users, MapPin, BookOpen, IndianRupee, ArrowRight, Gauge } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 
 export default async function ReportsPage() {
@@ -21,6 +21,7 @@ export default async function ReportsPage() {
 
   const reportSections = [
     { label: 'Lead Reports', href: '/reports/leads', icon: Users, desc: 'Funnel, SLA compliance, ageing, source performance' },
+    { label: 'Pipeline Analytics', href: '/reports/pipeline', icon: Gauge, desc: 'Source conversion, rep response time, win/loss reasons' },
     { label: 'Sales Reports', href: '/reports/sales', icon: BarChart3, desc: 'Advisor scorecard, bookings, site visits, targets' },
     { label: 'Financial Reports', href: '/reports/financial', icon: IndianRupee, desc: 'Collections, outstanding, broker commissions' },
     { label: 'Inventory Reports', href: '/reports/inventory', icon: MapPin, desc: 'Availability, plot ageing, soft holds' },

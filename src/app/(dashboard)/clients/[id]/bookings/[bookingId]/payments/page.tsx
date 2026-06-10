@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { notFound } from 'next/navigation'
 import { getClientById, getBookingPayments, getPaymentSummary } from '@/lib/clients/queries'
 import { createClient as createSupabase } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import PaymentSchedule from '@/components/clients/PaymentSchedule'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { Card } from '@/components/ui/Card'
@@ -16,8 +17,7 @@ export default async function BookingPaymentsPage({ params }: PageProps) {
   const { id, bookingId } = await params
 
   const supabase = await createSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile }  = await supabase.from('profiles').select('role').eq('id', user!.id).single()
+  const profile = (await getProfile())?.profile
   const canManage = ['admin', 'manager'].includes(profile?.role ?? '')
 
   const [client, payments, summary] = await Promise.all([

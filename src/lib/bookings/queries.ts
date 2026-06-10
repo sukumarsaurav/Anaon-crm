@@ -68,20 +68,14 @@ export async function getBookingById(id: string): Promise<BookingFull | null> {
 
 export async function getBookingStats(): Promise<BookingStats> {
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('bookings')
-    .select('status, total_sale_value')
-
-  const rows = data ?? []
-  const sum  = (s: string) => rows.filter((r) => r.status === s).reduce((a, r) => a + (r.total_sale_value ?? 0), 0)
-
-  return {
-    total:            rows.length,
-    pending_approval: rows.filter((r) => r.status === 'pending_approval').length,
-    confirmed:        rows.filter((r) => r.status === 'confirmed').length,
-    cancelled:        rows.filter((r) => r.status === 'cancelled').length,
-    total_value:      sum('confirmed'),
-    total_collected:  0, // computed separately via payments
+  const { data } = await supabase.rpc('get_booking_stats')
+  return data ?? {
+    total: 0,
+    pending_approval: 0,
+    confirmed: 0,
+    cancelled: 0,
+    total_value: 0,
+    total_collected: 0,
   }
 }
 
@@ -165,9 +159,9 @@ export async function getDemandLetterData(
     booking,
     payment:         payment as Payment,
     generated_at:    new Date().toISOString(),
-    bank_name:       'HDFC Bank',
+    bank_name:       'ANON INDIA — Collection Account',
     account_number:  'XXXXXXXXXXXX',
-    ifsc:            'HDFC0001234',
+    ifsc:            'XXXX0000000',
     late_charge_pct: 0.05,
   }
 }

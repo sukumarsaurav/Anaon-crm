@@ -2,14 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Users, Target, CalendarDays, Megaphone } from 'lucide-react'
+import { Users, Target, CalendarDays, Network } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const tabs = [
-  { label: 'Overview',      href: '/team',               icon: Users       },
-  { label: 'Targets',       href: '/team/targets',        icon: Target      },
-  { label: 'Attendance',    href: '/team/attendance',     icon: CalendarDays },
-  { label: 'Announcements', href: '/team/announcements',  icon: Megaphone   },
+  { label: 'Overview',    href: '/team',            icon: Users        },
+  { label: 'Teams',       href: '/team/teams',      icon: Network      },
+  { label: 'Targets',     href: '/team/targets',    icon: Target       },
+  { label: 'Attendance',  href: '/team/attendance', icon: CalendarDays },
 ]
 
 export default function TeamLayout({ children }: { children: React.ReactNode }) {

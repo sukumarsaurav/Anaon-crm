@@ -21,53 +21,32 @@ function groupBy<T>(arr: T[], key: (item: T) => string): Record<string, T[]> {
 
 export async function getExecDashboard() {
   const supabase = await createClient()
-  const curr = monthBounds(0)
-  const prev = monthBounds(-1)
-
-  const [leadsAll, visitsAll, bookingsAll, paymentsAll] = await Promise.all([
-    supabase.from('leads').select('id, created_at, utm_source, source').eq('is_active', true),
-    supabase.from('site_visits').select('id, created_at'),
-    supabase.from('bookings').select('id, created_at, booking_date, total_sale_value, status, project_id'),
-    supabase.from('payments').select('id, amount_paid, paid_date, amount_due, due_date, status'),
-  ])
-
-  const leads = leadsAll.data ?? []
-  const visits = visitsAll.data ?? []
-  const bookings = bookingsAll.data ?? []
-  const payments = paymentsAll.data ?? []
-
-  const inRange = (dateStr: string | null, s: string, e: string) =>
-    dateStr !== null && dateStr >= s && dateStr <= e
-
-  const currLeads = leads.filter(l => inRange(l.created_at?.split('T')[0] ?? null, curr.start, curr.end))
-  const prevLeads = leads.filter(l => inRange(l.created_at?.split('T')[0] ?? null, prev.start, prev.end))
-  const currVisits = visits.filter(v => inRange(v.created_at?.split('T')[0] ?? null, curr.start, curr.end))
-  const prevVisits = visits.filter(v => inRange(v.created_at?.split('T')[0] ?? null, prev.start, prev.end))
-  const currBookings = bookings.filter(b => b.status === 'confirmed' && inRange(b.booking_date, curr.start, curr.end))
-  const prevBookings = bookings.filter(b => b.status === 'confirmed' && inRange(b.booking_date, prev.start, prev.end))
-
-  const currRevenue = currBookings.reduce((s, b) => s + Number(b.total_sale_value ?? 0), 0)
-  const prevRevenue = prevBookings.reduce((s, b) => s + Number(b.total_sale_value ?? 0), 0)
-
-  const currCollections = payments
-    .filter(p => p.status === 'paid' && inRange(p.paid_date, curr.start, curr.end))
-    .reduce((s, p) => s + Number(p.amount_paid ?? 0), 0)
-
-  const outstanding = payments
-    .filter(p => p.status === 'pending' || p.status === 'overdue')
-    .reduce((s, p) => s + Number(p.amount_due ?? 0), 0)
+  const { data } = await supabase.rpc('get_exec_dashboard')
+  
+  if (!data) {
+    return {
+      leads: { curr: 0, prev: 0, trend: null },
+      visits: { curr: 0, prev: 0, trend: null },
+      bookings: { curr: 0, prev: 0, trend: null },
+      revenue: { curr: 0, prev: 0, trend: null },
+      collections: 0,
+      outstanding: 0,
+      leadToVisitRate: 0,
+      visitToBookingRate: 0,
+    }
+  }
 
   const pct = (a: number, b: number) => b === 0 ? null : Math.round(((a - b) / b) * 100)
 
   return {
-    leads:       { curr: currLeads.length,    prev: prevLeads.length,    trend: pct(currLeads.length, prevLeads.length) },
-    visits:      { curr: currVisits.length,   prev: prevVisits.length,   trend: pct(currVisits.length, prevVisits.length) },
-    bookings:    { curr: currBookings.length, prev: prevBookings.length, trend: pct(currBookings.length, prevBookings.length) },
-    revenue:     { curr: currRevenue,         prev: prevRevenue,         trend: pct(currRevenue, prevRevenue) },
-    collections: currCollections,
-    outstanding,
-    leadToVisitRate: currLeads.length > 0 ? Math.round((currVisits.length / currLeads.length) * 100) : 0,
-    visitToBookingRate: currVisits.length > 0 ? Math.round((currBookings.length / currVisits.length) * 100) : 0,
+    leads:       { curr: data.currLeads,    prev: data.prevLeads,    trend: pct(data.currLeads, data.prevLeads) },
+    visits:      { curr: data.currVisits,   prev: data.prevVisits,   trend: pct(data.currVisits, data.prevVisits) },
+    bookings:    { curr: data.currBookings, prev: data.prevBookings, trend: pct(data.currBookings, data.prevBookings) },
+    revenue:     { curr: data.currRevenue,  prev: data.prevRevenue,  trend: pct(data.currRevenue, data.prevRevenue) },
+    collections: data.currCollections,
+    outstanding: data.outstanding,
+    leadToVisitRate: data.currLeads > 0 ? Math.round((data.currVisits / data.currLeads) * 100) : 0,
+    visitToBookingRate: data.currVisits > 0 ? Math.round((data.currBookings / data.currVisits) * 100) : 0,
   }
 }
 
@@ -169,8 +148,19 @@ export async function getSLACompliance(from?: string, to?: string) {
   if (to) q = q.lte('created_at', to)
   const { data: leadsData } = await q
 
-  let aq = supabase.from('lead_activities').select('lead_id, created_at').eq('type', 'call')
-  const { data: activitiesData } = await aq
+  const leadIds = (leadsData ?? []).map(l => l.id)
+  
+  const activitiesData = []
+  if (leadIds.length > 0) {
+    // Supabase allows up to ~2000 items in an 'in' filter, chunking if necessary. 
+    // Assuming <2000 leads matched the date filter for now.
+    const { data } = await supabase
+      .from('lead_activities')
+      .select('lead_id, created_at')
+      .eq('type', 'call')
+      .in('lead_id', leadIds)
+    if (data) activitiesData.push(...data)
+  }
 
   const firstContactMap = groupBy(activitiesData ?? [], a => a.lead_id)
   let compliant = 0, nonCompliant = 0
@@ -241,7 +231,11 @@ export async function getSourcePerformance(from?: string, to?: string) {
     if (agg[s]) { agg[s].bookings++; agg[s].revenue += Number(b.total_sale_value ?? 0) }
   }
   return Object.entries(agg)
-    .map(([source, d]) => ({ source, ...d }))
+    .map(([source, d]) => ({
+      source,
+      ...d,
+      conversionRate: d.leads ? Math.round((d.bookings / d.leads) * 100) : 0,
+    }))
     .sort((a, b) => b.leads - a.leads)
 }
 
@@ -261,53 +255,113 @@ export async function getLostLeadAnalysis(from?: string, to?: string) {
   return { total: (lostLeads ?? []).length, sampleNotes: (activities ?? []).slice(0, 20).map(a => a.notes) }
 }
 
-// ── Sales Reports ─────────────────────────────────────────────────────────────
+// ── Pipeline Analytics (Phase 7) ────────────────────────────────────────────────
 
-export async function getAdvisorScorecard(from?: string, to?: string) {
+/** Wins vs losses + breakdown of loss reasons within a date range (by updated_at). */
+export async function getWinLossReport(from?: string, to?: string) {
   const supabase = await createClient()
-  const [profilesRes, leadsRes, activitiesRes, visitsRes, bookingsRes, targetsRes] = await Promise.all([
-    supabase.from('profiles').select('id, full_name, designation, monthly_target_bookings, monthly_target_revenue').eq('is_active', true),
-    supabase.from('leads').select('id, assigned_to').eq('is_active', true),
-    supabase.from('lead_activities').select('lead_id, type, performed_by, created_at'),
-    supabase.from('site_visits').select('id, accompanied_by, created_at'),
-    supabase.from('bookings').select('id, advisor_id, total_sale_value, booking_date').eq('status', 'confirmed'),
-    supabase.from('team_targets').select('user_id, target_bookings, target_revenue, month, year'),
-  ])
+  let q = supabase
+    .from('leads')
+    .select('stage, loss_reason')
+    .eq('is_active', true)
+    .in('stage', ['closed_won', 'not_interested'])
+  if (from) q = q.gte('updated_at', from)
+  if (to) q = q.lte('updated_at', to)
+  const { data } = await q
 
-  const profiles = profilesRes.data ?? []
-  const leads = leadsRes.data ?? []
-  const acts = activitiesRes.data ?? []
-  const visits = visitsRes.data ?? []
-  const bookings = bookingsRes.data ?? []
+  let wins = 0
+  let losses = 0
+  const reasons: Record<string, number> = {}
+  for (const l of data ?? []) {
+    if (l.stage === 'closed_won') {
+      wins++
+    } else {
+      losses++
+      const r = (l.loss_reason as string | null)?.trim() || 'Unspecified'
+      reasons[r] = (reasons[r] ?? 0) + 1
+    }
+  }
+  const total = wins + losses
+  return {
+    wins,
+    losses,
+    winRate: total ? Math.round((wins / total) * 100) : 0,
+    reasons: Object.entries(reasons)
+      .map(([reason, count]) => ({ reason, count }))
+      .sort((a, b) => b.count - a.count),
+  }
+}
 
-  const inRange = (d: string) => {
-    if (from && d < from) return false
-    if (to && d > to) return false
-    return true
+/**
+ * Average first-response time per rep: minutes between lead creation and the
+ * first outbound contact activity (call/whatsapp/sms/email). Leads created in
+ * the range with an assignee.
+ */
+export async function getResponseTimeByRep(from?: string, to?: string) {
+  const supabase = await createClient()
+  let lq = supabase
+    .from('leads')
+    .select('id, assigned_to, created_at')
+    .eq('is_active', true)
+    .not('assigned_to', 'is', null)
+  if (from) lq = lq.gte('created_at', from)
+  if (to) lq = lq.lte('created_at', to)
+  const { data: leads } = await lq
+  if (!leads?.length) return []
+
+  const leadIds = leads.map((l) => l.id)
+  const { data: acts } = await supabase
+    .from('lead_activities')
+    .select('lead_id, created_at, type')
+    .in('lead_id', leadIds)
+    .in('type', ['call', 'whatsapp', 'sms', 'email'])
+    .order('created_at', { ascending: true })
+
+  // First contact timestamp per lead.
+  const firstContact: Record<string, string> = {}
+  for (const a of acts ?? []) {
+    if (a.lead_id && !firstContact[a.lead_id]) firstContact[a.lead_id] = a.created_at
   }
 
-  return profiles.map(p => {
-    const myLeads = leads.filter(l => l.assigned_to === p.id).length
-    const myActs = acts.filter(a => a.performed_by === p.id && inRange(a.created_at.split('T')[0]))
-    const myCalls = myActs.filter(a => a.type === 'call').length
-    const myFollowups = myActs.filter(a => a.type === 'follow_up').length
-    const myVisits = visits.filter(v => v.accompanied_by === p.id && inRange((v.created_at ?? '').split('T')[0])).length
-    const myBookings = bookings.filter(b => b.advisor_id === p.id && (b.booking_date ? inRange(b.booking_date) : true))
-    const myRevenue = myBookings.reduce((s, b) => s + Number(b.total_sale_value ?? 0), 0)
-    return {
-      id: p.id,
-      name: p.full_name,
-      designation: p.designation,
-      leads: myLeads,
-      calls: myCalls,
-      followUps: myFollowups,
-      visits: myVisits,
-      bookings: myBookings.length,
-      revenue: myRevenue,
-      targetBookings: p.monthly_target_bookings ?? 0,
-      targetRevenue: Number(p.monthly_target_revenue ?? 0),
+  const advisorIds = [...new Set(leads.map((l) => l.assigned_to as string))]
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, full_name')
+    .in('id', advisorIds)
+  const nameOf = new Map((profiles ?? []).map((p) => [p.id, p.full_name]))
+
+  const agg: Record<string, { totalLeads: number; responded: number; minutesSum: number }> = {}
+  for (const l of leads) {
+    const rep = l.assigned_to as string
+    agg[rep] ??= { totalLeads: 0, responded: 0, minutesSum: 0 }
+    agg[rep].totalLeads++
+    const fc = firstContact[l.id]
+    if (fc) {
+      agg[rep].responded++
+      agg[rep].minutesSum += (new Date(fc).getTime() - new Date(l.created_at).getTime()) / 60000
     }
-  }).sort((a, b) => b.bookings - a.bookings)
+  }
+
+  return Object.entries(agg)
+    .map(([rep, d]) => ({
+      advisor: nameOf.get(rep) ?? 'Unknown',
+      totalLeads: d.totalLeads,
+      responded: d.responded,
+      responseRate: d.totalLeads ? Math.round((d.responded / d.totalLeads) * 100) : 0,
+      avgResponseMinutes: d.responded ? Math.round(d.minutesSum / d.responded) : null,
+    }))
+    .sort((a, b) => (a.avgResponseMinutes ?? Infinity) - (b.avgResponseMinutes ?? Infinity))
+}
+
+// ── Sales Reports ─────────────────────────────────────────────────────────────
+
+export async function getAdvisorScorecard(from?: string, to?: string): Promise<any[]> {
+  const supabase = await createClient()
+  const { data } = await supabase.rpc('get_advisor_scorecard', {
+    p_from: from || null,
+    p_to: to || null,
+  })
+  return (data as any[]) ?? []
 }
 
 export async function getBookingReport(from?: string, to?: string) {

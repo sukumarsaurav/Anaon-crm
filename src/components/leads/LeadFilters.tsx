@@ -11,9 +11,12 @@ import { cn } from '@/lib/utils'
 const VIEW_TABS = [
   { value: 'all', label: 'All Leads' },
   { value: 'my_leads', label: 'My Leads' },
-  { value: 'hot', label: 'Hot' },
+  { value: 'hot', label: 'Hot Leads' },
+  { value: 'today', label: 'Follow-up Today' },
   { value: 'overdue', label: 'Overdue' },
-  { value: 'today', label: "Today's" },
+  { value: 'visits_week', label: 'Site Visits This Week' },
+  { value: 'ready_to_buy', label: 'Ready to Buy' },
+  { value: 'future_buyers', label: 'Future Buyers' },
   { value: 'new_today', label: 'New Today' },
 ]
 

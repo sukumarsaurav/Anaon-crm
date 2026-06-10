@@ -1,7 +1,8 @@
 export const dynamic = 'force-dynamic'
 
 import { redirect } from 'next/navigation'
-import { getPortalSession, getPortalClientData } from '@/lib/portal/queries'
+import { getPortalSession } from '@/lib/portal/session'
+import { getPortalClientData } from '@/lib/portal/queries'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { PAYMENT_STATUS_CONFIG } from '@/types/clients'
 import PaymentExtensionForm from '@/components/client-portal/PaymentExtensionForm'

@@ -2,12 +2,13 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { sendTextMessage, sendTemplateMessage, renderTemplate } from './provider'
 import { getTemplateById } from './queries'
 
 export async function sendMessage(conversationId: string, text: string) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
   const { data: conv } = await supabase
@@ -51,7 +52,7 @@ export async function sendTemplateToConversation(
   variableValues: Record<string, string>
 ) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
   const [conv, template] = await Promise.all([
@@ -95,7 +96,7 @@ export async function sendTemplateToConversation(
 
 export async function assignConversation(conversationId: string, advisorId: string) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
   const { error } = await supabase.from('whatsapp_conversations').update({
@@ -113,7 +114,7 @@ export async function assignConversation(conversationId: string, advisorId: stri
 
 export async function resolveConversation(conversationId: string) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
   const { error } = await supabase.from('whatsapp_conversations').update({
@@ -139,7 +140,7 @@ export async function markConversationRead(conversationId: string) {
 
 export async function takeBotControl(conversationId: string, enableBot: boolean) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
   const updates: Record<string, unknown> = {
@@ -166,7 +167,7 @@ export async function takeBotControl(conversationId: string, enableBot: boolean)
 
 export async function createTemplate(formData: FormData) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
   const body = formData.get('body') as string
@@ -197,7 +198,7 @@ export async function createTemplate(formData: FormData) {
 
 export async function updateTemplate(id: string, formData: FormData) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
   const body = formData.get('body') as string
@@ -230,7 +231,7 @@ export async function toggleTemplateActive(id: string, isActive: boolean) {
 
 export async function createBroadcast(formData: FormData) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
   const audienceFilters = JSON.parse(formData.get('audience_filters') as string ?? '{}')
@@ -257,7 +258,7 @@ export async function createBroadcast(formData: FormData) {
 
 export async function sendBroadcast(broadcastId: string) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
   // Fetch broadcast + template
@@ -366,7 +367,7 @@ export async function sendBroadcast(broadcastId: string) {
 
 export async function saveAutoReplyRule(formData: FormData) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
   const id = formData.get('id') as string | null

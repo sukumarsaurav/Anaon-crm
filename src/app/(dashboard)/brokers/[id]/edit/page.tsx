@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getBrokerById } from '@/lib/brokers/queries'
-import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import BrokerForm from '@/components/brokers/BrokerForm'
 import { ArrowLeft } from 'lucide-react'
 
@@ -14,9 +14,7 @@ interface PageProps {
 export default async function EditBrokerPage({ params }: PageProps) {
   const { id } = await params
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user!.id).single()
+  const profile = (await getProfile())?.profile
   if (!['admin', 'manager'].includes(profile?.role ?? '')) redirect(`/brokers/${id}`)
 
   const broker = await getBrokerById(id)

@@ -1,7 +1,8 @@
 export const dynamic = 'force-dynamic'
 
 import { redirect } from 'next/navigation'
-import { getPortalSession, getPortalClientData } from '@/lib/portal/queries'
+import { getPortalSession } from '@/lib/portal/session'
+import { getPortalClientData } from '@/lib/portal/queries'
 import { Phone, MessageSquare, Mail, Building2 } from 'lucide-react'
 
 const FAQS = [

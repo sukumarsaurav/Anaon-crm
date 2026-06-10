@@ -27,21 +27,39 @@ export async function getEmployees(): Promise<HREmployee[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('profiles')
-    .select('*, manager:profiles!profiles_reporting_manager_id_fkey(full_name)')
+    .select('*')
     .eq('is_active', true)
     .order('full_name')
   if (error) throw error
-  return (data ?? []) as HREmployee[]
+
+  const rows = (data ?? []) as HREmployee[]
+  // Resolve manager names in-app (avoids a PostgREST self-join embed).
+  const nameById = new Map(rows.map((r) => [r.id, r.full_name]))
+  return rows.map((r) => ({
+    ...r,
+    manager: r.reporting_manager_id
+      ? { full_name: nameById.get(r.reporting_manager_id) ?? '' }
+      : null,
+  }))
 }
 
 export async function getEmployeeById(id: string): Promise<HREmployee | null> {
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('profiles')
-    .select('*, manager:profiles!profiles_reporting_manager_id_fkey(full_name)')
-    .eq('id', id)
-    .single()
-  return data as HREmployee | null
+  const { data } = await supabase.from('profiles').select('*').eq('id', id).single()
+  if (!data) return null
+
+  const employee = data as HREmployee
+  if (employee.reporting_manager_id) {
+    const { data: mgr } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', employee.reporting_manager_id)
+      .maybeSingle()
+    employee.manager = mgr ? { full_name: mgr.full_name } : null
+  } else {
+    employee.manager = null
+  }
+  return employee
 }
 
 export async function getLeaveRequests(status?: string): Promise<LeaveRequest[]> {

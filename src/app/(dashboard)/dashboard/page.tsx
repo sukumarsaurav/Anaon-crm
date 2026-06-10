@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getLeadStats } from '@/lib/leads/queries'
@@ -35,15 +36,9 @@ const MODULES = [
 ]
 
 export default async function DashboardHome() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, role, branch_id')
-    .eq('id', user.id)
-    .single()
+  const profileData = await getProfile()
+  if (!profileData || !profileData.user) redirect('/login')
+  const { user, profile } = profileData
 
   const role = profile?.role ?? 'sales_advisor'
   const branchId = profile?.branch_id ?? undefined

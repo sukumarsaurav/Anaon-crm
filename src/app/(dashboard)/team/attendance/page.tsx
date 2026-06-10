@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { getAttendanceLogs, getLeaveRequests } from '@/lib/team/queries'
 import AttendanceCalendar from '@/components/team/AttendanceCalendar'
 import LeaveApplyForm from '@/components/team/LeaveApplyForm'
@@ -8,8 +8,7 @@ import AttendancePageClient from '@/components/team/AttendancePageClient'
 export const dynamic = 'force-dynamic'
 
 export default async function AttendancePage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) redirect('/login')
 
   const now = new Date()

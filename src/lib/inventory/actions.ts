@@ -2,12 +2,13 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 
 async function getAuthUser() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { ok: false as const, error: 'Unauthorized', supabase, userId: '', role: '' }
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const profile = (await getProfile())?.profile
   return { ok: true as const, supabase, userId: user.id, role: profile?.role ?? '' }
 }
 

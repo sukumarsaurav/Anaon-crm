@@ -95,7 +95,7 @@ export default function BrokerForm({ broker }: Props) {
       <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
         <h3 className="font-semibold text-slate-900">Bank Details</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {field('bank_name',      'Bank Name',       { placeholder: 'HDFC Bank' })}
+          {field('bank_name',      'Bank Name',       { placeholder: 'Bank name' })}
           {field('account_number', 'Account Number',  { placeholder: 'XXXXXXXXXXX' })}
           {field('ifsc',           'IFSC Code',       { placeholder: 'HDFC0001234' })}
         </div>

@@ -1,19 +1,14 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { getBrokerByAuthUser } from '@/lib/brokers/queries'
 import BrokerNav from '@/components/broker-portal/BrokerNav'
 
 export default async function BrokerPortalLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await getProfile()
 
-  if (!user) redirect('/login')
+  if (!session?.user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
+  const { user, profile } = session
 
   // Non-brokers don't belong here
   if (profile?.role !== 'broker') redirect('/leads')

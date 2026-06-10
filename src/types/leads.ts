@@ -7,6 +7,7 @@ export type LeadStage =
   | 'site_visit_scheduled'
   | 'site_visit_done'
   | 'negotiation'
+  | 'token_paid'
   | 'closed_won'
   | 'not_interested'
   | 'future_followup'
@@ -17,6 +18,7 @@ export type LeadSource =
   | 'facebook_ads'
   | 'instagram_ads'
   | 'google_ads'
+  | 'google_lead_form'
   | 'website_form'
   | 'whatsapp'
   | 'manual'
@@ -25,6 +27,12 @@ export type LeadSource =
   | 'ivr'
   | 'portal'
   | 'broker'
+  | '99acres'
+  | 'magicbricks'
+  | 'housing'
+  | 'justdial'
+  | 'indiamart'
+  | 'linkedin'
 
 export type FollowUpOutcome =
   | 'connected_interested'
@@ -108,8 +116,10 @@ export interface Lead {
   stage: LeadStage
   temperature: LeadTemperature
   score: number
+  loss_reason: string | null
   // Follow-up
   next_followup_at: string | null
+  followup_reminder_sent_at: string | null
   last_contacted_at: string | null
   preferred_contact_time: string | null
   preferred_contact_method: string | null
@@ -174,7 +184,16 @@ export interface LeadFilters {
   budget_max?: number
   date_from?: string
   date_to?: string
-  view?: 'my_leads' | 'all' | 'hot' | 'overdue' | 'today' | 'new_today'
+  view?:
+    | 'my_leads'
+    | 'all'
+    | 'hot'
+    | 'overdue'
+    | 'today'
+    | 'new_today'
+    | 'ready_to_buy'
+    | 'future_buyers'
+    | 'visits_week'
   search?: string
   sort_by?: string
   sort_dir?: 'asc' | 'desc'
@@ -258,6 +277,14 @@ export const STAGE_CONFIG: Record<LeadStage, StageConfig> = {
     borderColor: 'border-yellow-200',
     slaHours: null,
   },
+  token_paid: {
+    label: 'Token Paid',
+    color: 'teal',
+    bgColor: 'bg-teal-50',
+    textColor: 'text-teal-700',
+    borderColor: 'border-teal-200',
+    slaHours: null,
+  },
   closed_won: {
     label: 'Closed Won',
     color: 'green',
@@ -288,14 +315,21 @@ export const SOURCE_LABELS: Record<LeadSource, string> = {
   facebook_ads: 'Facebook Ads',
   instagram_ads: 'Instagram Ads',
   google_ads: 'Google Ads',
+  google_lead_form: 'Google Lead Form',
   website_form: 'Website Form',
   whatsapp: 'WhatsApp',
   manual: 'Manual Entry',
   walk_in: 'Walk-in',
   referral: 'Referral',
   ivr: 'IVR / Missed Call',
-  portal: 'Portal (99acres/MagicBricks)',
+  portal: 'Other Portal',
   broker: 'Broker',
+  '99acres': '99acres',
+  magicbricks: 'MagicBricks',
+  housing: 'Housing.com',
+  justdial: 'JustDial',
+  indiamart: 'IndiaMart',
+  linkedin: 'LinkedIn',
 }
 
 export const STAGE_ORDER: LeadStage[] = [
@@ -305,6 +339,7 @@ export const STAGE_ORDER: LeadStage[] = [
   'site_visit_scheduled',
   'site_visit_done',
   'negotiation',
+  'token_paid',
   'closed_won',
   'not_interested',
   'future_followup',

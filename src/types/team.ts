@@ -5,6 +5,43 @@ export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'cancelled'
 export type AttendanceStatus = 'present' | 'absent' | 'half_day' | 'on_leave' | 'holiday' | 'weekend'
 export type AnnouncementType = 'announcement' | 'shoutout' | 'alert' | 'project_launch'
 
+// ── Team hierarchy (chain) ──────────────────────────────────────────────────
+export interface TeamRow {
+  id: string
+  name: string
+  leader_id: string | null
+  parent_team_id: string | null
+  is_active: boolean
+}
+
+export interface MemberRow {
+  id: string
+  full_name: string
+  role: string
+  designation: string | null
+  team_id: string | null
+  photo_url: string | null
+}
+
+export interface TeamsData {
+  teams: TeamRow[]
+  members: MemberRow[]
+  viewer: { id: string; role: string }
+  /** Team ids the viewer may manage (admin → all; leader → their team subtrees). */
+  manageableTeamIds: string[]
+}
+
+export interface AddJuniorInput {
+  full_name: string
+  email: string
+  phone?: string
+  role: 'manager' | 'sales_advisor' | 'telecaller'
+  designation?: string
+  target_team_id: string
+  mode: 'member' | 'team'
+  new_team_name?: string
+}
+
 export interface TeamMember {
   id: string
   full_name: string

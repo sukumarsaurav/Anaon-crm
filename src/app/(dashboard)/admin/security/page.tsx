@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { notFound } from 'next/navigation'
 import { Shield, AlertTriangle, Globe, Users2, Lock } from 'lucide-react'
 import IPWhitelistManager from '@/components/security/IPWhitelistManager'
@@ -9,10 +10,10 @@ import SecuritySettingsForm from '@/components/security/SecuritySettingsForm'
 
 export default async function AdminSecurityPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) notFound()
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const profile = (await getProfile())?.profile
   if (!['admin', 'manager'].includes(profile?.role ?? '')) notFound()
 
   const [ipListRes, settingsRes, teamRes, recentFailedRes] = await Promise.all([

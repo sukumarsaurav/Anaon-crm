@@ -5,7 +5,7 @@ import {
   getProjectById, getProjectStats, getPlots,
   getProjectDocuments, getPriceEscalations,
 } from '@/lib/inventory/queries'
-import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import ProjectStatusBadge from '@/components/inventory/ProjectStatusBadge'
 import PlotGrid from '@/components/inventory/PlotGrid'
 import ProjectDocumentList from '@/components/inventory/ProjectDocumentList'
@@ -34,9 +34,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
 
   if (!project) notFound()
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user!.id).single()
+  const profile = (await getProfile())?.profile
   const canManage = ['admin', 'manager'].includes(profile?.role ?? '')
 
   const soldPct = stats.total > 0

@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { notFound } from 'next/navigation'
 import { getBookingById, getBookingPayments, getBookingCommission } from '@/lib/bookings/queries'
-import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import BookingStatusBadge from '@/components/bookings/BookingStatusBadge'
 import ApprovalPanel from '@/components/bookings/ApprovalPanel'
@@ -40,9 +40,7 @@ export default async function BookingDetailPage({ params }: PageProps) {
   ])
   if (!booking) notFound()
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile }  = await supabase.from('profiles').select('role').eq('id', user!.id).single()
+  const profile = (await getProfile())?.profile
   const canManage = ['admin', 'manager'].includes(profile?.role ?? '')
 
   const paidTotal    = payments.reduce((s, p) => s + (p.amount_paid ?? 0), 0)

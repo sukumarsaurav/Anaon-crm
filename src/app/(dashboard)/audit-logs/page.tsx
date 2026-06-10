@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { notFound } from 'next/navigation'
 import { getAuditLogs } from '@/lib/security/audit'
 import { ChevronLeft, ChevronRight, Download } from 'lucide-react'
@@ -40,10 +41,10 @@ interface SearchParams {
 export default async function AuditLogsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) notFound()
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const profile = (await getProfile())?.profile
   if (!['admin', 'manager'].includes(profile?.role ?? '')) notFound()
 
   const page = Number(sp.page ?? 1)

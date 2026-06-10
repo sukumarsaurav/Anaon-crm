@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { calculateAchievementPct, isAtRisk } from './commission'
 import type {
   TeamMember,
@@ -16,14 +17,9 @@ import type {
 
 export async function getTeamMembers(branchId?: string): Promise<TeamMember[]> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, branch_id')
-    .eq('id', user.id)
-    .single()
+  const session = await getProfile()
+  if (!session?.user) return []
+  const { profile } = session
 
   let query = supabase
     .from('profiles')
@@ -276,10 +272,9 @@ export async function getLeaveRequests(
   status?: string
 ): Promise<LeaveRequest[]> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
-
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const session = await getProfile()
+  if (!session?.user) return []
+  const { user, profile } = session
 
   let query = supabase
     .from('leave_requests')

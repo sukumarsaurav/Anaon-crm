@@ -1,7 +1,8 @@
 export const dynamic = 'force-dynamic'
 
 import { redirect } from 'next/navigation'
-import { getPortalSession, getPortalClientData } from '@/lib/portal/queries'
+import { getPortalSession } from '@/lib/portal/session'
+import { getPortalClientData } from '@/lib/portal/queries'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { CreditCard, FileText, Building2, MessageSquare, AlertCircle, CheckCircle } from 'lucide-react'
 import Link from 'next/link'

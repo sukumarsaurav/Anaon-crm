@@ -2,23 +2,24 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import {
   Phone, MessageSquare, Mail, MapPin, Building2,
-  CalendarCheck, Clock, Edit2, UserCheck, ArrowLeft,
+  Clock, Edit2, UserCheck, ArrowLeft,
   Banknote, Target, Zap
 } from 'lucide-react'
-import { getLeadById, getLeadActivities, getSiteVisits, getActiveAdvisors } from '@/lib/leads/queries'
+import { getLeadById, getLeadActivities, getSiteVisits, getActiveAdvisors, getProjects } from '@/lib/leads/queries'
 import { STAGE_CONFIG, STAGE_ORDER, SOURCE_LABELS } from '@/types/leads'
 import StageBadge from '@/components/leads/StageBadge'
 import TemperatureBadge from '@/components/leads/TemperatureBadge'
 import ScoreBadge from '@/components/leads/ScoreBadge'
 import ActivityTimeline from '@/components/leads/ActivityTimeline'
 import LeadDetailActions from '@/components/leads/LeadDetailActions'
+import SiteVisitsCard from '@/components/leads/SiteVisitsCard'
 import { Card } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
 import { formatDate, formatDateTime, formatPhone, formatBudgetRange } from '@/lib/utils'
 import RelativeTime from '@/components/ui/RelativeTime'
 import { cn } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 
 interface LeadDetailPageProps {
   params: Promise<{ id: string }>
@@ -26,23 +27,19 @@ interface LeadDetailPageProps {
 
 export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
   const { id } = await params
-  const [lead, activities, siteVisits] = await Promise.all([
+  const [lead, activities, siteVisits, projects] = await Promise.all([
     getLeadById(id),
     getLeadActivities(id),
     getSiteVisits(id),
+    getProjects(),
   ])
 
   if (!lead) notFound()
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return null
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('branch_id')
-    .eq('id', user.id)
-    .single()
+  const profile = (await getProfile())?.profile
 
   const advisors = await getActiveAdvisors(profile?.branch_id ?? undefined)
 
@@ -291,45 +288,13 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
           />
 
           {/* Site visits */}
-          {siteVisits.length > 0 && (
-            <Card padding="md">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                <CalendarCheck size={16} className="text-indigo-600" />
-                Site Visits ({siteVisits.length})
-              </h3>
-              <div className="space-y-2">
-                {siteVisits.map((visit) => (
-                  <div
-                    key={visit.id}
-                    className="flex items-center justify-between p-3 bg-slate-50 rounded-xl"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-slate-900">
-                        {formatDateTime(visit.scheduled_at)}
-                      </p>
-                      {visit.project && (
-                        <p className="text-xs text-slate-500">{visit.project.name}</p>
-                      )}
-                    </div>
-                    <span
-                      className={cn(
-                        'text-xs px-2 py-1 rounded-full font-medium',
-                        visit.status === 'completed'
-                          ? 'bg-green-50 text-green-700'
-                          : visit.status === 'scheduled'
-                          ? 'bg-blue-50 text-blue-700'
-                          : visit.status === 'cancelled'
-                          ? 'bg-red-50 text-red-700'
-                          : 'bg-slate-100 text-slate-600'
-                      )}
-                    >
-                      {visit.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
+          <SiteVisitsCard
+            leadId={lead.id}
+            defaultProjectId={lead.project_id}
+            visits={siteVisits}
+            advisors={advisors}
+            projects={projects}
+          />
 
           {/* Timeline */}
           <Card padding="md">

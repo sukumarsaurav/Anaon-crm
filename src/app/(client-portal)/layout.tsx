@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { getPortalSession } from '@/lib/portal/queries'
+import { getPortalSession } from '@/lib/portal/session'
 import ClientPortalNav from '@/components/client-portal/ClientPortalNav'
 
 export default async function ClientPortalLayout({ children }: { children: React.ReactNode }) {

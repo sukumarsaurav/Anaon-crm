@@ -24,6 +24,7 @@ const KANBAN_STAGES: LeadStage[] = [
   'site_visit_scheduled',
   'site_visit_done',
   'negotiation',
+  'token_paid',
 ]
 
 function LeadKanbanCard({ lead }: { lead: Lead }) {

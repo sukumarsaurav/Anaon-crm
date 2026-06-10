@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -8,10 +9,9 @@ import {
   UserCheck, UsersRound, BarChart3, Settings, ChevronLeft,
   Zap, FileText, Briefcase, LogOut, BookOpen, Handshake,
   HardHat, Globe, PenLine, Megaphone, Scale, CreditCard,
-  Smartphone, ShieldCheck, ClipboardList, X,
+  Smartphone, ShieldCheck, ClipboardList, X, Images,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 
 const navGroups = [
   {
@@ -27,6 +27,7 @@ const navGroups = [
     label: 'Property',
     items: [
       { label: 'Inventory', href: '/inventory', icon: Building2 },
+      { label: 'Albums', href: '/albums', icon: Images },
       { label: 'Construction', href: '/construction', icon: HardHat },
       { label: 'Brokers', href: '/brokers', icon: Handshake },
     ],
@@ -67,7 +68,7 @@ const navGroups = [
 ]
 
 const bottomNav = [
-  { label: 'Settings', href: '/settings/security', icon: Settings },
+  { label: 'Settings', href: '/settings', icon: Settings },
 ]
 
 interface SidebarProps {
@@ -79,12 +80,12 @@ interface SidebarProps {
 
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname()
-  const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
-    router.push('/login')
+    // After logging out of the CRM, land on the public real-estate website.
+    window.location.href = process.env.NEXT_PUBLIC_WEBSITE_URL ?? 'https://anonindia.com'
   }
 
   const isActive = (href: string) => {

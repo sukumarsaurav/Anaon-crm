@@ -80,7 +80,7 @@ export function DSAFormButton({ dsa }: Props) {
           </div>
           <div className="sm:col-span-2">
             <label className="block text-xs font-medium text-slate-600 mb-1">Bank Empanelments (comma-separated)</label>
-            <input name="bank_empanelments" defaultValue={(dsa?.bank_empanelments ?? []).join(', ')} placeholder="SBI, HDFC, ICICI"
+            <input name="bank_empanelments" defaultValue={(dsa?.bank_empanelments ?? []).join(', ')} placeholder="Comma-separated bank names"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
           <div className="sm:col-span-2">

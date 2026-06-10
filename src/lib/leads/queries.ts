@@ -1,22 +1,16 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import type { Lead, LeadActivity, LeadFilters, SiteVisit, DuplicateCheck } from '@/types/leads'
 import { computeSlaStatus } from '@/lib/utils'
 
 export async function getLeads(filters: LeadFilters = {}): Promise<Lead[]> {
   const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return []
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, branch_id')
-    .eq('id', user.id)
-    .single()
+  const session = await getProfile()
+  if (!session?.user) return []
+  const { user } = session
 
   let query = supabase
     .from('leads')
@@ -29,12 +23,9 @@ export async function getLeads(filters: LeadFilters = {}): Promise<Lead[]> {
     )
     .eq('is_active', true)
 
-  // Role-based scoping
-  if (profile?.role === 'sales_advisor' || profile?.role === 'telecaller') {
-    query = query.eq('assigned_to', user.id)
-  } else if (profile?.role === 'manager' && profile?.branch_id) {
-    query = query.eq('branch_id', profile.branch_id)
-  }
+  // Visibility is enforced by the team-hierarchy RLS policy on `leads`
+  // (assignee + seniors up the chain; unassigned to admin/manager). No manual
+  // role/branch scoping needed here — the DB returns only what the user may see.
 
   // View presets
   if (filters.view === 'my_leads') {
@@ -55,6 +46,28 @@ export async function getLeads(filters: LeadFilters = {}): Promise<Lead[]> {
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
     query = query.gte('created_at', todayStart.toISOString())
+  } else if (filters.view === 'ready_to_buy') {
+    query = query.in('stage', ['negotiation', 'token_paid'])
+  } else if (filters.view === 'future_buyers') {
+    query = query.eq('stage', 'future_followup')
+  } else if (filters.view === 'visits_week') {
+    // Leads with a site visit scheduled in the current week.
+    const weekStart = new Date()
+    weekStart.setHours(0, 0, 0, 0)
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay()) // Sunday
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekEnd.getDate() + 7)
+
+    const { data: visits } = await supabase
+      .from('site_visits')
+      .select('lead_id')
+      .gte('scheduled_at', weekStart.toISOString())
+      .lt('scheduled_at', weekEnd.toISOString())
+      .in('status', ['scheduled', 'completed'])
+
+    const leadIds = [...new Set((visits ?? []).map((v) => v.lead_id).filter(Boolean))]
+    // No matches → return an impossible filter so the list is empty.
+    query = query.in('id', leadIds.length ? leadIds : ['00000000-0000-0000-0000-000000000000'])
   }
 
   // Filters
@@ -221,36 +234,12 @@ export async function checkDuplicate(
 
 export async function getLeadStats(userId: string, role: string, branchId?: string) {
   const supabase = await createClient()
-
-  let baseQuery = supabase.from('leads').select('id, stage, score, temperature, next_followup_at, created_at', { count: 'exact' }).eq('is_active', true)
-
-  if (role === 'sales_advisor' || role === 'telecaller') {
-    baseQuery = baseQuery.eq('assigned_to', userId)
-  } else if (role === 'manager' && branchId) {
-    baseQuery = baseQuery.eq('branch_id', branchId)
-  }
-
-  const { data: all } = await baseQuery
-
-  const now = new Date()
-  const todayStart = new Date(now)
-  todayStart.setHours(0, 0, 0, 0)
-  const todayEnd = new Date(now)
-  todayEnd.setHours(23, 59, 59, 999)
-
-  const total = all?.length ?? 0
-  const hot = all?.filter((l) => l.score >= 80).length ?? 0
-  const overdue = all?.filter(
-    (l) => l.next_followup_at && new Date(l.next_followup_at) < now
-  ).length ?? 0
-  const todayFollowups = all?.filter((l) => {
-    if (!l.next_followup_at) return false
-    const d = new Date(l.next_followup_at)
-    return d >= todayStart && d <= todayEnd
-  }).length ?? 0
-  const newToday = all?.filter((l) => new Date(l.created_at) >= todayStart).length ?? 0
-
-  return { total, hot, overdue, todayFollowups, newToday }
+  const { data } = await supabase.rpc('get_lead_stats', {
+    p_user_id: userId,
+    p_role: role,
+    p_branch_id: branchId ?? null,
+  })
+  return data ?? { total: 0, hot: 0, overdue: 0, todayFollowups: 0, newToday: 0 }
 }
 
 export async function getActiveAdvisors(branchId?: string) {
@@ -291,19 +280,22 @@ export async function getRoundRobinAdvisor(branchId?: string): Promise<string | 
   const { data: advisors } = await query
   if (!advisors?.length) return null
 
-  // Find advisor with fewest open leads
-  const counts = await Promise.all(
-    advisors.map(async (a) => {
-      const { count } = await supabase
-        .from('leads')
-        .select('id', { count: 'exact', head: true })
-        .eq('assigned_to', a.id)
-        .eq('is_active', true)
-        .not('stage', 'in', '("closed_won","not_interested")')
-      return { id: a.id, count: count ?? 0 }
-    })
-  )
+  // Single query to get lead counts for all advisors
+  const advisorIds = advisors.map(a => a.id)
+  const { data: leadCounts } = await supabase
+    .from('leads')
+    .select('assigned_to')
+    .eq('is_active', true)
+    .not('stage', 'in', '("closed_won","not_interested")')
+    .in('assigned_to', advisorIds)
 
-  counts.sort((a, b) => a.count - b.count)
-  return counts[0]?.id ?? null
+  // Count in JS from the single query
+  const countMap: Record<string, number> = {}
+  for (const a of advisors) countMap[a.id] = 0
+  for (const l of leadCounts ?? []) {
+    if (l.assigned_to) countMap[l.assigned_to] = (countMap[l.assigned_to] ?? 0) + 1
+  }
+
+  const sorted = Object.entries(countMap).sort((a, b) => a[1] - b[1])
+  return sorted[0]?.[0] ?? null
 }

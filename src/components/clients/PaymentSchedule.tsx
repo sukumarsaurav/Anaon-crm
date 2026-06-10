@@ -77,7 +77,7 @@ function RecordPaymentModal({
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Bank</label>
-              <input name="bank_name" placeholder="HDFC Bank"
+              <input name="bank_name" placeholder="Bank name"
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
             </div>
             <div>

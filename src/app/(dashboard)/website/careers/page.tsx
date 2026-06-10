@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 import { getCareerListings, getCareerApplications } from '@/lib/website/queries'
 import { EMPLOYMENT_TYPES } from '@/types/website'

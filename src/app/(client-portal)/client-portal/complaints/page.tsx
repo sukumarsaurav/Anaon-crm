@@ -1,7 +1,8 @@
 export const dynamic = 'force-dynamic'
 
 import { redirect } from 'next/navigation'
-import { getPortalSession, getPortalClientData } from '@/lib/portal/queries'
+import { getPortalSession } from '@/lib/portal/session'
+import { getPortalClientData } from '@/lib/portal/queries'
 import { formatDate } from '@/lib/utils'
 import { COMPLAINT_STATUS_CONFIG, COMPLAINT_CATEGORY_LABELS } from '@/types/clients'
 import ComplaintForm from '@/components/client-portal/ComplaintForm'

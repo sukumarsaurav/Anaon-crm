@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { notFound } from 'next/navigation'
 import TwoFactorSetup from '@/components/security/TwoFactorSetup'
 import ActiveSessions from '@/components/security/ActiveSessions'
@@ -8,7 +9,7 @@ import { getActiveSessions } from '@/lib/security/actions'
 
 export default async function SecuritySettingsPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) notFound()
 
   const { data: profile } = await supabase

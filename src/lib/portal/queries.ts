@@ -1,25 +1,13 @@
 'use server'
 
-import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import type { PortalClientData, ConstructionUpdate, PaymentExtensionRequest } from '@/types/portal'
 import type { Client, Payment, ClientDocument, Complaint } from '@/types/clients'
 import type { BookingFull } from '@/types/bookings'
 
-// ── Session management ─────────────────────────────────────────────
-
-export async function getPortalSession(): Promise<{ client: Client } | null> {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('client_portal_session')?.value
-  if (!token) return null
-
-  const supabase = await createClient()
-  const { data } = await supabase.rpc('portal_check_session', { p_token: token })
-  if (!data) return null
-  return { client: data as Client }
-}
-
 // ── Portal data ────────────────────────────────────────────────────
+// Note: getPortalSession() moved to '@/lib/portal/session' so it can be wrapped
+// in React cache() (this file is 'use server', where exports must be actions).
 
 export async function getPortalClientData(clientId: string): Promise<PortalClientData> {
   const supabase = await createClient()

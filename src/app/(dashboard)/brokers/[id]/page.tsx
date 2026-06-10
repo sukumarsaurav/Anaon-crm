@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getBrokerById, getBrokerStats, getBrokerCommissions, getBrokerLeadRegistrations } from '@/lib/brokers/queries'
-import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import BrokerStatusBadge from '@/components/brokers/BrokerStatusBadge'
 import BrokerPerformanceCard from '@/components/brokers/BrokerPerformanceCard'
@@ -40,9 +40,7 @@ export default async function BrokerDetailPage({ params }: PageProps) {
 
   if (!broker) notFound()
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user!.id).single()
+  const profile = (await getProfile())?.profile
   const canManage = ['admin', 'manager'].includes(profile?.role ?? '')
 
   return (

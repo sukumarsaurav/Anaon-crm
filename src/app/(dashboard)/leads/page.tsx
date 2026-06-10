@@ -1,7 +1,8 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
-import { Plus, LayoutList, Kanban } from 'lucide-react'
+import { Plus, LayoutList, Kanban, AlertTriangle, Upload } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { getLeads, getLeadStats, getActiveAdvisors } from '@/lib/leads/queries'
 import type { LeadFilters, LeadStage, LeadSource, LeadTemperature } from '@/types/leads'
 import LeadsStats from '@/components/leads/LeadsStats'
@@ -39,15 +40,9 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
     sort_dir: (params.sort_dir as 'asc' | 'desc') || 'desc',
   }
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, branch_id')
-    .eq('id', user.id)
-    .single()
+  const profileData = await getProfile()
+  if (!profileData || !profileData.user) return null
+  const { user, profile } = profileData
 
   const [leads, stats, advisors] = await Promise.all([
     getLeads(filters),
@@ -83,6 +78,18 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
                 Kanban
               </Link>
             </div>
+            {(profile?.role === 'admin' || profile?.role === 'manager') && (
+              <>
+                <Button href="/leads/overdue" variant="secondary">
+                  <AlertTriangle size={16} />
+                  Overdue
+                </Button>
+                <Button href="/leads/import" variant="secondary">
+                  <Upload size={16} />
+                  Import CSV
+                </Button>
+              </>
+            )}
             <Button href="/leads/new">
               <Plus size={16} />
               Add Lead

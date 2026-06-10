@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { getBrokerByAuthUser, getBrokerStats, getBrokerLeadRegistrations, getBrokerPortalCommissions } from '@/lib/brokers/queries'
 import { formatCurrency } from '@/lib/utils'
 import { Users, DollarSign, TrendingUp, BookOpen, ArrowRight } from 'lucide-react'
@@ -11,8 +11,7 @@ import { COMMISSION_STATUS_CONFIG } from '@/types/bookings'
 import type { CommissionStatus } from '@/types/bookings'
 
 export default async function BrokerPortalDashboard() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) redirect('/login')
 
   const broker = await getBrokerByAuthUser(user.id)

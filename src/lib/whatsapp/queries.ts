@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import type { WaConversation, WaMessage, WaTemplate, WaBroadcast } from '@/types/whatsapp'
 
 export async function getConversations(filters: {
@@ -9,14 +10,9 @@ export async function getConversations(filters: {
   search?: string
 } = {}): Promise<WaConversation[]> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, branch_id')
-    .eq('id', user.id)
-    .single()
+  const session = await getProfile()
+  if (!session?.user) return []
+  const { user, profile } = session
 
   let query = supabase
     .from('whatsapp_conversations')

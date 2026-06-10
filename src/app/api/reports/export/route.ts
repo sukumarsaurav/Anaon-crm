@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
     }
     case 'advisor_scorecard': {
       const data = await getAdvisorScorecard(from, to)
-      const rows = data.map(a => ({
+      const rows = data.map((a: any) => ({
         'Name': a.name,
         'Designation': a.designation,
         'Leads Assigned': a.leads,

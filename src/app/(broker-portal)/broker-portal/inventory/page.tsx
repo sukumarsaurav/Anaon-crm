@@ -1,14 +1,13 @@
 export const dynamic = 'force-dynamic'
 
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { getBrokerByAuthUser, getPortalAvailablePlots } from '@/lib/brokers/queries'
 import { formatCurrency } from '@/lib/utils'
 import { Building2 } from 'lucide-react'
 
 export default async function BrokerInventoryPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) redirect('/login')
 
   const broker = await getBrokerByAuthUser(user.id)

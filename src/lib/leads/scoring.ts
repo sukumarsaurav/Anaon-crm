@@ -62,7 +62,7 @@ export function calculateLeadScore(input: LeadScoreInput): {
   }
 
   // +20: has visited site
-  const visitedStages = ['site_visit_done', 'negotiation', 'closed_won']
+  const visitedStages = ['site_visit_done', 'negotiation', 'token_paid', 'closed_won']
   if (lead.stage && visitedStages.includes(lead.stage)) {
     deltas.push({ signal: 'Has visited site', delta: 20 })
     score += 20
@@ -108,6 +108,10 @@ export function calculateLeadScore(input: LeadScoreInput): {
   if (lead.stage === 'negotiation') {
     deltas.push({ signal: 'In negotiation', delta: 5 })
     score += 5
+  }
+  if (lead.stage === 'token_paid') {
+    deltas.push({ signal: 'Token paid', delta: 10 })
+    score += 10
   }
 
   const finalScore = Math.max(0, Math.min(100, score))

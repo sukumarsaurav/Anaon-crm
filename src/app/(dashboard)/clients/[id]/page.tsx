@@ -6,7 +6,7 @@ import {
   getClientById, getClientBookings, getClientDocuments,
   getClientComplaints, getClientTimeline, getPaymentSummary,
 } from '@/lib/clients/queries'
-import { createClient as createSupabase } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { OCCUPATION_LABELS } from '@/types/clients'
 import KycStatusBadge from '@/components/clients/KycStatusBadge'
@@ -41,9 +41,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
   const client = await getClientById(id)
   if (!client) notFound()
 
-  const supabase = await createSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile }  = await supabase.from('profiles').select('role').eq('id', user!.id).single()
+  const profile = (await getProfile())?.profile
   const canManage = ['admin', 'manager'].includes(profile?.role ?? '')
 
   const [bookings, documents, complaints, timeline] = await Promise.all([

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import {
   getMemberProfile, getMonthlyKPI, getMonthlyTarget,
   getDailyKPI, getAttendanceLogs, getLeaveRequests, getIncentiveSlabs,
@@ -23,9 +23,8 @@ interface Props {
 
 export default async function MemberProfilePage({ params }: Props) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: currentProfile } = await supabase.from('profiles').select('role').eq('id', user!.id).single()
+  const user = (await getProfile())?.user
+  const currentProfile = (await getProfile())?.profile
 
   const isOwn = user!.id === id
   const canManage = currentProfile?.role === 'admin' || currentProfile?.role === 'manager'

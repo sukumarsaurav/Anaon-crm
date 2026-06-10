@@ -52,7 +52,7 @@ export function BankTieupFormButton({ bank }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Bank / NBFC Name <span className="text-red-500">*</span></label>
-            <input name="bank_name" required defaultValue={bank?.bank_name ?? ''} placeholder="SBI / HDFC / LIC HFL"
+            <input name="bank_name" required defaultValue={bank?.bank_name ?? ''} placeholder="Bank name"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
           <div>

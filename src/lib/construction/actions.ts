@@ -2,14 +2,15 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { DEFAULT_PLOTTED_MILESTONES } from '@/types/construction'
 import { fireAutomations } from '@/lib/automation/engine'
 
 async function getAuthUser() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return null
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const profile = (await getProfile())?.profile
   if (!['admin', 'manager', 'sales_advisor'].includes(profile?.role ?? '')) return null
   return { supabase, user }
 }

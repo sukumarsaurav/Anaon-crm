@@ -98,39 +98,27 @@ export async function getPendingDisbursements(): Promise<LoanDisbursement[]> {
 
 export async function getLoanStats() {
   const supabase = await createClient()
-  const [appsRes, disbRes, banksRes, dsasRes] = await Promise.all([
-    supabase.from('loan_applications').select('stage, sanctioned_amount, loan_amount_applied'),
-    supabase.from('loan_disbursements').select('status, actual_amount, expected_amount'),
-    supabase.from('bank_tieups').select('id').eq('is_active', true),
-    supabase.from('dsas').select('id').eq('is_active', true),
+  
+  const [rpcRes, banksRes, dsasRes] = await Promise.all([
+    supabase.rpc('get_loan_stats'),
+    supabase.from('bank_tieups').select('id', { count: 'exact', head: true }).eq('is_active', true),
+    supabase.from('dsas').select('id', { count: 'exact', head: true }).eq('is_active', true),
   ])
 
-  const apps = appsRes.data ?? []
-  const disbs = disbRes.data ?? []
-
-  const activeStages = ['eligibility_check','bank_selected','application_submitted','docs_submitted','sanction_received','disbursement']
-  const active = apps.filter(a => activeStages.includes(a.stage))
-  const sanctioned = apps.filter(a => a.sanctioned_amount)
-  const totalSanctioned = sanctioned.reduce((s, a) => s + (a.sanctioned_amount ?? 0), 0)
-  const totalDisbursed = disbs.filter(d => d.status === 'received').reduce((s, d) => s + (d.actual_amount ?? 0), 0)
-  const pendingDisbs = disbs.filter(d => d.status === 'pending').length
-  const delayedDisbs = disbs.filter(d => d.status === 'delayed').length
-
-  const byStage: Record<string, number> = {}
-  for (const a of apps) {
-    byStage[a.stage] = (byStage[a.stage] ?? 0) + 1
+  const stats = rpcRes.data ?? {
+    totalApplications: 0,
+    activeApplications: 0,
+    rejected: 0,
+    totalSanctioned: 0,
+    totalDisbursed: 0,
+    pendingDisbursements: 0,
+    delayedDisbursements: 0,
+    byStage: {},
   }
 
   return {
-    totalApplications: apps.length,
-    activeApplications: active.length,
-    rejected: apps.filter(a => a.stage === 'rejected').length,
-    totalSanctioned,
-    totalDisbursed,
-    pendingDisbursements: pendingDisbs,
-    delayedDisbursements: delayedDisbs,
-    activeBanks: banksRes.data?.length ?? 0,
-    activeDSAs: dsasRes.data?.length ?? 0,
-    byStage,
+    ...stats,
+    activeBanks: banksRes.count ?? 0,
+    activeDSAs: dsasRes.count ?? 0,
   }
 }

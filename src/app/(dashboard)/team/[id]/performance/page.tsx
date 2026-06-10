@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { getMemberProfile, getMonthlyKPI, getMonthlyTarget } from '@/lib/team/queries'
 import { formatCurrency } from '@/lib/utils'
 import KPIGrid from '@/components/team/KPIGrid'
@@ -18,9 +18,8 @@ interface Props {
 export default async function MemberPerformancePage({ params, searchParams }: Props) {
   const { id } = await params
   const sp = await searchParams
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: currentProfile } = await supabase.from('profiles').select('role').eq('id', user!.id).single()
+  const user = (await getProfile())?.user
+  const currentProfile = (await getProfile())?.profile
 
   const isOwn = user!.id === id
   const canView = isOwn || currentProfile?.role === 'admin' || currentProfile?.role === 'manager'

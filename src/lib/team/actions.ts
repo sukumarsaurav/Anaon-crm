@@ -2,12 +2,13 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 
 async function requireRole(roles: string[]) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { ok: false as const, error: 'Unauthorized', supabase, userId: '' }
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const profile = (await getProfile())?.profile
   if (!profile || !roles.includes(profile.role)) return { ok: false as const, error: 'Forbidden', supabase, userId: user.id }
   return { ok: true as const, supabase, userId: user.id }
 }
@@ -44,7 +45,7 @@ export async function setMonthlyTarget(formData: FormData) {
 
 export async function checkIn(lat?: number, lng?: number) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
   const today = new Date().toISOString().split('T')[0]
@@ -67,7 +68,7 @@ export async function checkIn(lat?: number, lng?: number) {
 
 export async function checkOut(lat?: number, lng?: number) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
   const today = new Date().toISOString().split('T')[0]
@@ -110,7 +111,7 @@ export async function markAttendance(userId: string, date: string, status: strin
 
 export async function applyLeave(formData: FormData) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
   const fromDate = new Date(formData.get('from_date') as string)
@@ -154,7 +155,7 @@ export async function reviewLeave(leaveId: string, approved: boolean, note?: str
 
 export async function cancelLeave(leaveId: string) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
   const { error } = await supabase

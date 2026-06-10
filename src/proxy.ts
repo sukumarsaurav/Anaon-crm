@@ -7,7 +7,9 @@ const PUBLIC_PATHS = [
   '/api/auth',
   '/api/mobile',
   '/api/webhooks',
+  '/api/cron',
   '/api/portal',
+  '/share',
   '/broker-portal',
   '/client-portal',
 ]
@@ -17,6 +19,13 @@ function isPublic(pathname: string) {
 }
 
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Static assets — always allow
+  if (pathname.startsWith('/_next') || pathname.startsWith('/favicon')) {
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -39,18 +48,12 @@ export async function proxy(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-  const { pathname } = request.nextUrl
 
   // Public paths — let through, redirect logged-in users away from /login
   if (isPublic(pathname)) {
     if (user && pathname === '/login') {
       return NextResponse.redirect(new URL('/leads', request.url))
     }
-    return supabaseResponse
-  }
-
-  // Static assets — always allow
-  if (pathname.startsWith('/_next') || pathname.startsWith('/favicon')) {
     return supabaseResponse
   }
 

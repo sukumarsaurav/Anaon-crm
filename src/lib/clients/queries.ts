@@ -148,26 +148,30 @@ export async function getClientComplaints(clientId: string): Promise<Complaint[]
 export async function getClientTimeline(clientId: string): Promise<TimelineEvent[]> {
   const supabase = await createClient()
 
-  // Fetch from all sources in parallel
+  // 1. Get lead_id first
+  const { data: leadData } = await supabase.from('clients').select('lead_id').eq('id', clientId).single()
+  const leadId = leadData?.lead_id
+
+  // 2. Fetch from all sources in parallel
   const [
-    { data: leadData },
-    activities,
-    visits,
+    { data: leadActivitiesData },
+    { data: siteVisitsData },
     payments,
     docs,
     complaints,
   ] = await Promise.all([
-    supabase.from('clients').select('lead_id').eq('id', clientId).single(),
-    supabase
+    leadId ? supabase
       .from('lead_activities')
       .select('id, type, note, created_at, created_by_profile:profiles!lead_activities_created_by_fkey(full_name)')
+      .eq('lead_id', leadId)
       .order('created_at', { ascending: false })
-      .limit(30),
-    supabase
+      .limit(30) : Promise.resolve({ data: [] }),
+    leadId ? supabase
       .from('site_visits')
       .select('id, visit_date, status, visit_type, advisor_notes, created_at')
-      .eq('client_feedback', clientId) // won't match — get via lead_id below
-      .limit(0),
+      .eq('lead_id', leadId)
+      .order('visit_date', { ascending: false })
+      .limit(10) : Promise.resolve({ data: [] }),
     supabase
       .from('payments')
       .select('id, installment_number, description, amount_paid, paid_date, status, created_at')
@@ -189,30 +193,8 @@ export async function getClientTimeline(clientId: string): Promise<TimelineEvent
       .limit(20),
   ])
 
-  const leadId = leadData?.lead_id
-
-  // Get lead activities and site visits if we have the lead_id
-  let leadActivities: Array<{ id: string; type: string; note: string | null; created_at: string; created_by_profile?: { full_name: string } | null }> = []
-  let siteVisits: Array<{ id: string; visit_date: string; status: string; visit_type: string; advisor_notes: string | null; created_at: string }> = []
-
-  if (leadId) {
-    const [{ data: la }, { data: sv }] = await Promise.all([
-      supabase
-        .from('lead_activities')
-        .select('id, type, note, created_at, created_by_profile:profiles!lead_activities_created_by_fkey(full_name)')
-        .eq('lead_id', leadId)
-        .order('created_at', { ascending: false })
-        .limit(30),
-      supabase
-        .from('site_visits')
-        .select('id, visit_date, status, visit_type, advisor_notes, created_at')
-        .eq('lead_id', leadId)
-        .order('visit_date', { ascending: false })
-        .limit(10),
-    ])
-    leadActivities = (la ?? []) as unknown as typeof leadActivities
-    siteVisits = (sv ?? []) as unknown as typeof siteVisits
-  }
+  const leadActivities = (leadActivitiesData ?? []) as any[]
+  const siteVisits = (siteVisitsData ?? []) as any[]
 
   const events: TimelineEvent[] = []
 
@@ -221,7 +203,7 @@ export async function getClientTimeline(clientId: string): Promise<TimelineEvent
       id:          `act-${a.id}`,
       type:        'activity',
       date:        a.created_at,
-      title:       a.type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+      title:       a.type.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
       description: a.note,
     })
   }

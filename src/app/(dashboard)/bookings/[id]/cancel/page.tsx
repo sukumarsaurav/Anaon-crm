@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { notFound, redirect } from 'next/navigation'
 import { getBookingById } from '@/lib/bookings/queries'
-import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import CancellationForm from '@/components/bookings/CancellationForm'
 import BookingStatusBadge from '@/components/bookings/BookingStatusBadge'
@@ -16,9 +16,7 @@ interface PageProps {
 export default async function CancelBookingPage({ params }: PageProps) {
   const { id } = await params
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile }  = await supabase.from('profiles').select('role').eq('id', user!.id).single()
+  const profile = (await getProfile())?.profile
 
   if (!['admin', 'manager'].includes(profile?.role ?? '')) redirect(`/bookings/${id}`)
 

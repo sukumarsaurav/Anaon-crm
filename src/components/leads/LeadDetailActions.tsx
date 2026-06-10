@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button'
 import AssignModal from './AssignModal'
 import FollowUpModal from './FollowUpModal'
 import AddActivityModal from './AddActivityModal'
+import LossReasonModal from './LossReasonModal'
 import { changeLeadStage, deleteLead } from '@/lib/leads/actions'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
@@ -21,6 +22,7 @@ export default function LeadDetailActions({ lead, advisors }: LeadDetailActionsP
   const [showAssign, setShowAssign] = useState(false)
   const [showFollowUp, setShowFollowUp] = useState(false)
   const [showActivity, setShowActivity] = useState(false)
+  const [showLossReason, setShowLossReason] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
@@ -91,7 +93,7 @@ export default function LeadDetailActions({ lead, advisors }: LeadDetailActionsP
           {!TERMINAL_STAGES.includes(lead.stage) && (
             <div className="flex items-center gap-2 ml-auto">
               <button
-                onClick={() => handleAdvanceStage('not_interested')}
+                onClick={() => setShowLossReason(true)}
                 disabled={isPending}
                 className="text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
               >
@@ -125,6 +127,11 @@ export default function LeadDetailActions({ lead, advisors }: LeadDetailActionsP
         leadId={lead.id}
         open={showActivity}
         onClose={() => setShowActivity(false)}
+      />
+      <LossReasonModal
+        leadId={lead.id}
+        open={showLossReason}
+        onClose={() => setShowLossReason(false)}
       />
     </>
   )

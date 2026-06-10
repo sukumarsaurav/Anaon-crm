@@ -2,22 +2,20 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { calculateLeadScore } from './scoring'
-import { getRoundRobinAdvisor, getLeadActivities } from './queries'
+import { getLeadActivities } from './queries'
+import { resolveAssignee } from './assignment'
 import type { LeadStage, FollowUpOutcome, Lead } from '@/types/leads'
 import { suggestNextFollowup } from '@/lib/utils'
 import { fireAutomations } from '@/lib/automation/engine'
 
 export async function createLead(formData: FormData): Promise<{ success: boolean; id?: string; error?: string }> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await getProfile()
+  const user = session?.user
   if (!user) return { success: false, error: 'Not authenticated' }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, branch_id')
-    .eq('id', user.id)
-    .single()
+  const profile = session?.profile
 
   const payload: Record<string, unknown> = {
     full_name: formData.get('full_name'),
@@ -49,13 +47,19 @@ export async function createLead(formData: FormData): Promise<{ success: boolean
     created_by: user.id,
   }
 
-  // Auto-assign via round-robin
+  // Auto-assign via assignment rules (falls back to round-robin)
   const assignedTo = formData.get('assigned_to') as string | null
   if (assignedTo) {
     payload.assigned_to = assignedTo
   } else {
-    const advisorId = await getRoundRobinAdvisor(profile?.branch_id ?? undefined)
-    payload.assigned_to = advisorId
+    payload.assigned_to = await resolveAssignee(supabase, {
+      source: payload.source as string | null,
+      property_type: payload.property_type as string | null,
+      city: payload.city as string | null,
+      budget_min: payload.budget_min as number | null,
+      budget_max: payload.budget_max as number | null,
+      branch_id: payload.branch_id as string | null,
+    })
   }
 
   // Initial scoring
@@ -109,7 +113,7 @@ export async function updateLead(
   updates: Partial<Lead>
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Not authenticated' }
 
   const { data: oldLead } = await supabase.from('leads').select('*').eq('id', id).single()
@@ -144,10 +148,11 @@ export async function updateLead(
 export async function changeLeadStage(
   leadId: string,
   newStage: LeadStage,
-  notes?: string
+  notes?: string,
+  lossReason?: string | null
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Not authenticated' }
 
   const { data: lead } = await supabase.from('leads').select('stage, score').eq('id', leadId).single()
@@ -161,15 +166,20 @@ export async function changeLeadStage(
     activities,
   })
 
-  const { error } = await supabase
-    .from('leads')
-    .update({
-      stage: newStage,
-      score,
-      temperature,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', leadId)
+  const updates: Record<string, unknown> = {
+    stage: newStage,
+    score,
+    temperature,
+    updated_at: new Date().toISOString(),
+  }
+  // Persist loss reason only when marking not interested; clear it otherwise.
+  if (newStage === 'not_interested') {
+    if (lossReason) updates.loss_reason = lossReason
+  } else {
+    updates.loss_reason = null
+  }
+
+  const { error } = await supabase.from('leads').update(updates).eq('id', leadId)
 
   if (error) return { success: false, error: error.message }
 
@@ -178,7 +188,11 @@ export async function changeLeadStage(
     type: 'stage_change',
     stage_from: oldStage,
     stage_to: newStage,
-    notes: notes ?? `Stage changed from ${oldStage} to ${newStage}`,
+    notes:
+      notes ??
+      (newStage === 'not_interested' && lossReason
+        ? `Marked Not Interested — ${lossReason}`
+        : `Stage changed from ${oldStage} to ${newStage}`),
     performed_by: user.id,
   })
 
@@ -197,7 +211,7 @@ export async function changeLeadStage(
 
 export async function logActivity(formData: FormData): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Not authenticated' }
 
   const leadId = formData.get('lead_id') as string
@@ -227,8 +241,10 @@ export async function logActivity(formData: FormData): Promise<{ success: boolea
 
   if (scheduleFollowup && followupAt) {
     updates.next_followup_at = followupAt
+    updates.followup_reminder_sent_at = null
   } else if (outcome === 'not_reachable' || outcome === 'callback_requested') {
     updates.next_followup_at = suggestNextFollowup(outcome).toISOString()
+    updates.followup_reminder_sent_at = null
   }
 
   await supabase.from('leads').update(updates).eq('id', leadId)
@@ -250,7 +266,7 @@ export async function assignLead(
   advisorId: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Not authenticated' }
 
   const { data: oldLead } = await supabase.from('leads').select('assigned_to').eq('id', leadId).single()
@@ -303,7 +319,7 @@ export async function bulkAssignLeads(
   advisorId: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Not authenticated' }
 
   const { error } = await supabase
@@ -319,10 +335,10 @@ export async function bulkAssignLeads(
 
 export async function deleteLead(leadId: string): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Not authenticated' }
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const profile = (await getProfile())?.profile
   if (profile?.role !== 'admin') return { success: false, error: 'Only admins can delete leads' }
 
   // Soft delete
@@ -345,12 +361,12 @@ export async function scheduleFollowUp(
   followupAt: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Not authenticated' }
 
   const { error } = await supabase
     .from('leads')
-    .update({ next_followup_at: followupAt, updated_at: new Date().toISOString() })
+    .update({ next_followup_at: followupAt, followup_reminder_sent_at: null, updated_at: new Date().toISOString() })
     .eq('id', leadId)
 
   if (error) return { success: false, error: error.message }
@@ -365,7 +381,7 @@ export async function mergeDuplicate(
   mergeLeadId: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Not authenticated' }
 
   // Mark merged lead as duplicate, link to kept lead

@@ -2,16 +2,13 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
 
 async function getAuthUser() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await getProfile()
+  const user = session?.user
   if (!user) throw new Error('Unauthorized')
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
+  const profile = session?.profile
   if (!profile || !['admin', 'manager', 'marketing'].includes(profile.role)) {
     throw new Error('Insufficient permissions')
   }
