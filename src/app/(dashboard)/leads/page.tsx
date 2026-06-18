@@ -3,8 +3,8 @@ import Link from 'next/link'
 import { Plus, LayoutList, Kanban, AlertTriangle, Upload } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
-import { getLeads, getLeadStats, getActiveAdvisors } from '@/lib/leads/queries'
-import type { LeadFilters, LeadStage, LeadSource, LeadTemperature } from '@/types/leads'
+import { getLeads, getLeadsPage, getLeadStats, getActiveAdvisors } from '@/lib/leads/queries'
+import type { Lead, LeadFilters, LeadStage, LeadSource, LeadTemperature } from '@/types/leads'
 import LeadsStats from '@/components/leads/LeadsStats'
 import LeadFiltersBar from '@/components/leads/LeadFilters'
 import LeadsTable from '@/components/leads/LeadsTable'
@@ -26,6 +26,8 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   const params = await searchParams
   const view = (params.view as string) || 'all'
   const isKanban = params.view_mode === 'kanban'
+  const page = Math.max(1, parseInt((params.page as string) || '1', 10) || 1)
+  const PAGE_SIZE = 50
 
   const filters: LeadFilters = {
     view: view as LeadFilters['view'],
@@ -44,11 +46,27 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   if (!profileData || !profileData.user) return null
   const { user, profile } = profileData
 
-  const [leads, stats, advisors] = await Promise.all([
-    getLeads(filters),
+  const [leadsResult, stats, advisors] = await Promise.all([
+    isKanban ? getLeads(filters) : getLeadsPage(filters, page, PAGE_SIZE),
     getLeadStats(user.id, profile?.role ?? 'sales_advisor', profile?.branch_id ?? undefined),
     getActiveAdvisors(profile?.branch_id ?? undefined),
   ])
+
+  const leads: Lead[] = isKanban ? (leadsResult as Lead[]) : (leadsResult as { leads: Lead[] }).leads
+  const totalLeads = isKanban ? leads.length : (leadsResult as { count: number }).count
+  const totalPages = Math.max(1, Math.ceil(totalLeads / PAGE_SIZE))
+
+  // Build a querystring that preserves filters while changing the page.
+  const pageHref = (p: number) => {
+    const sp = new URLSearchParams()
+    for (const [k, v] of Object.entries(params)) {
+      if (k === 'page' || v == null) continue
+      if (Array.isArray(v)) v.forEach((x) => sp.append(k, x))
+      else sp.set(k, v as string)
+    }
+    sp.set('page', String(p))
+    return `/leads?${sp.toString()}`
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -111,7 +129,29 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
         {isKanban ? (
           <LeadsKanban leads={leads} />
         ) : (
-          <LeadsTable leads={leads} advisors={advisors} />
+          <>
+            <LeadsTable leads={leads} advisors={advisors} />
+            {totalLeads > 0 && (
+              <div className="flex items-center justify-between mt-4 text-sm">
+                <p className="text-slate-500">
+                  Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, totalLeads)} of {totalLeads}
+                </p>
+                <div className="flex items-center gap-2">
+                  {page > 1 ? (
+                    <Link href={pageHref(page - 1)} className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700">Previous</Link>
+                  ) : (
+                    <span className="px-3 py-1.5 rounded-lg border border-slate-100 text-slate-300 cursor-not-allowed">Previous</span>
+                  )}
+                  <span className="text-slate-500">Page {page} of {totalPages}</span>
+                  {page < totalPages ? (
+                    <Link href={pageHref(page + 1)} className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700">Next</Link>
+                  ) : (
+                    <span className="px-3 py-1.5 rounded-lg border border-slate-100 text-slate-300 cursor-not-allowed">Next</span>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </Suspense>
     </div>

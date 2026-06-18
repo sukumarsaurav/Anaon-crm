@@ -46,18 +46,26 @@ async function handler(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  let notified = 0
-  for (const lead of dueLeads ?? []) {
-    // Pull the last note/outcome so the rep has context in the reminder.
-    const { data: lastActivity } = await supabase
-      .from('lead_activities')
-      .select('notes, outcome')
-      .eq('lead_id', lead.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
+  const leads = dueLeads ?? []
 
-    const lastNote = lastActivity?.notes ? ` Last note: "${lastActivity.notes}"` : ''
+  // Batch-fetch the latest note per due lead in one query (avoids N+1).
+  const lastNoteByLead = new Map<string, string>()
+  if (leads.length) {
+    const { data: acts } = await supabase
+      .from('lead_activities')
+      .select('lead_id, notes, created_at')
+      .in('lead_id', leads.map((l) => l.id))
+      .not('notes', 'is', null)
+      .order('created_at', { ascending: false })
+    for (const a of acts ?? []) {
+      if (a.lead_id && a.notes && !lastNoteByLead.has(a.lead_id)) lastNoteByLead.set(a.lead_id, a.notes)
+    }
+  }
+
+  let notified = 0
+  for (const lead of leads) {
+    const note = lastNoteByLead.get(lead.id)
+    const lastNote = note ? ` Last note: "${note}"` : ''
 
     await notifyUsers([lead.assigned_to], {
       title: `Follow-up due: ${lead.full_name}`,
@@ -67,11 +75,6 @@ async function handler(req: NextRequest) {
       related_id: lead.id,
       action_url: `/leads/${lead.id}`,
     })
-
-    await supabase
-      .from('leads')
-      .update({ followup_reminder_sent_at: nowIso })
-      .eq('id', lead.id)
 
     // Let the automation engine deliver downstream (e.g. push / WhatsApp).
     fireAutomations(
@@ -94,7 +97,15 @@ async function handler(req: NextRequest) {
     notified++
   }
 
-  return NextResponse.json({ ok: true, notified, scanned: dueLeads?.length ?? 0 })
+  // Batch-mark all reminded leads in one update (avoids N updates).
+  if (leads.length) {
+    await supabase
+      .from('leads')
+      .update({ followup_reminder_sent_at: nowIso })
+      .in('id', leads.map((l) => l.id))
+  }
+
+  return NextResponse.json({ ok: true, notified, scanned: leads.length })
 }
 
 export const GET = handler

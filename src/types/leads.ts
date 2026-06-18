@@ -199,6 +199,8 @@ export interface LeadFilters {
   search?: string
   sort_by?: string
   sort_dir?: 'asc' | 'desc'
+  /** Max rows to fetch (Kanban/exports). Ignored when paginating. */
+  limit?: number
 }
 
 export interface DuplicateCheck {

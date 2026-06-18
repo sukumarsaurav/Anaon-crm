@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Building2 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { PROJECT_TYPE_LABELS } from '@/types/inventory'
@@ -18,7 +19,13 @@ export default function ProjectCard({ project, stats }: Props) {
       {/* Layout image or placeholder */}
       <div className="h-36 bg-gradient-to-br from-primary-50 to-blue-100 flex items-center justify-center relative">
         {project.layout_image_url ? (
-          <img src={project.layout_image_url} alt={project.name} className="w-full h-full object-cover" />
+          <Image
+            src={project.layout_image_url}
+            alt={project.name}
+            fill
+            sizes="(max-width: 768px) 100vw, 33vw"
+            className="object-cover"
+          />
         ) : (
           <Building2 size={36} className="text-primary-300" />
         )}

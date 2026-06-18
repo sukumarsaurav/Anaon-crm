@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import Image from 'next/image'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { Building2, MapPin, Phone, MessageSquare, FileText, CalendarClock, ShieldCheck } from 'lucide-react'
@@ -59,9 +60,9 @@ export default async function SharedAlbumPage({ params }: PageProps) {
         {gallery.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {gallery.slice(0, 6).map((url, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={i} src={url} alt={`${project?.name ?? 'Project'} ${i + 1}`}
-                className="w-full h-32 object-cover rounded-xl border border-slate-200" />
+              <div key={i} className="relative w-full h-32 rounded-xl border border-slate-200 overflow-hidden">
+                <Image src={url} alt={`${project?.name ?? 'Project'} ${i + 1}`} fill sizes="(max-width: 640px) 50vw, 33vw" className="object-cover" />
+              </div>
             ))}
           </div>
         )}
