@@ -81,7 +81,7 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
           <div className="sm:col-span-2">
             <label className="block text-xs font-medium text-slate-600 mb-1">Client *</label>
             <select name="client_id" required
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
               <option value="">— Select client —</option>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>{c.full_name} · {c.phone}</option>
@@ -91,7 +91,7 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Project *</label>
             <select name="project_id" required value={projectId} onChange={(e) => { setProjectId(e.target.value); setSelectedPlot(null) }}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
               <option value="">— Select project —</option>
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>{p.name} · {p.city}</option>
@@ -105,7 +105,7 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
             ) : (
               <select required value={selectedPlot?.id ?? ''}
                 onChange={(e) => setSelectedPlot(plots.find((p) => p.id === e.target.value) ?? null)}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 disabled={!projectId || plots.length === 0}>
                 <option value="">— Select plot —</option>
                 {plots.map((p) => (
@@ -134,17 +134,17 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
             <input name="total_sale_value" type="number" min="1" required
               value={totalValue || ''}
               onChange={(e) => setTotalValue(parseFloat(e.target.value) || 0)}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Booking Amount (₹) *</label>
             <input name="booking_amount" type="number" min="1" required
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Payment Plan Type</label>
             <select name="payment_plan_type" defaultValue="custom"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
               {Object.entries(PAYMENT_PLAN_LABELS).map(([v, label]) => (
                 <option key={v} value={v}>{label}</option>
               ))}
@@ -153,18 +153,18 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Payment Plan Notes</label>
             <input name="payment_plan" placeholder="e.g. 50:50, 10:90..."
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Booking Date *</label>
             <input name="booking_date" type="date" required
               defaultValue={new Date().toISOString().split('T')[0]}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Expected Possession</label>
             <input name="expected_possession_date" type="date"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
         </div>
       </div>
@@ -176,7 +176,7 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Sales Advisor</label>
             <select name="advisor_id"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
               <option value="">— Self —</option>
               {advisors.map((a) => (
                 <option key={a.id} value={a.id}>{a.full_name}</option>
@@ -186,7 +186,7 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Lead Source</label>
             <select name="referred_by_source"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
               <option value="">— Select —</option>
               {Object.entries(REFERRED_BY_LABELS).map(([v, label]) => (
                 <option key={v} value={v}>{label}</option>
@@ -196,7 +196,7 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Channel Partner (Broker)</label>
             <select name="broker_id" value={brokerId} onChange={(e) => setBrokerId(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
               <option value="">— None —</option>
               {brokers.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -213,7 +213,7 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
             <input name="notes" placeholder="Any special terms or observations"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
         </div>
       </div>
@@ -222,7 +222,7 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
 
       <div className="flex gap-3">
         <button type="submit" disabled={isPending || !selectedPlot}
-          className="px-6 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-40">
+          className="px-6 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-40">
           {isPending ? 'Creating...' : 'Submit Booking'}
         </button>
         <button type="button" onClick={() => router.back()}

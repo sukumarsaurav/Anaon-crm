@@ -62,7 +62,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
               <Link
                 href={`/leads?view_mode=list`}
                 className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
-                  !isKanban ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-50'
+                  !isKanban ? 'bg-primary-600 text-white' : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
                 <LayoutList size={16} />
@@ -71,7 +71,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
               <Link
                 href={`/leads?view_mode=kanban`}
                 className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
-                  isKanban ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-50'
+                  isKanban ? 'bg-primary-600 text-white' : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
                 <Kanban size={16} />

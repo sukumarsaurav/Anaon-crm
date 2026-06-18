@@ -21,9 +21,9 @@ export default function CostSheetView({ data }: Props) {
   return (
     <div className="max-w-2xl mx-auto bg-white p-8 print:p-6">
       {/* Header */}
-      <div className="flex items-start justify-between mb-6 pb-4 border-b-2 border-indigo-600">
+      <div className="flex items-start justify-between mb-6 pb-4 border-b-2 border-primary-600">
         <div>
-          <h1 className="text-2xl font-bold text-indigo-700">ANON INDIA</h1>
+          <h1 className="text-2xl font-bold text-primary-700">ANON INDIA</h1>
           <p className="text-sm text-slate-500">Real Estate Developers</p>
         </div>
         <div className="text-right">
@@ -56,7 +56,7 @@ export default function CostSheetView({ data }: Props) {
       {/* Price breakdown */}
       <table className="w-full mb-6 border border-slate-200 rounded-lg overflow-hidden">
         <thead>
-          <tr className="bg-indigo-600 text-white">
+          <tr className="bg-primary-600 text-white">
             <th className="text-left py-2 px-4 text-sm font-medium">Particulars</th>
             <th className="text-right py-2 px-4 text-sm font-medium">Amount</th>
           </tr>
@@ -71,9 +71,9 @@ export default function CostSheetView({ data }: Props) {
           {data.gst > 0 && <Row label="GST (5%)" amount={data.gst} />}
         </tbody>
         <tfoot>
-          <tr className="bg-indigo-50">
-            <td className="py-3 px-4 font-bold text-indigo-800">Total Payable</td>
-            <td className="py-3 px-4 text-right font-bold text-indigo-800 text-lg">{formatCurrency(data.total_payable)}</td>
+          <tr className="bg-primary-50">
+            <td className="py-3 px-4 font-bold text-primary-800">Total Payable</td>
+            <td className="py-3 px-4 text-right font-bold text-primary-800 text-lg">{formatCurrency(data.total_payable)}</td>
           </tr>
         </tfoot>
       </table>
@@ -89,7 +89,7 @@ export default function CostSheetView({ data }: Props) {
       {/* Print button */}
       <button
         onClick={() => window.print()}
-        className="print:hidden px-6 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700"
+        className="print:hidden px-6 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700"
       >
         🖨 Print / Save as PDF
       </button>

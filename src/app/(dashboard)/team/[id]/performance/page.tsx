@@ -108,7 +108,7 @@ export default async function MemberPerformancePage({ params, searchParams }: Pr
                   : null
                 const isCurrentMonth = m.month === month && m.year === year
                 return (
-                  <tr key={i} className={`border-b border-slate-100 ${isCurrentMonth ? 'bg-indigo-50 font-semibold' : ''}`}>
+                  <tr key={i} className={`border-b border-slate-100 ${isCurrentMonth ? 'bg-primary-50 font-semibold' : ''}`}>
                     <td className="py-2">{label}</td>
                     <td className="py-2 text-right">{kpi.calls_made}</td>
                     <td className="py-2 text-right">{kpi.followups_completed}</td>

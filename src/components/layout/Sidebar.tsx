@@ -1,17 +1,18 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { cn } from '@/lib/utils'
+import { cn, getInitials } from '@/lib/utils'
 import {
   Users, Building2, LayoutDashboard, MessageSquare,
   UserCheck, UsersRound, BarChart3, Settings, ChevronLeft,
-  Zap, FileText, Briefcase, LogOut, BookOpen, Handshake,
+  Zap, Briefcase, LogOut, BookOpen, Handshake,
   HardHat, Globe, PenLine, Megaphone, Scale, CreditCard,
-  Smartphone, ShieldCheck, ClipboardList, X, Images,
+  Smartphone, ShieldCheck, ClipboardList, X, Images, ChevronDown,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useProfile } from './ProfileProvider'
 
 const navGroups = [
   {
@@ -67,9 +68,7 @@ const navGroups = [
   },
 ]
 
-const bottomNav = [
-  { label: 'Settings', href: '/settings', icon: Settings },
-]
+const STORAGE_KEY = 'anon-sidebar-groups'
 
 interface SidebarProps {
   collapsed: boolean
@@ -80,7 +79,33 @@ interface SidebarProps {
 
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname()
+  const profile = useProfile()
   const supabase = useMemo(() => createClient(), [])
+
+  // Per-group collapse state, persisted to localStorage.
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      setOpenGroups(raw ? JSON.parse(raw) : {})
+    } catch {
+      setOpenGroups({})
+    }
+  }, [])
+
+  const toggleGroup = (label: string) => {
+    setOpenGroups((prev) => {
+      const next = { ...prev, [label]: prev[label] === false ? true : false }
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      } catch {
+        /* ignore quota / privacy-mode errors */
+      }
+      return next
+    })
+  }
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -95,149 +120,168 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
   return (
     <aside
+      aria-label="Main navigation"
       className={cn(
-        // Base: fixed, full-height, dark background, flex column, smooth transition
         'fixed left-0 top-0 z-30 h-screen flex flex-col',
-        'bg-slate-900 border-r border-slate-800/60',
+        'bg-white border-r border-slate-200',
         'transition-all duration-300 ease-in-out',
-        // Always w-64 on mobile; desktop width controlled by collapsed state
         'w-64',
         collapsed ? 'lg:w-16' : 'lg:w-64',
-        // Mobile: hide off-screen unless open. max-lg: avoids CSS conflict with desktop always-visible.
         mobileOpen ? 'translate-x-0' : 'max-lg:-translate-x-full',
       )}
     >
       {/* Logo + collapse controls */}
-      <div className="flex h-16 items-center justify-between px-3 border-b border-slate-800/60 shrink-0">
-        {/* Logo — hidden when desktop-collapsed but always shown on mobile */}
-        <div className={cn(
-          'flex items-center gap-2.5 overflow-hidden transition-all duration-300',
-          collapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'
-        )}>
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shrink-0 shadow-lg shadow-indigo-900/40">
-            <Building2 size={16} className="text-white" />
+      <div className="flex h-16 items-center justify-between px-3 border-b border-slate-200 shrink-0">
+        <div
+          className={cn(
+            'flex items-center gap-2.5 overflow-hidden transition-all duration-300',
+            collapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100',
+          )}
+        >
+          <div className="size-10 bg-primary rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-primary/30">
+            <Building2 size={18} className="text-white" />
           </div>
           <div className="shrink-0">
-            <p className="text-white font-bold text-sm leading-none tracking-wide">ANON INDIA</p>
-            <p className="text-slate-500 text-[10px] mt-0.5 uppercase tracking-wider">CRM</p>
+            <p className="text-slate-900 font-bold text-sm leading-none tracking-wide">ANON INDIA</p>
+            <p className="text-slate-500 text-[11px] mt-1 font-medium">Admin Dashboard</p>
           </div>
         </div>
 
-        {/* Collapsed-only logo */}
         {collapsed && (
-          <div className="hidden lg:flex w-8 h-8 bg-indigo-600 rounded-lg items-center justify-center mx-auto shadow-lg shadow-indigo-900/40">
-            <Building2 size={16} className="text-white" />
+          <div className="hidden lg:flex size-10 bg-primary rounded-xl items-center justify-center mx-auto shadow-lg shadow-primary/30">
+            <Building2 size={18} className="text-white" />
           </div>
         )}
 
-        {/* Mobile close button */}
         <button
           onClick={onMobileClose}
-          className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors focus-ring"
           aria-label="Close navigation"
         >
           <X size={16} />
         </button>
 
-        {/* Desktop collapse toggle */}
         <button
           onClick={onToggle}
           className={cn(
-            'hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors',
-            collapsed && 'mx-auto'
+            'hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors focus-ring',
+            collapsed && 'mx-auto',
           )}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          <ChevronLeft
-            size={15}
-            className={cn('transition-transform duration-300', collapsed && 'rotate-180')}
-          />
+          <ChevronLeft size={15} className={cn('transition-transform duration-300', collapsed && 'rotate-180')} />
         </button>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-5">
-        {navGroups.map((group) => (
-          <div key={group.label}>
-            {/* Section label — hidden when collapsed on desktop */}
-            {!collapsed && (
-              <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500 lg:block">
-                {group.label}
-              </p>
-            )}
-            <div className="space-y-0.5">
-              {group.items.map(({ label, href, icon: Icon }) => {
-                const active = isActive(href)
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    onClick={onMobileClose}
-                    title={collapsed ? label : undefined}
-                    className={cn(
-                      'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 group relative',
-                      active
-                        ? 'bg-indigo-600/20 text-indigo-300 ring-1 ring-indigo-500/30'
-                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
-                    )}
-                  >
-                    <Icon
-                      size={17}
-                      className={cn(
-                        'shrink-0 transition-colors',
-                        active ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'
-                      )}
-                    />
-                    {/* Label — visible on mobile always; hidden on desktop when collapsed */}
-                    <span className={cn(
-                      'truncate transition-all duration-300',
-                      collapsed ? 'lg:hidden' : ''
-                    )}>
-                      {label}
-                    </span>
-
-                    {/* Active indicator bar */}
-                    {active && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-indigo-400 rounded-r-full" />
-                    )}
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-        ))}
-      </nav>
-
-      {/* Bottom nav */}
-      <div className="border-t border-slate-800/60 pt-2 pb-3 px-2 space-y-0.5 shrink-0">
-        {bottomNav.map(({ label, href, icon: Icon }) => {
-          const active = isActive(href)
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
+        {navGroups.map((group) => {
+          const expanded = openGroups[group.label] !== false
           return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onMobileClose}
-              title={collapsed ? label : undefined}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150',
-                active
-                  ? 'bg-indigo-600/20 text-indigo-300'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
+            <div key={group.label}>
+              {!collapsed && (
+                <button
+                  onClick={() => toggleGroup(group.label)}
+                  aria-expanded={expanded}
+                  className="w-full flex items-center justify-between px-3 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-600 transition-colors focus-ring rounded"
+                >
+                  {group.label}
+                  <ChevronDown
+                    size={13}
+                    className={cn('transition-transform duration-200', !expanded && '-rotate-90')}
+                  />
+                </button>
               )}
-            >
-              <Icon size={17} className="shrink-0" />
-              <span className={cn(collapsed ? 'lg:hidden' : '')}>{label}</span>
-            </Link>
+              {(expanded || collapsed) && (
+                <div className="space-y-0.5">
+                  {group.items.map(({ label, href, icon: Icon }) => {
+                    const active = isActive(href)
+                    return (
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={onMobileClose}
+                        title={collapsed ? label : undefined}
+                        aria-current={active ? 'page' : undefined}
+                        className={cn(
+                          'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group relative focus-ring',
+                          active
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
+                        )}
+                      >
+                        <Icon
+                          size={18}
+                          className={cn(
+                            'shrink-0 transition-colors',
+                            active ? 'text-primary' : 'text-slate-400 group-hover:text-slate-600',
+                          )}
+                        />
+                        <span className={cn('truncate transition-all duration-300', collapsed ? 'lg:hidden' : '')}>
+                          {label}
+                        </span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           )
         })}
+      </nav>
+
+      {/* Profile card */}
+      <div className="border-t border-slate-200 p-2 shrink-0 relative">
+        {/* Drop-up menu */}
+        {profileMenuOpen && !collapsed && (
+          <>
+            <div className="fixed inset-0 z-0" onClick={() => setProfileMenuOpen(false)} aria-hidden="true" />
+            <div className="absolute bottom-full left-2 right-2 mb-2 z-10 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden py-1">
+              <Link
+                href="/settings"
+                onClick={() => {
+                  setProfileMenuOpen(false)
+                  onMobileClose()
+                }}
+                className="flex items-center gap-2.5 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors focus-ring"
+              >
+                <Settings size={16} className="text-slate-400" />
+                Settings
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors focus-ring"
+              >
+                <LogOut size={16} />
+                Log Out
+              </button>
+            </div>
+          </>
+        )}
 
         <button
-          onClick={handleSignOut}
-          title={collapsed ? 'Sign Out' : undefined}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-150"
+          onClick={() => (collapsed ? handleSignOut() : setProfileMenuOpen((o) => !o))}
+          title={collapsed ? 'Account' : undefined}
+          className={cn(
+            'w-full flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-slate-100 transition-colors focus-ring',
+            collapsed && 'lg:justify-center',
+          )}
         >
-          <LogOut size={17} className="shrink-0" />
-          <span className={cn(collapsed ? 'lg:hidden' : '')}>Sign Out</span>
+          <div className="size-9 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shrink-0">
+            {getInitials(profile.fullName)}
+          </div>
+          <div className={cn('min-w-0 flex-1 text-left', collapsed ? 'lg:hidden' : '')}>
+            <p className="text-sm font-semibold text-slate-900 truncate leading-tight">{profile.fullName}</p>
+            <p className="text-xs text-slate-500 truncate">{profile.email}</p>
+          </div>
+          <ChevronDown
+            size={15}
+            className={cn(
+              'text-slate-400 shrink-0 transition-transform',
+              collapsed ? 'lg:hidden' : '',
+              profileMenuOpen && 'rotate-180',
+            )}
+          />
         </button>
       </div>
     </aside>

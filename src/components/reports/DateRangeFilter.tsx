@@ -37,7 +37,7 @@ export default function DateRangeFilter() {
           className="text-sm text-slate-700 focus:outline-none" />
       </div>
       <button type="submit"
-        className="px-3 py-2 text-xs bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700">
+        className="px-3 py-2 text-xs bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700">
         Apply
       </button>
       {(from || to) && (

@@ -150,7 +150,7 @@ export const CANDIDATE_STAGES: { value: CandidateStage; label: string; color: st
   { value: 'shortlisted',          label: 'Shortlisted',         color: 'text-blue-700',   bg: 'bg-blue-50' },
   { value: 'interview_scheduled',  label: 'Interview Scheduled', color: 'text-amber-700',  bg: 'bg-amber-50' },
   { value: 'interview_done',       label: 'Interview Done',      color: 'text-purple-700', bg: 'bg-purple-50' },
-  { value: 'offer',                label: 'Offer',               color: 'text-indigo-700', bg: 'bg-indigo-50' },
+  { value: 'offer',                label: 'Offer',               color: 'text-primary-700', bg: 'bg-primary-50' },
   { value: 'joined',               label: 'Joined',              color: 'text-green-700',  bg: 'bg-green-50' },
   { value: 'rejected',             label: 'Rejected',            color: 'text-red-700',    bg: 'bg-red-50' },
 ]

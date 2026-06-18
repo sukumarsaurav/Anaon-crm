@@ -6,6 +6,8 @@ import { getProfile } from '@/lib/supabase/getProfile'
 import { calculateLeadScore } from './scoring'
 import { getLeadActivities } from './queries'
 import { resolveAssignee } from './assignment'
+import { notifyUsers } from '@/lib/notifications/notify'
+import { sendTextMessage } from '@/lib/whatsapp/provider'
 import type { LeadStage, FollowUpOutcome, Lead } from '@/types/leads'
 import { suggestNextFollowup } from '@/lib/utils'
 import { fireAutomations } from '@/lib/automation/engine'
@@ -291,14 +293,14 @@ export async function assignLead(
     performed_by: user.id,
   })
 
-  // Notify new advisor
-  await supabase.from('notifications').insert({
-    user_id: advisorId,
+  // Notify new advisor (in-app + push)
+  await notifyUsers([advisorId], {
     title: 'New Lead Assigned',
-    body: 'A lead has been assigned to you.',
+    message: 'A lead has been assigned to you.',
     type: 'lead_assigned',
-    related_record_type: 'lead',
-    related_record_id: leadId,
+    related_type: 'lead',
+    related_id: leadId,
+    action_url: `/leads/${leadId}`,
   })
 
   const { data: assignedLead } = await supabase.from('leads').select('full_name, phone, stage, project_id, utm_source').eq('id', leadId).single()
@@ -331,6 +333,73 @@ export async function bulkAssignLeads(
 
   revalidatePath('/leads')
   return { success: true }
+}
+
+export async function bulkChangeStage(
+  leadIds: string[],
+  stage: string
+): Promise<{ success: boolean; error?: string; count?: number }> {
+  const supabase = await createClient()
+  const user = (await getProfile())?.user
+  if (!user) return { success: false, error: 'Not authenticated' }
+  if (!leadIds.length) return { success: false, error: 'No leads selected' }
+
+  const { error } = await supabase
+    .from('leads')
+    .update({ stage, updated_at: new Date().toISOString() })
+    .in('id', leadIds)
+  if (error) return { success: false, error: error.message }
+
+  // One timeline entry per lead recording the bulk change.
+  await supabase.from('lead_activities').insert(
+    leadIds.map((lead_id) => ({
+      lead_id,
+      type: 'stage_change',
+      notes: `Stage changed to "${stage.replace(/_/g, ' ')}" (bulk action)`,
+      performed_by: user.id,
+    }))
+  )
+
+  revalidatePath('/leads')
+  return { success: true, count: leadIds.length }
+}
+
+export async function bulkSendWhatsApp(
+  leadIds: string[],
+  message: string
+): Promise<{ success: boolean; error?: string; sent?: number; failed?: number }> {
+  const supabase = await createClient()
+  const user = (await getProfile())?.user
+  if (!user) return { success: false, error: 'Not authenticated' }
+  if (!leadIds.length) return { success: false, error: 'No leads selected' }
+  if (!message.trim()) return { success: false, error: 'Message is empty' }
+
+  const { data: leads } = await supabase
+    .from('leads')
+    .select('id, full_name, phone')
+    .in('id', leadIds)
+    .not('phone', 'is', null)
+
+  let sent = 0
+  let failed = 0
+  for (const lead of leads ?? []) {
+    const text = message.replace(/\{\{\s*name\s*\}\}/g, lead.full_name ?? 'there')
+    const res = await sendTextMessage(lead.phone as string, text)
+    if (res.success) {
+      sent++
+      await supabase.from('lead_activities').insert({
+        lead_id: lead.id,
+        type: 'whatsapp',
+        notes: `WhatsApp sent (bulk): ${text.slice(0, 120)}`,
+        performed_by: user.id,
+      })
+    } else {
+      failed++
+    }
+  }
+
+  revalidatePath('/leads')
+  return { success: true, sent, failed }
 }
 
 export async function deleteLead(leadId: string): Promise<{ success: boolean; error?: string }> {
@@ -384,22 +453,56 @@ export async function mergeDuplicate(
   const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Not authenticated' }
 
-  // Mark merged lead as duplicate, link to kept lead
+  const profile = (await getProfile())?.profile
+  if (!['admin', 'manager'].includes(profile?.role ?? '')) {
+    return { success: false, error: 'Only admins and managers can merge leads' }
+  }
+  if (keepLeadId === mergeLeadId) return { success: false, error: 'Cannot merge a lead into itself' }
+
+  // Pull both records so we can backfill empty fields on the survivor and keep
+  // the higher score.
+  const { data: pair } = await supabase
+    .from('leads')
+    .select('id, full_name, email, phone, alternate_phone, city, budget_min, budget_max, score, project_id')
+    .in('id', [keepLeadId, mergeLeadId])
+
+  const keep = pair?.find((l) => l.id === keepLeadId)
+  const dupe = pair?.find((l) => l.id === mergeLeadId)
+  if (!keep || !dupe) return { success: false, error: 'One or both leads not found' }
+
+  // Re-parent child records from the duplicate onto the survivor.
+  await Promise.all([
+    supabase.from('lead_activities').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
+    supabase.from('site_visits').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
+    supabase.from('clients').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
+  ])
+
+  // Backfill survivor fields that are empty, and keep the higher score.
+  const backfill: Record<string, unknown> = {}
+  const fillable = ['email', 'alternate_phone', 'city', 'budget_min', 'budget_max', 'project_id'] as const
+  for (const f of fillable) {
+    if ((keep as Record<string, unknown>)[f] == null && (dupe as Record<string, unknown>)[f] != null) {
+      backfill[f] = (dupe as Record<string, unknown>)[f]
+    }
+  }
+  const keepScore = Math.max(Number(keep.score ?? 0), Number(dupe.score ?? 0))
+  if (keepScore !== Number(keep.score ?? 0)) backfill.score = keepScore
+  if (Object.keys(backfill).length) {
+    backfill.updated_at = new Date().toISOString()
+    await supabase.from('leads').update(backfill).eq('id', keepLeadId)
+  }
+
+  // Retire the duplicate.
   const { error } = await supabase
     .from('leads')
-    .update({
-      is_active: false,
-      is_duplicate: true,
-      duplicate_of: keepLeadId,
-    })
+    .update({ is_active: false, is_duplicate: true, duplicate_of: keepLeadId, updated_at: new Date().toISOString() })
     .eq('id', mergeLeadId)
-
   if (error) return { success: false, error: error.message }
 
   await supabase.from('lead_activities').insert({
     lead_id: keepLeadId,
     type: 'system',
-    notes: `Duplicate lead (${mergeLeadId}) merged into this record`,
+    notes: `Merged duplicate lead "${dupe.full_name}" (${dupe.phone}) into this record — its activities and site visits were moved here.`,
     performed_by: user.id,
   })
 

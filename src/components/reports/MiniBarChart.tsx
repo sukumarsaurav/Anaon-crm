@@ -10,7 +10,7 @@ interface Props {
 
 export default function MiniBarChart({
   data,
-  colorClass = 'bg-indigo-500',
+  colorClass = 'bg-primary-500',
   formatValue = (v) => String(v),
   showValues = true,
   maxBars = 10,

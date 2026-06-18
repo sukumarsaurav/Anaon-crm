@@ -91,7 +91,7 @@ export default function AlbumsManager({ albums, projects, appUrl }: Props) {
               </span>
               <button
                 onClick={() => copy(a.share_token)}
-                className="shrink-0 p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                className="shrink-0 p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg"
                 title="Copy share link"
               >
                 {copied === a.share_token ? <Check size={15} className="text-green-600" /> : <Copy size={15} />}
@@ -100,7 +100,7 @@ export default function AlbumsManager({ albums, projects, appUrl }: Props) {
                 href={shareUrl(a.share_token)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="shrink-0 p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                className="shrink-0 p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg"
                 title="Open"
               >
                 <ExternalLink size={15} />
@@ -138,7 +138,7 @@ export default function AlbumsManager({ albums, projects, appUrl }: Props) {
               </code>
               <button
                 onClick={() => copy(createdToken)}
-                className="shrink-0 p-2 rounded-lg border border-slate-200 text-slate-500 hover:text-indigo-600"
+                className="shrink-0 p-2 rounded-lg border border-slate-200 text-slate-500 hover:text-primary-600"
               >
                 {copied === createdToken ? <Check size={15} className="text-green-600" /> : <Copy size={15} />}
               </button>
@@ -165,7 +165,7 @@ export default function AlbumsManager({ albums, projects, appUrl }: Props) {
                 name="message"
                 rows={2}
                 placeholder="A short note shown at the top of the album…"
-                className="mt-1.5 w-full rounded-lg border border-slate-300 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
+                className="mt-1.5 w-full rounded-lg border border-slate-300 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
               />
             </div>
             <p className="text-xs text-slate-400">

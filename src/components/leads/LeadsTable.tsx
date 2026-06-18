@@ -70,7 +70,7 @@ export default function LeadsTable({ leads, advisors }: LeadsTableProps) {
                     type="checkbox"
                     checked={selected.size === leads.length && leads.length > 0}
                     onChange={toggleAll}
-                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                   />
                 </th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
@@ -103,7 +103,7 @@ export default function LeadsTable({ leads, advisors }: LeadsTableProps) {
                     key={lead.id}
                     className={cn(
                       'hover:bg-slate-50 transition-colors group',
-                      isSelected && 'bg-indigo-50/50'
+                      isSelected && 'bg-primary-50/50'
                     )}
                   >
                     <td className="px-4 py-3.5">
@@ -111,20 +111,20 @@ export default function LeadsTable({ leads, advisors }: LeadsTableProps) {
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleOne(lead.id)}
-                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                       />
                     </td>
 
                     {/* Name + phone */}
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-xs font-semibold text-indigo-700 shrink-0">
+                        <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center text-xs font-semibold text-primary-700 shrink-0">
                           {getInitials(lead.full_name)}
                         </div>
                         <div>
                           <Link
                             href={`/leads/${lead.id}`}
-                            className="font-medium text-slate-900 hover:text-indigo-600 transition-colors"
+                            className="font-medium text-slate-900 hover:text-primary-600 transition-colors"
                           >
                             {lead.full_name}
                           </Link>
@@ -239,7 +239,7 @@ export default function LeadsTable({ leads, advisors }: LeadsTableProps) {
                       <Link href={`/leads/${lead.id}`}>
                         <ChevronRight
                           size={16}
-                          className="text-slate-300 group-hover:text-indigo-500 transition-colors"
+                          className="text-slate-300 group-hover:text-primary-500 transition-colors"
                         />
                       </Link>
                     </td>

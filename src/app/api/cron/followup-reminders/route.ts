@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { fireAutomations } from '@/lib/automation/engine'
+import { notifyUsers } from '@/lib/notifications/notify'
 
 const CRON_SECRET = process.env.CRON_SECRET ?? 'anon_india_cron_secret'
 
@@ -58,13 +59,12 @@ async function handler(req: NextRequest) {
 
     const lastNote = lastActivity?.notes ? ` Last note: "${lastActivity.notes}"` : ''
 
-    await supabase.from('notifications').insert({
-      user_id: lead.assigned_to,
+    await notifyUsers([lead.assigned_to], {
       title: `Follow-up due: ${lead.full_name}`,
-      body: `${lead.full_name} (${lead.phone}) is due for follow-up.${lastNote}`,
+      message: `${lead.full_name} (${lead.phone}) is due for follow-up.${lastNote}`,
       type: 'followup_reminder',
-      related_record_type: 'lead',
-      related_record_id: lead.id,
+      related_type: 'lead',
+      related_id: lead.id,
       action_url: `/leads/${lead.id}`,
     })
 

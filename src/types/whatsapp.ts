@@ -254,7 +254,7 @@ export interface MetaMessageStatus {
 
 export const CONVERSATION_STATUS_CONFIG: Record<WaConversationStatus, { label: string; color: string; bg: string; border: string }> = {
   new: { label: 'New', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' },
-  assigned: { label: 'Assigned', color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200' },
+  assigned: { label: 'Assigned', color: 'text-primary-700', bg: 'bg-primary-50', border: 'border-primary-200' },
   in_progress: { label: 'In Progress', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' },
   waiting_reply: { label: 'Waiting Reply', color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-200' },
   resolved: { label: 'Resolved', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200' },

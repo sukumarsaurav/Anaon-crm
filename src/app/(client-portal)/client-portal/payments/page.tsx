@@ -6,6 +6,7 @@ import { getPortalClientData } from '@/lib/portal/queries'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { PAYMENT_STATUS_CONFIG } from '@/types/clients'
 import PaymentExtensionForm from '@/components/client-portal/PaymentExtensionForm'
+import PayNowButton from '@/components/client-portal/PayNowButton'
 import type { PaymentStatus } from '@/types/clients'
 import { CheckCircle, Clock, AlertCircle } from 'lucide-react'
 
@@ -30,7 +31,7 @@ export default async function ClientPortalPaymentsPage() {
         {[
           { label: 'Paid',        value: formatCurrency(paymentSummary.total_paid),    icon: CheckCircle, color: 'text-green-600' },
           { label: 'Outstanding', value: formatCurrency(paymentSummary.outstanding),   icon: Clock,       color: 'text-amber-600' },
-          { label: 'Total',       value: formatCurrency(paymentSummary.total_due),     icon: AlertCircle, color: 'text-indigo-600' },
+          { label: 'Total',       value: formatCurrency(paymentSummary.total_due),     icon: AlertCircle, color: 'text-primary-600' },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-white border border-slate-200 rounded-xl p-4 text-center">
             <Icon size={18} className={`${color} mx-auto mb-1`} />
@@ -48,7 +49,7 @@ export default async function ClientPortalPaymentsPage() {
             <span>{Math.round((paymentSummary.total_paid / paymentSummary.total_due) * 100)}%</span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-3">
-            <div className="bg-indigo-600 h-3 rounded-full transition-all"
+            <div className="bg-primary-600 h-3 rounded-full transition-all"
               style={{ width: `${Math.min(100, Math.round((paymentSummary.total_paid / paymentSummary.total_due) * 100))}%` }} />
           </div>
         </div>
@@ -84,6 +85,16 @@ export default async function ClientPortalPaymentsPage() {
                       <p className="text-xs text-slate-500">Due: {formatDate(p.due_date)}</p>
                       {p.paid_date && <p className="text-xs text-green-600">Paid: {formatDate(p.paid_date)}</p>}
                       {p.transaction_id && <p className="text-xs text-slate-400">Txn: {p.transaction_id}</p>}
+                      {p.status === 'paid' && (
+                        <a
+                          href={`/api/portal/receipt/${p.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block text-xs font-medium text-primary-600 hover:text-primary-700 mt-1"
+                        >
+                          Download receipt ↓
+                        </a>
+                      )}
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-base font-bold text-slate-900">{formatCurrency(p.amount_due)}</p>
@@ -92,9 +103,10 @@ export default async function ClientPortalPaymentsPage() {
                       )}
                     </div>
                   </div>
-                  {/* Extension request */}
+                  {/* Pay online + extension request */}
                   {p.status === 'pending' && booking && (
-                    <div className="mt-3">
+                    <div className="mt-3 flex flex-wrap items-start gap-3">
+                      <PayNowButton paymentId={p.id} />
                       <PaymentExtensionForm paymentId={p.id} bookingId={booking.id} clientId={session.client.id} amountDue={p.amount_due} dueDate={p.due_date} />
                     </div>
                   )}
@@ -107,7 +119,7 @@ export default async function ClientPortalPaymentsPage() {
 
       <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-500">
         <p className="font-medium text-slate-700 mb-1">Need help with a payment?</p>
-        <p>Contact your dedicated ANON INDIA advisor or visit the Support section. For online payment, reach out to our accounts team for a payment link.</p>
+        <p>Pay any pending installment online with the <span className="font-medium text-slate-700">Pay Now</span> button — cards, UPI, and net-banking are accepted. For other queries, contact your dedicated ANON INDIA advisor or visit the Support section.</p>
       </div>
     </div>
   )

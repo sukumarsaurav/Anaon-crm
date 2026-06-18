@@ -41,7 +41,7 @@ export default async function CancelBookingPage({ params }: PageProps) {
         <div className="grid grid-cols-2 gap-3 text-sm pt-2">
           <div><p className="text-xs text-slate-500">Client</p><p className="font-medium">{booking.client?.full_name}</p></div>
           <div><p className="text-xs text-slate-500">Project / Plot</p><p className="font-medium">{booking.project?.name} · {booking.plot?.plot_number}</p></div>
-          <div><p className="text-xs text-slate-500">Total Value</p><p className="font-bold text-indigo-700">{formatCurrency(booking.total_sale_value)}</p></div>
+          <div><p className="text-xs text-slate-500">Total Value</p><p className="font-bold text-primary-700">{formatCurrency(booking.total_sale_value)}</p></div>
           <div><p className="text-xs text-slate-500">Booking Date</p><p className="font-medium">{formatDate(booking.booking_date)}</p></div>
         </div>
       </div>

@@ -50,12 +50,12 @@ export default function ProjectForm({ project }: Props) {
           <div className="sm:col-span-2">
             <label className="block text-xs font-medium text-slate-600 mb-1">Project Name *</label>
             <input name="name" required defaultValue={p?.name} placeholder="Jaipur Highlands Phase 2"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Type *</label>
             <select name="type" required defaultValue={p?.type ?? 'plotted_development'}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
               {Object.entries(PROJECT_TYPE_LABELS).map(([v, label]) => (
                 <option key={v} value={v}>{label}</option>
               ))}
@@ -64,54 +64,54 @@ export default function ProjectForm({ project }: Props) {
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Status *</label>
             <select name="status" required defaultValue={p?.status ?? 'pre_launch'}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
               {PROJECT_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">City *</label>
             <input name="city" required defaultValue={p?.city} placeholder="Jaipur"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Locality</label>
             <input name="locality" defaultValue={p?.locality ?? ''} placeholder="Jagatpura"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div className="sm:col-span-2">
             <label className="block text-xs font-medium text-slate-600 mb-1">Full Address</label>
             <input name="address" defaultValue={p?.address ?? ''} placeholder="Survey No. 123, Near..."
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Google Maps Pin URL</label>
             <input name="google_maps_pin" defaultValue={p?.google_maps_pin ?? ''} placeholder="https://maps.google.com/..."
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">RERA Number</label>
             <input name="rera_number" defaultValue={p?.rera_number ?? ''} placeholder="RAJ/P/2024/001234"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Launch Date</label>
             <input name="launch_date" type="date" defaultValue={p?.launch_date ?? ''}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Expected Completion</label>
             <input name="expected_completion_date" type="date" defaultValue={p?.expected_completion_date ?? ''}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Total Units</label>
             <input name="total_units" type="number" min="1" defaultValue={p?.total_units ?? ''}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div className="sm:col-span-2">
             <label className="block text-xs font-medium text-slate-600 mb-1">Description</label>
             <textarea name="description" rows={3} defaultValue={p?.description ?? ''}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
           </div>
         </div>
       </div>
@@ -123,12 +123,12 @@ export default function ProjectForm({ project }: Props) {
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Legal Contact</label>
             <input name="legal_contact" defaultValue={p?.legal_contact ?? ''} placeholder="Adv. Sharma +91..."
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Contractor / Builder</label>
             <input name="contractor_name" defaultValue={p?.contractor_name ?? ''} placeholder="ABC Constructions"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
         </div>
       </div>
@@ -140,34 +140,34 @@ export default function ProjectForm({ project }: Props) {
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Layout Image URL</label>
             <input name="layout_image_url" defaultValue={p?.layout_image_url ?? ''}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Brochure PDF URL</label>
             <input name="brochure_url" defaultValue={p?.brochure_url ?? ''}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Price List URL</label>
             <input name="price_list_url" defaultValue={p?.price_list_url ?? ''}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Video Walkthrough URL</label>
             <input name="video_url" defaultValue={p?.video_url ?? ''}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">360° Virtual Tour URL</label>
             <input name="virtual_tour_url" defaultValue={p?.virtual_tour_url ?? ''}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
         </div>
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">Amenities (one per line)</label>
           <textarea name="amenities" rows={4} defaultValue={Array.isArray(p?.amenities) ? p.amenities.join('\n') : ''}
             placeholder="Gated Community&#10;24/7 Security&#10;Park & Playground&#10;Wide Internal Roads"
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
+            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
         </div>
       </div>
 
@@ -178,12 +178,12 @@ export default function ProjectForm({ project }: Props) {
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Hold Duration (hours)</label>
             <input name="hold_duration_hours" type="number" min="1" max="168" defaultValue={p?.hold_duration_hours ?? 48}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Max Holds per Advisor</label>
             <input name="max_holds_per_advisor" type="number" min="1" max="10" defaultValue={p?.max_holds_per_advisor ?? 3}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
         </div>
       </div>
@@ -192,7 +192,7 @@ export default function ProjectForm({ project }: Props) {
 
       <div className="flex gap-3">
         <button type="submit" disabled={isPending}
-          className="px-6 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-40">
+          className="px-6 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-40">
           {isPending ? 'Saving...' : project ? 'Update Project' : 'Create Project'}
         </button>
         <button type="button" onClick={() => router.back()}

@@ -132,7 +132,7 @@ export default function AddActivityModal({ leadId, open, onClose }: AddActivityM
               type="checkbox"
               checked={scheduleFollowup}
               onChange={(e) => setScheduleFollowup(e.target.checked)}
-              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
             />
             <span className="text-sm font-medium text-slate-700">Schedule next follow-up</span>
           </label>
@@ -143,7 +143,7 @@ export default function AddActivityModal({ leadId, open, onClose }: AddActivityM
                 type="datetime-local"
                 name="followup_at"
                 defaultValue={defaultFollowupTime}
-                className="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
               {outcome === 'not_reachable' && (
                 <p className="text-xs text-amber-600 mt-1">

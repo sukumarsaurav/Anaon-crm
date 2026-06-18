@@ -28,10 +28,10 @@ export default async function ClientPortalConstructionPage() {
       <div className="bg-white border border-slate-200 rounded-xl p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-slate-900">Overall Progress</h3>
-          <span className="text-2xl font-bold text-indigo-600">{latestPct}%</span>
+          <span className="text-2xl font-bold text-primary-600">{latestPct}%</span>
         </div>
         <div className="w-full bg-slate-100 rounded-full h-4 mb-2">
-          <div className="bg-indigo-600 h-4 rounded-full transition-all"
+          <div className="bg-primary-600 h-4 rounded-full transition-all"
             style={{ width: `${latestPct}%` }} />
         </div>
         <p className="text-xs text-slate-500">
@@ -60,7 +60,7 @@ export default async function ClientPortalConstructionPage() {
                 <div key={update.id} className="relative flex gap-4">
                   {/* Dot */}
                   <div className={`relative z-10 flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center ${
-                    i === 0 ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-300'
+                    i === 0 ? 'bg-primary-600 border-primary-600' : 'bg-white border-slate-300'
                   }`}>
                     {i === 0
                       ? <CheckCircle size={14} className="text-white" />
@@ -75,7 +75,7 @@ export default async function ClientPortalConstructionPage() {
                     </div>
 
                     {update.milestone && (
-                      <span className="inline-block px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs rounded-full mb-2">
+                      <span className="inline-block px-2 py-0.5 bg-primary-50 text-primary-700 text-xs rounded-full mb-2">
                         {update.milestone}
                       </span>
                     )}

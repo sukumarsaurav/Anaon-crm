@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { fireAutomations } from '@/lib/automation/engine'
+import { sendReceiptEmail } from '@/lib/email/send'
 
 async function getAuth() {
   const supabase = await createClient()
@@ -155,6 +156,8 @@ export async function recordPayment(paymentId: string, formData: FormData) {
       payment: { id: paymentId, amount_due: payment.amount_due },
       client: clientData ? { id: payment.client_id, full_name: clientData.full_name, phone: clientData.phone } : undefined,
     }, 'payment', paymentId)
+    // Email receipt with PDF (no-op if email unconfigured / client has no email).
+    await sendReceiptEmail(paymentId)
   }
 
   if (payment?.client_id) revalidatePath(`/clients/${payment.client_id}`)

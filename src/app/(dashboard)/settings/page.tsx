@@ -49,16 +49,16 @@ export default async function SettingsPage() {
           <Link
             key={l.href}
             href={l.href}
-            className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 hover:border-indigo-300 hover:shadow-sm transition-all"
+            className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 hover:border-primary-300 hover:shadow-sm transition-all"
           >
-            <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
-              <l.icon size={18} className="text-indigo-600" />
+            <div className="w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center shrink-0">
+              <l.icon size={18} className="text-primary-600" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-slate-900">{l.title}</p>
               <p className="text-sm text-slate-500 truncate">{l.description}</p>
             </div>
-            <ChevronRight size={18} className="text-slate-300 group-hover:text-indigo-500 shrink-0" />
+            <ChevronRight size={18} className="text-slate-300 group-hover:text-primary-500 shrink-0" />
           </Link>
         ))}
       </div>

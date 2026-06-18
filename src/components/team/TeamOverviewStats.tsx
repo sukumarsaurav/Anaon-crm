@@ -30,7 +30,7 @@ export default function TeamOverviewStats({ summaries }: Props) {
     { label: 'Follow-ups Done',  value: totals.followups,                       Icon: RotateCcw,     color: 'text-purple-600' },
     { label: 'Visits (Month)',   value: totals.visits,                          Icon: MapPin,        color: 'text-amber-600' },
     { label: 'Bookings (Month)', value: totals.bookings,                        Icon: Award,         color: 'text-green-600' },
-    { label: 'Revenue (Month)',  value: formatCurrency(totals.revenue),         Icon: IndianRupee,   color: 'text-indigo-600' },
+    { label: 'Revenue (Month)',  value: formatCurrency(totals.revenue),         Icon: IndianRupee,   color: 'text-primary-600' },
     { label: 'At Risk',          value: atRisk,                                 Icon: AlertTriangle, color: atRisk > 0 ? 'text-red-600' : 'text-slate-400' },
   ]
 

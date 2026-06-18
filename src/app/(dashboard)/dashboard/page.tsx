@@ -21,7 +21,7 @@ import { BOOKING_STATUS_CONFIG } from '@/types/bookings'
 import type { BookingFull } from '@/types/bookings'
 
 const MODULES = [
-  { href: '/leads',        label: 'Leads',        icon: Users,        color: 'text-indigo-600', bg: 'bg-indigo-50'  },
+  { href: '/leads',        label: 'Leads',        icon: Users,        color: 'text-primary-600', bg: 'bg-primary-50'  },
   { href: '/clients',      label: 'Clients',      icon: UserCheck,    color: 'text-blue-600',   bg: 'bg-blue-50'    },
   { href: '/bookings',     label: 'Bookings',     icon: Building2,    color: 'text-emerald-600', bg: 'bg-emerald-50' },
   { href: '/inventory',    label: 'Inventory',    icon: Building2,    color: 'text-cyan-600',   bg: 'bg-cyan-50'    },
@@ -70,9 +70,9 @@ export default async function DashboardHome() {
             label="Total Leads"
             value={leadStats.total}
             sub={`${leadStats.newToday} added today`}
-            icon={<Users size={20} className="text-indigo-600" />}
-            iconBg="bg-indigo-50"
-            accent="border-indigo-500"
+            icon={<Users size={20} className="text-primary-600" />}
+            iconBg="bg-primary-50"
+            accent="border-primary-500"
             href="/leads"
           />
           <StatCard
@@ -187,7 +187,7 @@ export default async function DashboardHome() {
         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
           {MODULES.map(({ href, label, icon: Icon, color, bg }) => (
             <Link key={href} href={href}
-              className="flex flex-col items-center gap-2 p-4 bg-white border border-slate-200 rounded-xl hover:border-indigo-200 hover:shadow-sm transition-all text-center">
+              className="flex flex-col items-center gap-2 p-4 bg-white border border-slate-200 rounded-xl hover:border-primary-200 hover:shadow-sm transition-all text-center">
               <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center`}>
                 <Icon size={20} className={color} />
               </div>

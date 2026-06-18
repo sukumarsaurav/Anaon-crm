@@ -29,7 +29,7 @@ export default function AnnouncementsPage() {
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700"
+          className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700"
         >
           + New Announcement
         </button>

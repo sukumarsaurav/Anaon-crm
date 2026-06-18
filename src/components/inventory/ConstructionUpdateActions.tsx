@@ -32,7 +32,7 @@ export default function ConstructionUpdateActions({ updateId, projectId, isPubli
   return (
     <div className="flex items-center gap-1">
       <button onClick={handleToggle} title={isPublished ? 'Unpublish' : 'Publish'}
-        className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100">
+        className="p-1.5 text-slate-400 hover:text-primary-600 rounded-lg hover:bg-slate-100">
         {isPublished ? <EyeOff size={14} /> : <Eye size={14} />}
       </button>
       <button onClick={handleDelete} title="Delete"

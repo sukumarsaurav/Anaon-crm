@@ -41,7 +41,7 @@ export default function LeaveApplyForm({ onClose }: Props) {
             <select
               name="leave_type"
               required
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               {Object.entries(LEAVE_TYPE_LABELS).map(([v, label]) => (
                 <option key={v} value={v}>{label}</option>
@@ -57,7 +57,7 @@ export default function LeaveApplyForm({ onClose }: Props) {
                 type="date"
                 required
                 min={new Date().toISOString().split('T')[0]}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
             <div>
@@ -67,7 +67,7 @@ export default function LeaveApplyForm({ onClose }: Props) {
                 type="date"
                 required
                 min={new Date().toISOString().split('T')[0]}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
           </div>
@@ -78,7 +78,7 @@ export default function LeaveApplyForm({ onClose }: Props) {
               name="reason"
               rows={3}
               placeholder="Brief reason for leave..."
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
             />
           </div>
 
@@ -88,7 +88,7 @@ export default function LeaveApplyForm({ onClose }: Props) {
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-40"
+              className="flex-1 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-40"
             >
               {isPending ? 'Submitting...' : 'Submit Request'}
             </button>

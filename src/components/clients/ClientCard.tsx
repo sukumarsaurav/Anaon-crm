@@ -16,7 +16,7 @@ export default function ClientCard({ client, bookingCount }: Props) {
     <Card href={`/clients/${client.id}`} padding="sm">
       <div className="flex items-start gap-3">
         {/* Avatar */}
-        <div className="w-11 h-11 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 text-indigo-700 font-bold text-sm">
+        <div className="w-11 h-11 rounded-full bg-primary-100 flex items-center justify-center shrink-0 text-primary-700 font-bold text-sm">
           {client.photo_url
             ? <img src={client.photo_url} alt={client.full_name} className="w-full h-full rounded-full object-cover" />
             : initials}
@@ -40,7 +40,7 @@ export default function ClientCard({ client, bookingCount }: Props) {
           </div>
 
           {bookingCount !== undefined && (
-            <div className="mt-2 flex items-center gap-1.5 text-xs text-indigo-600">
+            <div className="mt-2 flex items-center gap-1.5 text-xs text-primary-600">
               <Building2 size={14} />
               <span>{bookingCount} booking{bookingCount !== 1 ? 's' : ''}</span>
             </div>

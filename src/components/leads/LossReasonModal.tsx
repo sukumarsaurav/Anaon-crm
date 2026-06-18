@@ -81,7 +81,7 @@ export default function LossReasonModal({ leadId, open, onClose }: LossReasonMod
             onChange={(e) => setNote(e.target.value)}
             placeholder="Describe the reason…"
             rows={2}
-            className="w-full rounded-lg border border-slate-300 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
+            className="w-full rounded-lg border border-slate-300 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
           />
         )}
       </div>

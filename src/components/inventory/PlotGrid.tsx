@@ -44,7 +44,7 @@ export default function PlotGrid({ plots, projectId, canManage }: Props) {
           placeholder="Search plot number..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="text-sm px-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-48"
+          className="text-sm px-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 w-48"
         />
         <div className="flex gap-1 flex-wrap">
           {STATUS_FILTERS.map((f) => (
@@ -53,7 +53,7 @@ export default function PlotGrid({ plots, projectId, canManage }: Props) {
               onClick={() => setFilter(f.value)}
               className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
                 filter === f.value
-                  ? 'bg-indigo-600 text-white'
+                  ? 'bg-primary-600 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
@@ -93,7 +93,7 @@ export default function PlotGrid({ plots, projectId, canManage }: Props) {
                 disabled={plot.status === 'not_for_sale'}
                 title={`${plot.plot_number} — ${cfg.label}${plot.size_sqyd ? ` (${plot.size_sqyd} sq yd)` : ''}`}
                 className={`relative aspect-square rounded-lg flex flex-col items-center justify-center text-white text-xs font-bold transition-all border-2 ${
-                  isSelected ? 'border-indigo-600 ring-2 ring-indigo-400 scale-105' : 'border-transparent'
+                  isSelected ? 'border-primary-600 ring-2 ring-primary-400 scale-105' : 'border-transparent'
                 } ${cfg.mapColor}`}
               >
                 <span className="leading-tight text-center px-1 break-all">{plot.plot_number}</span>

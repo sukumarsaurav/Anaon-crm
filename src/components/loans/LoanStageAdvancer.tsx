@@ -67,7 +67,7 @@ export default function LoanStageAdvancer({ loan, banks, dsas }: Props) {
         <div className="flex flex-wrap gap-2">
           {next && (
             <button onClick={() => openAdvance(next)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
+              className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700">
               Advance to {LOAN_STAGES.find(s => s.value === next)?.label}
               <ChevronRight size={14} />
             </button>
@@ -89,7 +89,7 @@ export default function LoanStageAdvancer({ loan, banks, dsas }: Props) {
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Bank</label>
                 <select name="bank_tieup_id" defaultValue={loan.bank_tieup_id ?? ''}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                   <option value="">Select bank</option>
                   {banks.map(b => <option key={b.id} value={b.id}>{b.bank_name} — {b.loan_product_name}</option>)}
                 </select>
@@ -97,7 +97,7 @@ export default function LoanStageAdvancer({ loan, banks, dsas }: Props) {
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">DSA (optional)</label>
                 <select name="dsa_id" defaultValue={loan.dsa_id ?? ''}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                   <option value="">Direct / no DSA</option>
                   {dsas.map(d => <option key={d.id} value={d.id}>{d.name}{d.firm_name ? ` (${d.firm_name})` : ''}</option>)}
                 </select>
@@ -105,7 +105,7 @@ export default function LoanStageAdvancer({ loan, banks, dsas }: Props) {
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">RM Contacted Date</label>
                 <input type="date" name="rm_contacted_date"
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
             </div>
           )}
@@ -116,17 +116,17 @@ export default function LoanStageAdvancer({ loan, banks, dsas }: Props) {
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Loan Amount Applied (₹)</label>
                 <input type="number" name="loan_amount_applied" defaultValue={loan.loan_amount_applied ?? ''}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Application Date</label>
                 <input type="date" name="application_date"
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Processing Fee Paid (₹)</label>
                 <input type="number" name="processing_fee_paid"
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
             </div>
           )}
@@ -137,22 +137,22 @@ export default function LoanStageAdvancer({ loan, banks, dsas }: Props) {
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Sanctioned Amount (₹) <span className="text-red-500">*</span></label>
                 <input type="number" name="sanctioned_amount" required
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Interest Rate (%)</label>
                 <input type="number" step="0.01" name="sanctioned_interest_rate"
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Tenure (months)</label>
                 <input type="number" name="sanctioned_tenure_months"
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Sanction Date</label>
                 <input type="date" name="sanction_date"
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
             </div>
           )}
@@ -163,17 +163,17 @@ export default function LoanStageAdvancer({ loan, banks, dsas }: Props) {
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Rejection Date</label>
                 <input type="date" name="rejection_date" defaultValue={new Date().toISOString().split('T')[0]}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Alternate Bank Tried</label>
                 <input name="alternate_bank_tried" placeholder="Bank name..."
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-xs font-medium text-slate-600 mb-1">Rejection Reason</label>
                 <textarea name="rejection_reason" rows={2} placeholder="Low CIBIL score / insufficient income..."
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
               </div>
             </div>
           )}
@@ -182,7 +182,7 @@ export default function LoanStageAdvancer({ loan, banks, dsas }: Props) {
           <div className="flex gap-2">
             <button type="submit" disabled={loading}
               className={`px-4 py-2 text-white text-sm font-medium rounded-lg disabled:opacity-50 ${
-                targetStage === 'rejected' ? 'bg-red-600 hover:bg-red-700' : 'bg-indigo-600 hover:bg-indigo-700'
+                targetStage === 'rejected' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-600 hover:bg-primary-700'
               }`}>
               {loading ? 'Saving...' : 'Confirm'}
             </button>

@@ -25,8 +25,8 @@ export default async function HRPage() {
       title: 'Employees',
       href: '/hr/employees',
       icon: Users,
-      color: 'text-indigo-600',
-      bg: 'bg-indigo-50',
+      color: 'text-primary-600',
+      bg: 'bg-primary-50',
       stat: stats.active,
       statLabel: 'active employees',
       description: 'View and update employee profiles, salary, bank details.',
@@ -75,12 +75,12 @@ export default async function HRPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {sections.map(({ title, href, icon: Icon, color, bg, stat, statLabel, description }) => (
           <Link key={href} href={href}
-            className="bg-white border border-slate-200 rounded-xl p-5 hover:border-indigo-200 hover:shadow-sm transition-all group">
+            className="bg-white border border-slate-200 rounded-xl p-5 hover:border-primary-200 hover:shadow-sm transition-all group">
             <div className="flex items-start justify-between mb-3">
               <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center`}>
                 <Icon size={20} className={color} />
               </div>
-              <ArrowRight size={16} className="text-slate-300 group-hover:text-indigo-400 transition-colors mt-1" />
+              <ArrowRight size={16} className="text-slate-300 group-hover:text-primary-400 transition-colors mt-1" />
             </div>
             <p className="font-semibold text-slate-900">{title}</p>
             {stat !== null && (

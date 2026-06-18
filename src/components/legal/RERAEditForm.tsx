@@ -59,27 +59,27 @@ export default function RERAEditForm({ projectId, data }: Props) {
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">RERA Number <span className="text-red-500">*</span></label>
             <input name="rera_number" defaultValue={data.rera_number ?? ''} placeholder="RAJ/P/2024/001234"
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">State RERA Authority</label>
             <input name="rera_authority_name" defaultValue={data.rera_authority_name ?? ''} placeholder="e.g. Rajasthan RERA"
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Registration Date</label>
             <input type="date" name="rera_registration_date" defaultValue={data.rera_registration_date ?? ''}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Expiry Date</label>
             <input type="date" name="rera_expiry_date" defaultValue={data.rera_expiry_date ?? ''}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div className="sm:col-span-2">
             <label className="block text-xs font-medium text-slate-600 mb-1">RERA Portal URL</label>
             <input type="url" name="rera_website_url" defaultValue={data.rera_website_url ?? ''} placeholder="https://rera.rajasthan.gov.in/project/..."
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
         </div>
       </div>
@@ -91,17 +91,17 @@ export default function RERAEditForm({ projectId, data }: Props) {
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Carpet Area (sqft)</label>
             <input type="number" name="carpet_area_sqft" defaultValue={data.carpet_area_sqft ?? ''} placeholder="1200"
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">FSI Approved</label>
             <input type="number" step="0.01" name="fsi_approved" defaultValue={data.fsi_approved ?? ''} placeholder="2.5"
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Total Approved Units</label>
             <input type="number" name="total_approved_units" defaultValue={data.total_approved_units ?? ''} placeholder="150"
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
         </div>
       </div>
@@ -113,7 +113,7 @@ export default function RERAEditForm({ projectId, data }: Props) {
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Next Report Due Date</label>
             <input type="date" name="quarterly_report_due_date" defaultValue={data.quarterly_report_due_date ?? ''}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div className="flex flex-col justify-end">
             {data.quarterly_report_last_submitted && (
@@ -131,14 +131,14 @@ export default function RERAEditForm({ projectId, data }: Props) {
       <div>
         <h3 className="text-sm font-semibold text-slate-700 mb-3 pb-2 border-b border-slate-100">Legal Contact</h3>
         <input name="legal_contact" defaultValue={data.legal_contact ?? ''} placeholder="Adv. Sharma — +91 98765 43210"
-          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
       {success && <p className="text-sm text-green-600">RERA details saved successfully.</p>}
 
       <button type="submit" disabled={loading}
-        className="px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+        className="px-5 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50">
         {loading ? 'Saving...' : 'Save RERA Details'}
       </button>
     </form>

@@ -56,7 +56,7 @@ export default async function MemberProfilePage({ params }: Props) {
       {/* Profile header */}
       <Card padding="lg">
         <div className="flex items-start gap-5 flex-wrap">
-          <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xl flex-shrink-0">
+          <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-xl flex-shrink-0">
             {member.photo_url ? (
               <img src={member.photo_url} alt={member.full_name} className="w-16 h-16 rounded-full object-cover" />
             ) : initials}
@@ -126,7 +126,7 @@ export default async function MemberProfilePage({ params }: Props) {
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-slate-900">Leave Requests</h3>
           {isOwn && (
-            <Link href="/team/attendance" className="text-sm text-indigo-600 hover:underline">
+            <Link href="/team/attendance" className="text-sm text-primary-600 hover:underline">
               Apply for leave →
             </Link>
           )}

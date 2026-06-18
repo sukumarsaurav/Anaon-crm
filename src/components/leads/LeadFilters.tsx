@@ -81,8 +81,8 @@ export default function LeadFilters() {
             className={cn(
               'px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all',
               activeView === tab.value || (tab.value === 'all' && !searchParams.get('view'))
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600'
+                ? 'bg-primary-600 text-white shadow-sm'
+                : 'bg-white text-slate-600 border border-slate-200 hover:border-primary-300 hover:text-primary-600'
             )}
           >
             {tab.label}
@@ -157,7 +157,7 @@ export default function LeadFilters() {
             setParam('sort_by', by)
             setParam('sort_dir', dir)
           }}
-          className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
         >
           <option value="created_at:desc">Newest First</option>
           <option value="created_at:asc">Oldest First</option>

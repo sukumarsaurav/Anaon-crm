@@ -48,7 +48,7 @@ export default function PaymentExtensionForm({ paymentId, bookingId, clientId, a
   return (
     <div>
       <button onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800">
+        className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800">
         Request payment extension <ChevronDown size={12} className={open ? 'rotate-180' : ''} />
       </button>
 
@@ -62,16 +62,16 @@ export default function PaymentExtensionForm({ paymentId, bookingId, clientId, a
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Requested new date <span className="text-red-500">*</span></label>
             <input type="date" name="requested_date" required min={dueDate}
-              className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+              className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Reason <span className="text-red-500">*</span></label>
             <textarea name="reason" required rows={2} placeholder="Briefly explain why you need an extension..."
-              className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+              className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           {error && <p className="text-xs text-red-600">{error}</p>}
           <button type="submit" disabled={loading}
-            className="w-full py-2 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+            className="w-full py-2 bg-primary-600 text-white text-xs font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50">
             {loading ? 'Submitting...' : 'Submit Request'}
           </button>
         </form>

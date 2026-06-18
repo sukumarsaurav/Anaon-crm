@@ -31,17 +31,17 @@ export default async function ClientPortalDashboard() {
 
       {/* Property card */}
       {booking ? (
-        <div className="bg-indigo-600 rounded-2xl p-5 text-white">
-          <p className="text-indigo-200 text-xs font-medium mb-1">YOUR PROPERTY</p>
+        <div className="bg-primary-600 rounded-2xl p-5 text-white">
+          <p className="text-primary-200 text-xs font-medium mb-1">YOUR PROPERTY</p>
           <h2 className="text-xl font-bold">{booking.project?.name}</h2>
-          <p className="text-indigo-200 text-sm mt-0.5">Plot {booking.plot?.plot_number} · {booking.plot?.type?.replace('_',' ')}</p>
-          <div className="mt-4 pt-4 border-t border-indigo-500 flex justify-between text-sm">
+          <p className="text-primary-200 text-sm mt-0.5">Plot {booking.plot?.plot_number} · {booking.plot?.type?.replace('_',' ')}</p>
+          <div className="mt-4 pt-4 border-t border-primary-500 flex justify-between text-sm">
             <div>
-              <p className="text-indigo-300 text-xs">Total Value</p>
+              <p className="text-primary-300 text-xs">Total Value</p>
               <p className="font-bold text-base">{formatCurrency(booking.total_sale_value)}</p>
             </div>
             <div className="text-right">
-              <p className="text-indigo-300 text-xs">Booking Date</p>
+              <p className="text-primary-300 text-xs">Booking Date</p>
               <p className="font-bold text-base">{formatDate(booking.booking_date)}</p>
             </div>
           </div>
@@ -57,10 +57,10 @@ export default async function ClientPortalDashboard() {
         <div className="bg-white border border-slate-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-slate-900">Payment Progress</h3>
-            <span className="text-sm font-bold text-indigo-600">{progressPct}%</span>
+            <span className="text-sm font-bold text-primary-600">{progressPct}%</span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-3 mb-3">
-            <div className="bg-indigo-600 h-3 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+            <div className="bg-primary-600 h-3 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
           </div>
           <div className="flex justify-between text-sm">
             <div>
@@ -89,15 +89,15 @@ export default async function ClientPortalDashboard() {
       {/* Status cards */}
       <div className="grid grid-cols-2 gap-3">
         <Link href="/client-portal/construction"
-          className="bg-white border border-slate-200 rounded-xl p-4 hover:border-indigo-300">
-          <Building2 size={20} className="text-indigo-500 mb-2" />
+          className="bg-white border border-slate-200 rounded-xl p-4 hover:border-primary-300">
+          <Building2 size={20} className="text-primary-500 mb-2" />
           <p className="text-xs text-slate-500">Construction</p>
           <p className="text-sm font-semibold text-slate-900 mt-0.5">
             {latestUpdate ? `${latestUpdate.percentage_complete}% complete` : 'No updates yet'}
           </p>
         </Link>
         <Link href="/client-portal/documents"
-          className="bg-white border border-slate-200 rounded-xl p-4 hover:border-indigo-300">
+          className="bg-white border border-slate-200 rounded-xl p-4 hover:border-primary-300">
           <FileText size={20} className="text-blue-500 mb-2" />
           <p className="text-xs text-slate-500">Documents</p>
           <p className="text-sm font-semibold text-slate-900 mt-0.5">
@@ -105,7 +105,7 @@ export default async function ClientPortalDashboard() {
           </p>
         </Link>
         <Link href="/client-portal/complaints"
-          className="bg-white border border-slate-200 rounded-xl p-4 hover:border-indigo-300">
+          className="bg-white border border-slate-200 rounded-xl p-4 hover:border-primary-300">
           <MessageSquare size={20} className={openComplaints > 0 ? 'text-red-500' : 'text-green-500'} />
           <p className="text-xs text-slate-500 mb-2">Complaints</p>
           <p className="text-sm font-semibold text-slate-900">
@@ -113,7 +113,7 @@ export default async function ClientPortalDashboard() {
           </p>
         </Link>
         <Link href="/client-portal/payments"
-          className="bg-white border border-slate-200 rounded-xl p-4 hover:border-indigo-300">
+          className="bg-white border border-slate-200 rounded-xl p-4 hover:border-primary-300">
           <CreditCard size={20} className="text-amber-500 mb-2" />
           <p className="text-xs text-slate-500">Payments</p>
           <p className="text-sm font-semibold text-slate-900">

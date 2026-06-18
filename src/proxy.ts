@@ -49,10 +49,12 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Public paths — let through, redirect logged-in users away from /login
+  // Public paths — let through, redirect logged-in users away from /login (by role).
   if (isPublic(pathname)) {
     if (user && pathname === '/login') {
-      return NextResponse.redirect(new URL('/leads', request.url))
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+      const isStaff = !!profile && ['admin', 'manager', 'sales_advisor', 'telecaller'].includes(profile.role)
+      return NextResponse.redirect(new URL(isStaff ? '/' : '/client-portal', request.url))
     }
     return supabaseResponse
   }

@@ -9,19 +9,19 @@ interface BadgeProps {
 }
 
 const variantStyles = {
-  gray: 'bg-slate-100 text-slate-700',
-  slate: 'bg-slate-100 text-slate-700',
-  blue: 'bg-blue-50 text-blue-700',
-  green: 'bg-emerald-50 text-emerald-700',
-  emerald: 'bg-emerald-50 text-emerald-700',
-  yellow: 'bg-amber-50 text-amber-700',
-  amber: 'bg-amber-50 text-amber-700',
-  red: 'bg-red-50 text-red-700',
-  indigo: 'bg-indigo-50 text-indigo-700',
-  violet: 'bg-violet-50 text-violet-700',
-  purple: 'bg-purple-50 text-purple-700',
-  orange: 'bg-orange-50 text-orange-700',
-  teal: 'bg-teal-50 text-teal-700',
+  gray: 'bg-slate-100 text-slate-800',
+  slate: 'bg-slate-100 text-slate-800',
+  blue: 'bg-blue-100 text-blue-800',
+  green: 'bg-green-100 text-green-800',
+  emerald: 'bg-emerald-100 text-emerald-800',
+  yellow: 'bg-amber-100 text-amber-800',
+  amber: 'bg-amber-100 text-amber-800',
+  red: 'bg-red-100 text-red-800',
+  indigo: 'bg-primary-100 text-primary-800',
+  violet: 'bg-violet-100 text-violet-800',
+  purple: 'bg-purple-100 text-purple-800',
+  orange: 'bg-orange-100 text-orange-800',
+  teal: 'bg-teal-100 text-teal-800',
 }
 
 const dotStyles = {
@@ -33,7 +33,7 @@ const dotStyles = {
   yellow: 'bg-amber-500',
   amber: 'bg-amber-500',
   red: 'bg-red-500',
-  indigo: 'bg-indigo-500',
+  indigo: 'bg-primary-500',
   violet: 'bg-violet-500',
   purple: 'bg-purple-500',
   orange: 'bg-orange-500',

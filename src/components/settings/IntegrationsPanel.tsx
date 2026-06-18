@@ -53,8 +53,8 @@ export default function IntegrationsPanel({ secret, appUrl }: { secret: string; 
           <div key={c.slug} className="rounded-xl border border-slate-200 bg-white p-4">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
-                  <Webhook size={16} className="text-indigo-600" />
+                <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
+                  <Webhook size={16} className="text-primary-600" />
                 </div>
                 <div>
                   <p className="font-semibold text-slate-900 text-sm">{c.name}</p>
@@ -68,7 +68,7 @@ export default function IntegrationsPanel({ secret, appUrl }: { secret: string; 
               </code>
               <button
                 onClick={() => copy(c.slug)}
-                className="shrink-0 p-2 rounded-lg border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-300 transition-colors"
+                className="shrink-0 p-2 rounded-lg border border-slate-200 text-slate-500 hover:text-primary-600 hover:border-primary-300 transition-colors"
                 title="Copy URL"
               >
                 {copied === c.slug ? (

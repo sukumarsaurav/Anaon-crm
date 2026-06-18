@@ -18,7 +18,7 @@ function CopySecretButton({ secret }: { secret: string }) {
     })
   }
   return (
-    <button onClick={handleCopy} className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800">
+    <button onClick={handleCopy} className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800">
       {copied ? <Check size={12} /> : <Copy size={12} />}
       {copied ? 'Copied!' : 'Copy'}
     </button>
@@ -122,7 +122,7 @@ export default function TwoFactorSetup({ enabled, userId }: Props) {
           <button
             onClick={startEnroll}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50"
           >
             <QrCode size={15} /> Enable 2FA
           </button>
@@ -145,7 +145,7 @@ export default function TwoFactorSetup({ enabled, userId }: Props) {
             <code className="text-xs font-mono text-slate-800 break-all">{secret}</code>
           </div>
           <button onClick={() => setStep('verify')}
-            className="w-full py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
+            className="w-full py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700">
             I've scanned the code →
           </button>
         </div>
@@ -167,7 +167,7 @@ export default function TwoFactorSetup({ enabled, userId }: Props) {
               onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
               placeholder="000000"
               autoFocus
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 pl-9 text-center text-xl font-mono tracking-[0.4em] focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 pl-9 text-center text-xl font-mono tracking-[0.4em] focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
           <div className="flex gap-2">

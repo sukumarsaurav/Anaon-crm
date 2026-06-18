@@ -22,7 +22,7 @@ export default function CareerActions({ listingId, isActive }: Props) {
 
   return (
     <button onClick={handleToggle} title={isActive ? 'Deactivate' : 'Activate'}
-      className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100">
+      className="p-1.5 text-slate-400 hover:text-primary-600 rounded-lg hover:bg-slate-100">
       {isActive ? <EyeOff size={14} /> : <Eye size={14} />}
     </button>
   )

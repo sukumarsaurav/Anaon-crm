@@ -40,7 +40,7 @@ export default function AnnouncementForm({ onClose }: Props) {
               <label className="block text-xs font-medium text-slate-600 mb-1">Type</label>
               <select
                 name="type"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="announcement">Announcement</option>
                 <option value="shoutout">Shoutout</option>
@@ -62,7 +62,7 @@ export default function AnnouncementForm({ onClose }: Props) {
               name="title"
               required
               placeholder="New Project Launch — Jaipur Highlands"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
@@ -73,7 +73,7 @@ export default function AnnouncementForm({ onClose }: Props) {
               required
               rows={4}
               placeholder="Share the announcement details here..."
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
             />
           </div>
 
@@ -82,7 +82,7 @@ export default function AnnouncementForm({ onClose }: Props) {
             <input
               name="expires_at"
               type="datetime-local"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
@@ -92,7 +92,7 @@ export default function AnnouncementForm({ onClose }: Props) {
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-40"
+              className="flex-1 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-40"
             >
               {isPending ? 'Posting...' : 'Post Announcement'}
             </button>

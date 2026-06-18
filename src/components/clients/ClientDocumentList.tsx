@@ -48,18 +48,18 @@ export default function ClientDocumentList({ clientId, documents, canManage }: P
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-slate-900">Documents</h3>
         <button onClick={() => setShowForm((v) => !v)}
-          className="flex items-center gap-1 text-xs px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 font-medium">
+          className="flex items-center gap-1 text-xs px-3 py-1.5 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 font-medium">
           <Plus size={12} /> Add
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="mb-4 p-4 bg-indigo-50 rounded-xl space-y-3">
+        <form onSubmit={handleSubmit} className="mb-4 p-4 bg-primary-50 rounded-xl space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Document Type *</label>
               <select name="document_type" required
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                 {Object.entries(DOC_TYPE_LABELS).map(([v, label]) => (
                   <option key={v} value={v}>{label}</option>
                 ))}
@@ -68,28 +68,28 @@ export default function ClientDocumentList({ clientId, documents, canManage }: P
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Label / Name</label>
               <input name="name" placeholder="Aadhar Front & Back"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div className="col-span-2">
               <label className="block text-xs font-medium text-slate-600 mb-1">File URL</label>
               <input name="file_url" type="url" placeholder="https://..."
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Expiry Date</label>
               <input name="expiry_date" type="date"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
               <input name="notes"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
           </div>
           {error && <p className="text-xs text-red-600">{error}</p>}
           <div className="flex gap-2">
             <button type="submit" disabled={isPending}
-              className="px-4 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-40">
+              className="px-4 py-1.5 bg-primary-600 text-white text-xs font-medium rounded-lg hover:bg-primary-700 disabled:opacity-40">
               {isPending ? 'Saving...' : 'Add Document'}
             </button>
             <button type="button" onClick={() => setShowForm(false)}
@@ -110,7 +110,7 @@ export default function ClientDocumentList({ clientId, documents, canManage }: P
               <div key={doc.id}
                 className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-slate-100 bg-slate-50">
                 <div className="flex items-center gap-3 min-w-0">
-                  <FileText size={15} className="text-indigo-500 shrink-0" />
+                  <FileText size={15} className="text-primary-500 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-slate-800 truncate">
                       {doc.name ?? DOC_TYPE_LABELS[doc.document_type as keyof typeof DOC_TYPE_LABELS] ?? doc.document_type}
@@ -130,7 +130,7 @@ export default function ClientDocumentList({ clientId, documents, canManage }: P
                 <div className="flex items-center gap-1.5 ml-3 shrink-0">
                   {doc.file_url && (
                     <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
-                      className="p-1.5 text-slate-400 hover:text-indigo-600">
+                      className="p-1.5 text-slate-400 hover:text-primary-600">
                       <ExternalLink size={14} />
                     </a>
                   )}

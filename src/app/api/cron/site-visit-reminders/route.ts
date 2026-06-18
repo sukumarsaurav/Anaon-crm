@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { fireAutomations } from '@/lib/automation/engine'
+import { notifyUsers } from '@/lib/notifications/notify'
 
 const CRON_SECRET = process.env.CRON_SECRET ?? 'anon_india_cron_secret'
 
@@ -48,13 +49,12 @@ async function handler(req: NextRequest) {
     if (!recipient) continue
 
     const time = new Date(v.scheduled_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
-    await supabase.from('notifications').insert({
-      user_id: recipient,
+    await notifyUsers([recipient], {
       title: `Site visit today: ${lead?.full_name ?? 'Lead'}`,
-      body: `Visit with ${lead?.full_name ?? 'lead'} (${lead?.phone ?? ''}) at ${time}.`,
+      message: `Visit with ${lead?.full_name ?? 'lead'} (${lead?.phone ?? ''}) at ${time}.`,
       type: 'site_visit_reminder',
-      related_record_type: 'lead',
-      related_record_id: v.lead_id,
+      related_type: 'lead',
+      related_id: v.lead_id,
       action_url: `/leads/${v.lead_id}`,
     })
     await supabase.from('site_visits').update({ reminded_at: now.toISOString() }).eq('id', v.id)

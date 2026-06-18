@@ -16,11 +16,11 @@ export default function ProjectCard({ project, stats }: Props) {
   return (
     <Link href={`/inventory/${project.id}`} className="block bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
       {/* Layout image or placeholder */}
-      <div className="h-36 bg-gradient-to-br from-indigo-50 to-blue-100 flex items-center justify-center relative">
+      <div className="h-36 bg-gradient-to-br from-primary-50 to-blue-100 flex items-center justify-center relative">
         {project.layout_image_url ? (
           <img src={project.layout_image_url} alt={project.name} className="w-full h-full object-cover" />
         ) : (
-          <Building2 size={36} className="text-indigo-300" />
+          <Building2 size={36} className="text-primary-300" />
         )}
         <div className="absolute top-2 right-2">
           <ProjectStatusBadge status={project.status} />
@@ -52,7 +52,7 @@ export default function ProjectCard({ project, stats }: Props) {
         {/* Progress bar */}
         <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2">
           <div
-            className="bg-indigo-500 h-1.5 rounded-full transition-all"
+            className="bg-primary-500 h-1.5 rounded-full transition-all"
             style={{ width: `${soldPct}%` }}
           />
         </div>

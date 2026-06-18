@@ -39,12 +39,12 @@ export default function ClientPortalNav({ clientName, projectName }: Props) {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex fixed left-0 top-0 z-30 h-screen w-60 bg-slate-900 flex-col">
         <div className="flex h-16 items-center gap-3 px-5 border-b border-slate-800">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
             <Building2 size={18} className="text-white" />
           </div>
           <div>
             <p className="text-white font-bold text-sm leading-none">ANON INDIA</p>
-            <p className="text-indigo-400 text-xs mt-0.5">Client Portal</p>
+            <p className="text-primary-400 text-xs mt-0.5">Client Portal</p>
           </div>
         </div>
         <div className="px-5 py-4 border-b border-slate-800">
@@ -56,7 +56,7 @@ export default function ClientPortalNav({ clientName, projectName }: Props) {
             <Link key={href} href={href}
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
-                isActive(href) ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                isActive(href) ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'
               )}>
               <Icon size={18} /><span>{label}</span>
             </Link>
@@ -76,7 +76,7 @@ export default function ClientPortalNav({ clientName, projectName }: Props) {
           <Link key={href} href={href}
             className={cn(
               'flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors',
-              isActive(href) ? 'text-indigo-400' : 'text-slate-500'
+              isActive(href) ? 'text-primary-400' : 'text-slate-500'
             )}>
             <Icon size={20} /><span>{label.split(' ')[0]}</span>
           </Link>

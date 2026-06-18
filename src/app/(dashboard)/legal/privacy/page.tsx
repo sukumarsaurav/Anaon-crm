@@ -39,7 +39,7 @@ export default async function PrivacyCompliancePage() {
         {[
           { label: 'Pending Requests', value: stats.pendingRequests, icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-50' },
           { label: 'Completed', value: stats.completedRequests, icon: ShieldCheck, color: 'text-green-600', bg: 'bg-green-50' },
-          { label: 'Consent Logs', value: stats.totalConsentLogs, icon: Lock, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+          { label: 'Consent Logs', value: stats.totalConsentLogs, icon: Lock, color: 'text-primary-600', bg: 'bg-primary-50' },
           { label: 'Opted Out', value: stats.optedOut, icon: UserX, color: 'text-red-600', bg: 'bg-red-50' },
         ].map(({ label, value, icon: Icon, color, bg }) => (
           <div key={label} className="bg-white border border-slate-200 rounded-xl p-4">
@@ -68,7 +68,7 @@ export default async function PrivacyCompliancePage() {
                     <span className="text-slate-500 text-xs">{stat.opted_in}/{stat.total} opted in ({pct}%)</span>
                   </div>
                   <div className="bg-slate-100 rounded-full h-1.5">
-                    <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${pct}%` }} />
+                    <div className="bg-primary-500 h-1.5 rounded-full" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               )

@@ -96,7 +96,7 @@ export default async function LeadReportsPage({ searchParams }: PageProps) {
                   </td>
                   <td className="py-2.5 pl-4 w-40">
                     <div className="bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                      <div className="h-1.5 rounded-full bg-indigo-500" style={{ width: `${row.pct}%` }} />
+                      <div className="h-1.5 rounded-full bg-primary-500" style={{ width: `${row.pct}%` }} />
                     </div>
                   </td>
                 </tr>

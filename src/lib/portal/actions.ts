@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
+import { deliverOtp } from '@/lib/messaging/otp'
 import { createHash } from 'crypto'
 
 function hashOtp(otp: string): string {
@@ -16,7 +17,7 @@ function generateOtp(): string {
 
 // ── OTP auth ────────────────────────────────────────────────────────
 
-export async function sendPortalOtp(phone: string): Promise<{ success: boolean; error?: string; otp?: string }> {
+export async function sendPortalOtp(phone: string): Promise<{ success: boolean; error?: string }> {
   const cleaned = phone.replace(/\s+/g, '').replace(/^(\+91|91)/, '')
   const otp     = generateOtp()
   const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString()
@@ -31,9 +32,19 @@ export async function sendPortalOtp(phone: string): Promise<{ success: boolean; 
   if (result === 'no_client')    return { success: false, error: 'No account found with this phone number. Please contact ANON INDIA.' }
   if (result === 'rate_limited') return { success: false, error: 'Too many OTP requests. Please wait 10 minutes.' }
 
-  // In production: send OTP via WhatsApp / SMS here
-  const isDev = process.env.NODE_ENV === 'development'
-  return { success: true, otp: isDev ? otp : undefined }
+  // Deliver via WhatsApp (primary) → SMS (fallback). The OTP is NEVER returned
+  // to the client — delivery happens out-of-band only.
+  const delivery = await deliverOtp(cleaned, otp)
+  if (!delivery.success) {
+    // In dev, surface the code in server logs so local testing still works.
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[portal-otp] delivery unavailable — OTP for ${cleaned}: ${otp}`)
+      return { success: true }
+    }
+    return { success: false, error: 'Could not send OTP right now. Please try again shortly.' }
+  }
+
+  return { success: true }
 }
 
 export async function verifyPortalOtp(phone: string, otp: string): Promise<{ success: boolean; error?: string }> {

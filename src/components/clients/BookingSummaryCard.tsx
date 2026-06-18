@@ -63,7 +63,7 @@ export default function BookingSummaryCard({ booking, summary }: Props) {
           <span>{paidPct}% paid</span>
         </div>
         <div className="w-full bg-slate-200 rounded-full h-2 mb-2">
-          <div className="bg-indigo-500 h-2 rounded-full" style={{ width: `${paidPct}%` }} />
+          <div className="bg-primary-500 h-2 rounded-full" style={{ width: `${paidPct}%` }} />
         </div>
         <div className="flex justify-between text-xs">
           <span className="text-green-700 font-medium">Paid: {formatCurrency(summary.total_paid)}</span>
@@ -78,7 +78,7 @@ export default function BookingSummaryCard({ booking, summary }: Props) {
 
       <Link
         href={`/clients/${booking.client_id}/bookings/${booking.id}/payments`}
-        className="flex items-center justify-between w-full px-3 py-2 bg-indigo-50 text-indigo-700 text-sm font-medium rounded-lg hover:bg-indigo-100"
+        className="flex items-center justify-between w-full px-3 py-2 bg-primary-50 text-primary-700 text-sm font-medium rounded-lg hover:bg-primary-100"
       >
         <span>View Payment Schedule</span>
         <ArrowRight size={15} />

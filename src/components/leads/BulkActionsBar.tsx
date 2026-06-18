@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { X, UserCheck, Download } from 'lucide-react'
+import { X, UserCheck, Download, GitBranch, MessageSquare } from 'lucide-react'
 import Button from '@/components/ui/Button'
-import { bulkAssignLeads } from '@/lib/leads/actions'
+import { bulkAssignLeads, bulkChangeStage, bulkSendWhatsApp } from '@/lib/leads/actions'
+import { STAGE_CONFIG, STAGE_ORDER } from '@/types/leads'
 import { createClient } from '@/lib/supabase/client'
 
 interface BulkActionsBarProps {
@@ -14,6 +15,10 @@ interface BulkActionsBarProps {
 
 export default function BulkActionsBar({ selectedIds, advisors, onClear }: BulkActionsBarProps) {
   const [showAdvisorSelect, setShowAdvisorSelect] = useState(false)
+  const [showStageSelect, setShowStageSelect] = useState(false)
+  const [showWhatsApp, setShowWhatsApp] = useState(false)
+  const [waText, setWaText] = useState('')
+  const [waResult, setWaResult] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [exporting, setExporting] = useState(false)
 
@@ -23,6 +28,28 @@ export default function BulkActionsBar({ selectedIds, advisors, onClear }: BulkA
     setLoading(false)
     setShowAdvisorSelect(false)
     onClear()
+  }
+
+  const handleBulkStage = async (stage: string) => {
+    setLoading(true)
+    await bulkChangeStage(selectedIds, stage)
+    setLoading(false)
+    setShowStageSelect(false)
+    onClear()
+  }
+
+  const handleBulkWhatsApp = async () => {
+    if (!waText.trim()) return
+    setLoading(true)
+    const res = await bulkSendWhatsApp(selectedIds, waText)
+    setLoading(false)
+    if (res.success) {
+      setWaResult(`Sent ${res.sent ?? 0}${res.failed ? `, ${res.failed} failed` : ''}`)
+      setWaText('')
+      setTimeout(() => { setShowWhatsApp(false); setWaResult(null); onClear() }, 1500)
+    } else {
+      setWaResult(res.error ?? 'Failed')
+    }
   }
 
   const handleExport = async () => {
@@ -92,11 +119,72 @@ export default function BulkActionsBar({ selectedIds, advisors, onClear }: BulkA
                 <button
                   key={a.id}
                   onClick={() => handleBulkAssign(a.id)}
-                  className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+                  className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition-colors"
                 >
                   {a.full_name}
                 </button>
               ))}
+            </div>
+          )}
+        </div>
+
+        <div className="relative">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-slate-300 hover:text-white hover:bg-slate-800"
+            onClick={() => setShowStageSelect((v) => !v)}
+            loading={loading}
+          >
+            <GitBranch size={15} />
+            Stage
+          </Button>
+
+          {showStageSelect && (
+            <div className="absolute bottom-full mb-2 left-0 bg-white rounded-xl shadow-xl border border-slate-200 min-w-[200px] overflow-hidden z-50 max-h-72 overflow-y-auto">
+              <p className="text-xs font-semibold text-slate-500 px-3 py-2 border-b border-slate-100">Move to stage:</p>
+              {STAGE_ORDER.map((stage) => (
+                <button
+                  key={stage}
+                  onClick={() => handleBulkStage(stage)}
+                  className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition-colors"
+                >
+                  {STAGE_CONFIG[stage]?.label ?? stage}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="relative">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-slate-300 hover:text-white hover:bg-slate-800"
+            onClick={() => setShowWhatsApp((v) => !v)}
+          >
+            <MessageSquare size={15} />
+            WhatsApp
+          </Button>
+
+          {showWhatsApp && (
+            <div className="absolute bottom-full mb-2 left-0 bg-white rounded-xl shadow-xl border border-slate-200 w-72 p-3 z-50">
+              <p className="text-xs font-semibold text-slate-500 mb-1.5">
+                Message {selectedIds.length} lead{selectedIds.length !== 1 ? 's' : ''} · use <code className="bg-slate-100 px-1 rounded">{'{{name}}'}</code>
+              </p>
+              <textarea
+                value={waText}
+                onChange={(e) => setWaText(e.target.value)}
+                rows={3}
+                placeholder="Hi {{name}}, ..."
+                className="w-full text-sm border border-slate-200 rounded-lg px-2.5 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-400 resize-none"
+              />
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-xs text-slate-500">{waResult}</span>
+                <Button variant="primary" size="xs" onClick={handleBulkWhatsApp} loading={loading} disabled={!waText.trim()}>
+                  Send
+                </Button>
+              </div>
             </div>
           )}
         </div>

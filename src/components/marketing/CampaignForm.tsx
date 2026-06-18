@@ -38,7 +38,7 @@ export default function CampaignForm({ projects }: Props) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors"
+        className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-xl hover:bg-primary-700 transition-colors"
       >
         <Plus size={16} /> New Campaign
       </button>
@@ -58,13 +58,13 @@ export default function CampaignForm({ projects }: Props) {
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-slate-700 mb-1">Campaign Name <span className="text-red-500">*</span></label>
                   <input name="name" required placeholder="e.g. Vedanta Hills – May 2025 – Facebook"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Platform <span className="text-red-500">*</span></label>
                   <select name="platform" required
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400">
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
                     {CAMPAIGN_PLATFORMS.map(p => (
                       <option key={p.value} value={p.value}>{p.label}</option>
                     ))}
@@ -74,7 +74,7 @@ export default function CampaignForm({ projects }: Props) {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Objective</label>
                   <select name="objective"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400">
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
                     <option value="">Select objective</option>
                     {CAMPAIGN_OBJECTIVES.map(o => (
                       <option key={o.value} value={o.value}>{o.label}</option>
@@ -85,7 +85,7 @@ export default function CampaignForm({ projects }: Props) {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Project</label>
                   <select name="project_id"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400">
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
                     <option value="">All projects</option>
                     {projects.map(p => (
                       <option key={p.id} value={p.id}>{p.name}</option>
@@ -96,19 +96,19 @@ export default function CampaignForm({ projects }: Props) {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Budget (₹)</label>
                   <input name="budget" type="number" min="0" step="100" placeholder="50000"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Start Date <span className="text-red-500">*</span></label>
                   <input name="start_date" type="date" required
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
                   <input name="end_date" type="date"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                 </div>
 
                 <div className="sm:col-span-2 border-t border-slate-100 pt-4">
@@ -117,17 +117,17 @@ export default function CampaignForm({ projects }: Props) {
                     <div>
                       <label className="block text-xs text-slate-600 mb-1">utm_source</label>
                       <input name="utm_source" placeholder="facebook"
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                     </div>
                     <div>
                       <label className="block text-xs text-slate-600 mb-1">utm_medium</label>
                       <input name="utm_medium" placeholder="cpc"
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                     </div>
                     <div>
                       <label className="block text-xs text-slate-600 mb-1">utm_campaign</label>
                       <input name="utm_campaign" placeholder="vedanta-jaipur-may25"
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                     </div>
                   </div>
                 </div>
@@ -138,12 +138,12 @@ export default function CampaignForm({ projects }: Props) {
                     <div>
                       <label className="block text-xs text-slate-600 mb-1">Meta Campaign ID</label>
                       <input name="meta_campaign_id" placeholder="120210..."
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                     </div>
                     <div>
                       <label className="block text-xs text-slate-600 mb-1">Meta Ad Set ID</label>
                       <input name="meta_adset_id" placeholder="120211..."
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                     </div>
                   </div>
                 </div>
@@ -157,7 +157,7 @@ export default function CampaignForm({ projects }: Props) {
                   Cancel
                 </button>
                 <button type="submit" disabled={loading}
-                  className="flex-1 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50">
+                  className="flex-1 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-xl hover:bg-primary-700 disabled:opacity-50">
                   {loading ? 'Creating...' : 'Create Campaign'}
                 </button>
               </div>

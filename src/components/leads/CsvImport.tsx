@@ -104,7 +104,7 @@ export default function CsvImport({ advisors }: { advisors: Advisor[] }) {
     <div className="space-y-6">
       {/* Upload */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6">
-        <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-xl py-10 cursor-pointer hover:border-indigo-300 transition-colors">
+        <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-xl py-10 cursor-pointer hover:border-primary-300 transition-colors">
           <Upload size={26} className="text-slate-400" />
           <span className="text-sm font-medium text-slate-700">Choose a CSV file</span>
           <span className="text-xs text-slate-400">First row must be column headers</span>
@@ -113,7 +113,7 @@ export default function CsvImport({ advisors }: { advisors: Advisor[] }) {
         </label>
         {data && (
           <p className="mt-3 text-sm text-slate-600 flex items-center gap-2">
-            <FileText size={15} className="text-indigo-600" /> {data.rows.length} rows · {data.headers.length} columns detected
+            <FileText size={15} className="text-primary-600" /> {data.rows.length} rows · {data.headers.length} columns detected
           </p>
         )}
         {error && <p className="mt-3 text-sm text-red-600">{error}</p>}

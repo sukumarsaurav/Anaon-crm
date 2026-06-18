@@ -47,23 +47,23 @@ export default function BulkPlotForm({ projectId }: Props) {
           <label className="block text-xs font-medium text-slate-600 mb-1">Prefix</label>
           <input name="prefix" value={prefix} onChange={(e) => setPrefix(e.target.value)}
             placeholder="A-"
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
         </div>
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">From #</label>
           <input name="from_number" type="number" min="1" value={from}
             onChange={(e) => setFrom(parseInt(e.target.value) || 1)}
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
         </div>
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">To #</label>
           <input name="to_number" type="number" min="1" value={to}
             onChange={(e) => setTo(parseInt(e.target.value) || 1)}
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
         </div>
       </div>
 
-      <div className="p-3 bg-indigo-50 rounded-lg text-sm text-indigo-700">
+      <div className="p-3 bg-primary-50 rounded-lg text-sm text-primary-700">
         <strong>{count}</strong> plots will be created: <span className="font-mono text-xs">{preview}</span>
       </div>
 
@@ -72,23 +72,23 @@ export default function BulkPlotForm({ projectId }: Props) {
           <label className="block text-xs font-medium text-slate-600 mb-1">Size (sq yards)</label>
           <input name="size_sqyd" type="number" step="0.01" value={sizeQyd}
             onChange={(e) => setSizeQyd(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
         </div>
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">Base Price (₹) *</label>
           <input name="base_price" type="number" min="0" required value={basePrice || ''}
             onChange={(e) => setBasePrice(parseFloat(e.target.value) || 0)}
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
         </div>
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">Dev. Charges (₹)</label>
           <input name="development_charges" type="number" min="0" value={devCharges || ''}
             onChange={(e) => setDevCharges(parseFloat(e.target.value) || 0)}
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
         </div>
         <div className="flex items-end">
           <div className="w-full p-2 bg-slate-50 rounded-lg text-sm text-center">
-            Total/plot: <strong className="text-indigo-700">{formatCurrency(basePrice + devCharges, { mode: 'exact' })}</strong>
+            Total/plot: <strong className="text-primary-700">{formatCurrency(basePrice + devCharges, { mode: 'exact' })}</strong>
           </div>
         </div>
       </div>
@@ -97,7 +97,7 @@ export default function BulkPlotForm({ projectId }: Props) {
 
       <div className="flex gap-3">
         <button type="submit" disabled={isPending || count === 0}
-          className="px-6 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-40">
+          className="px-6 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-40">
           {isPending ? 'Creating...' : `Create ${count} Plots`}
         </button>
         <button type="button" onClick={() => router.back()}

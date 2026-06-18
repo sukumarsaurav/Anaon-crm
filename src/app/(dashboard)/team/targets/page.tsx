@@ -101,7 +101,7 @@ export default function TargetsPage() {
                   <td className="px-4 py-3 text-right">
                     <button
                       onClick={() => setSelected(m)}
-                      className="text-xs px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 font-medium"
+                      className="text-xs px-3 py-1.5 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 font-medium"
                     >
                       {t ? 'Edit' : 'Set Target'}
                     </button>

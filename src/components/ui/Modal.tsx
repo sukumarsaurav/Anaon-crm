@@ -15,14 +15,40 @@ interface ModalProps {
 
 export default function Modal({ open, onClose, title, children, size = 'md', footer }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        onClose()
+        return
+      }
+      // Focus trap: cycle Tab within the panel.
+      if (e.key === 'Tab' && panelRef.current) {
+        const focusables = panelRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
+        )
+        if (focusables.length === 0) return
+        const first = focusables[0]
+        const last = focusables[focusables.length - 1]
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
     }
     if (open) {
       document.addEventListener('keydown', handleKey)
       document.body.style.overflow = 'hidden'
+      // Move focus into the dialog.
+      requestAnimationFrame(() => {
+        panelRef.current?.querySelector<HTMLElement>(
+          'a[href], button:not([disabled]), textarea, input, select',
+        )?.focus()
+      })
     }
     return () => {
       document.removeEventListener('keydown', handleKey)
@@ -47,10 +73,14 @@ export default function Modal({ open, onClose, title, children, size = 'md', foo
         if (e.target === overlayRef.current) onClose()
       }}
     >
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" />
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
         className={cn(
-          'relative w-full bg-white rounded-xl shadow-2xl flex flex-col max-h-[90vh] border border-slate-200',
+          'relative w-full bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] border border-slate-200',
           sizes[size]
         )}
       >

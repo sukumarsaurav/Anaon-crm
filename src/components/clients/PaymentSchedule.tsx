@@ -47,18 +47,18 @@ function RecordPaymentModal({
               <label className="block text-xs font-medium text-slate-600 mb-1">Amount Paid (₹) *</label>
               <input name="amount_paid" type="number" min="0" step="1" required
                 defaultValue={payment.amount_due}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Payment Date *</label>
               <input name="paid_date" type="date" required
                 defaultValue={new Date().toISOString().split('T')[0]}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Mode</label>
               <select name="mode"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                 <option value="">— Select —</option>
                 {Object.entries(PAYMENT_MODE_LABELS).map(([v, label]) => (
                   <option key={v} value={v}>{label}</option>
@@ -68,33 +68,33 @@ function RecordPaymentModal({
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Transaction / UTR</label>
               <input name="transaction_id" placeholder="UTR123456"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Cheque No.</label>
               <input name="cheque_number" placeholder="123456"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Bank</label>
               <input name="bank_name" placeholder="Bank name"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Reference</label>
               <input name="payment_reference" placeholder="Any reference"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div className="col-span-2">
               <label className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
               <input name="notes"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
           </div>
           {error && <p className="text-xs text-red-600">{error}</p>}
           <div className="flex gap-2 pt-2">
             <button type="submit" disabled={isPending}
-              className="flex-1 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-40">
+              className="flex-1 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-40">
               {isPending ? 'Saving...' : 'Record Payment'}
             </button>
             <button type="button" onClick={onClose}
@@ -139,7 +139,7 @@ export default function PaymentSchedule({ bookingId, clientId, payments, summary
         {[
           { label: 'Total Due',    value: formatCurrency(summary.total_due),   color: 'text-slate-800' },
           { label: 'Total Paid',   value: formatCurrency(summary.total_paid),   color: 'text-green-700' },
-          { label: 'Outstanding',  value: formatCurrency(summary.outstanding),  color: 'text-indigo-700' },
+          { label: 'Outstanding',  value: formatCurrency(summary.outstanding),  color: 'text-primary-700' },
           { label: 'Overdue',      value: `${summary.overdue_count} inst.`,     color: summary.overdue_count > 0 ? 'text-red-600' : 'text-slate-500' },
         ].map((s) => (
           <div key={s.label} className="bg-white border border-slate-200 rounded-xl p-3 text-center">
@@ -153,29 +153,29 @@ export default function PaymentSchedule({ bookingId, clientId, payments, summary
       {canManage && (
         <div className="mb-4">
           {showAddForm ? (
-            <form onSubmit={handleAddInstallment} className="p-4 bg-indigo-50 rounded-xl space-y-3 mb-3">
+            <form onSubmit={handleAddInstallment} className="p-4 bg-primary-50 rounded-xl space-y-3 mb-3">
               <h4 className="text-sm font-semibold text-slate-700">Add Installment</h4>
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1">Amount (₹) *</label>
                   <input name="amount_due" type="number" min="1" required
-                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1">Due Date *</label>
                   <input name="due_date" type="date" required
-                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1">Description</label>
                   <input name="description" placeholder="Down payment"
-                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
               </div>
               {error && <p className="text-xs text-red-600">{error}</p>}
               <div className="flex gap-2">
                 <button type="submit" disabled={isPending}
-                  className="px-4 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-40">
+                  className="px-4 py-1.5 bg-primary-600 text-white text-xs font-medium rounded-lg hover:bg-primary-700 disabled:opacity-40">
                   {isPending ? 'Adding...' : 'Add'}
                 </button>
                 <button type="button" onClick={() => setShowAddForm(false)}
@@ -186,7 +186,7 @@ export default function PaymentSchedule({ bookingId, clientId, payments, summary
             </form>
           ) : (
             <button onClick={() => setShowAddForm(true)}
-              className="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700 font-medium mb-3">
+              className="flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 font-medium mb-3">
               <Plus size={15} /> Add Installment
             </button>
           )}
@@ -234,7 +234,7 @@ export default function PaymentSchedule({ bookingId, clientId, payments, summary
                 <div className="flex gap-2 ml-3 shrink-0">
                   <button
                     onClick={() => setSelectedPayment(p)}
-                    className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700">
+                    className="px-3 py-1.5 bg-primary-600 text-white text-xs font-medium rounded-lg hover:bg-primary-700">
                     Record
                   </button>
                   <button

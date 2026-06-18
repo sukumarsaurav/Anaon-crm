@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getDemandLetterData } from '@/lib/bookings/queries'
 import DemandLetterView from '@/components/bookings/DemandLetterView'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Download } from 'lucide-react'
 
 interface PageProps {
   params: Promise<{ id: string; paymentId: string }>
@@ -28,6 +28,14 @@ export default async function DemandLetterPage({ params }: PageProps) {
         <p className="text-sm text-slate-600">
           Demand Letter — Installment #{data.payment.installment_number} · {data.booking.client?.full_name}
         </p>
+        <a
+          href={`/api/documents/demand/${paymentId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ml-auto inline-flex items-center gap-1.5 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 px-3 py-1.5 rounded-lg transition-colors"
+        >
+          <Download size={15} /> Download PDF
+        </a>
       </div>
       <DemandLetterView data={data} />
     </div>

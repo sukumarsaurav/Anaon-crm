@@ -60,7 +60,7 @@ export default async function TemplatesPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <Zap size={14} className="text-indigo-500 shrink-0" />
+                          <Zap size={14} className="text-primary-500 shrink-0" />
                           <p className="font-semibold text-slate-900 text-sm">{tpl.name}</p>
                         </div>
                         {tpl.description && (

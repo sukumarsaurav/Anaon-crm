@@ -72,7 +72,7 @@ export default function DisbursementManager({ loanId, disbursements, milestones 
                   </div>
                   {d.status !== 'received' && (
                     <button onClick={() => setShowMarkForm(d.id)}
-                      className="text-xs text-indigo-600 hover:underline shrink-0">
+                      className="text-xs text-primary-600 hover:underline shrink-0">
                       Mark received
                     </button>
                   )}
@@ -84,17 +84,17 @@ export default function DisbursementManager({ loanId, disbursements, milestones 
                     <div>
                       <label className="block text-xs text-slate-500 mb-1">Actual Amount (₹)</label>
                       <input type="number" name="actual_amount" defaultValue={d.expected_amount} required
-                        className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                        className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary-500" />
                     </div>
                     <div>
                       <label className="block text-xs text-slate-500 mb-1">Date Received</label>
                       <input type="date" name="actual_date" defaultValue={new Date().toISOString().split('T')[0]} required
-                        className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                        className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary-500" />
                     </div>
                     <div>
                       <label className="block text-xs text-slate-500 mb-1">Bank Ref / UTR</label>
                       <input name="bank_reference" placeholder="UTR123..."
-                        className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                        className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary-500" />
                     </div>
                     <div className="col-span-3 flex gap-2">
                       <button type="submit" disabled={markingId === d.id}
@@ -124,17 +124,17 @@ export default function DisbursementManager({ loanId, disbursements, milestones 
             <div>
               <label className="block text-xs text-slate-500 mb-1">Expected Amount (₹) <span className="text-red-500">*</span></label>
               <input type="number" name="expected_amount" required
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
               <label className="block text-xs text-slate-500 mb-1">Expected Date</label>
               <input type="date" name="expected_date"
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
               <label className="block text-xs text-slate-500 mb-1">Linked Milestone</label>
               <select name="milestone_id"
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                 <option value="">None</option>
                 {milestones.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
@@ -142,7 +142,7 @@ export default function DisbursementManager({ loanId, disbursements, milestones 
           </div>
           <div className="flex gap-2">
             <button type="submit" disabled={addLoading}
-              className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+              className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50">
               {addLoading ? 'Adding...' : 'Add Tranche'}
             </button>
             <button type="button" onClick={() => setShowAdd(false)}

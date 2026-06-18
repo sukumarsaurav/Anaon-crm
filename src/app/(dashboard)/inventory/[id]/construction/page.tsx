@@ -104,13 +104,13 @@ export default async function ConstructionPage({ params }: PageProps) {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-2xl font-bold text-indigo-600">{u.percentage_complete}%</span>
+                    <span className="text-2xl font-bold text-primary-600">{u.percentage_complete}%</span>
                     <ConstructionUpdateActions updateId={u.id} projectId={id} isPublished={u.is_published} />
                   </div>
                 </div>
                 {u.description && <p className="text-sm text-slate-600 mb-3">{u.description}</p>}
                 <div className="w-full bg-slate-100 rounded-full h-1.5">
-                  <div className="bg-indigo-600 h-1.5 rounded-full" style={{ width: `${u.percentage_complete}%` }} />
+                  <div className="bg-primary-600 h-1.5 rounded-full" style={{ width: `${u.percentage_complete}%` }} />
                 </div>
                 {u.photos && u.photos.length > 0 && (
                   <div className="flex gap-2 mt-3 overflow-x-auto">

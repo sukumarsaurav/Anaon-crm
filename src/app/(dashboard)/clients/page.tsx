@@ -62,10 +62,10 @@ export default async function ClientsPage({ searchParams }: PageProps) {
             name="search"
             defaultValue={params.search}
             placeholder="Search name, phone, email..."
-            className="flex-1 min-w-48 px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
+            className="flex-1 min-w-48 px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
           />
           <select name="kyc_status" defaultValue={params.kyc_status ?? ''}
-            className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
+            className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500">
             <option value="">All KYC Status</option>
             {Object.entries(KYC_STATUS_CONFIG).map(([v, cfg]) => (
               <option key={v} value={v}>{cfg.label}</option>

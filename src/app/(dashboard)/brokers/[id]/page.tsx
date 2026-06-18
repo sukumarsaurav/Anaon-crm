@@ -138,7 +138,7 @@ export default async function BrokerDetailPage({ params }: PageProps) {
 
           <div className="bg-white border border-slate-200 rounded-xl p-5">
             <h3 className="font-semibold text-slate-900 mb-1">Commission Rate</h3>
-            <p className="text-3xl font-bold text-indigo-600">{broker.commission_rate}%</p>
+            <p className="text-3xl font-bold text-primary-600">{broker.commission_rate}%</p>
             <p className="text-xs text-slate-500 mt-1">Default rate per booking value</p>
           </div>
         </div>
@@ -203,7 +203,7 @@ export default async function BrokerDetailPage({ params }: PageProps) {
                       <tr key={c.id} className="border-b border-slate-50 last:border-0">
                         <td className="py-2 text-slate-600">{c.booking?.booking_number ?? '—'}</td>
                         <td className="py-2 text-right">{formatCurrency(c.booking_value)}</td>
-                        <td className="py-2 text-right font-semibold text-indigo-700">{formatCurrency(c.commission_amount ?? 0)}</td>
+                        <td className="py-2 text-right font-semibold text-primary-700">{formatCurrency(c.commission_amount ?? 0)}</td>
                         <td className="py-2 pl-4">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${cfg?.color} ${cfg?.bg}`}>{cfg?.label}</span>
                         </td>

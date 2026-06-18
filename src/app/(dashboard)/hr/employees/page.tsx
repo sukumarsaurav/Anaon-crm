@@ -32,11 +32,11 @@ export default async function EmployeesPage() {
             {employees.map(emp => (
               <Link key={emp.id} href={`/hr/employees/${emp.id}`}
                 className="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors">
-                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
                   {emp.photo_url ? (
                     <img src={emp.photo_url} alt={emp.full_name} className="w-10 h-10 rounded-full object-cover" />
                   ) : (
-                    <User size={18} className="text-indigo-600" />
+                    <User size={18} className="text-primary-600" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">

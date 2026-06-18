@@ -18,9 +18,9 @@ export default function LeadsStats({ stats }: LeadsStatsProps) {
         label="Total Leads"
         value={stats.total}
         sub={`${stats.newToday} added today`}
-        icon={<Users size={20} className="text-indigo-600" />}
-        iconBg="bg-indigo-50"
-        accent="border-indigo-500"
+        icon={<Users size={20} className="text-primary-600" />}
+        iconBg="bg-primary-50"
+        accent="border-primary-500"
       />
       <StatCard
         label="Hot Leads"

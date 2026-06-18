@@ -48,7 +48,7 @@ export default function TeamSessionsManager() {
             onClick={() => loadSessions(p.id)}
             className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
               selected === p.id
-                ? 'bg-indigo-600 text-white border-indigo-600'
+                ? 'bg-primary-600 text-white border-primary-600'
                 : 'border-slate-200 text-slate-600 hover:bg-slate-50'
             }`}
           >

@@ -75,7 +75,7 @@ export default function PlotDetailPanel({ plot, canManage, onClose, onUpdate }: 
             {plot.development_charges > 0 && <Row label="Dev. Charges" value={formatCurrency(plot.development_charges)} />}
             <div className="flex justify-between pt-2 mt-1 border-t border-slate-200">
               <span className="text-sm font-semibold text-slate-700">Total Price</span>
-              <span className="text-sm font-bold text-indigo-700">{formatCurrency(plot.total_price ?? 0)}</span>
+              <span className="text-sm font-bold text-primary-700">{formatCurrency(plot.total_price ?? 0)}</span>
             </div>
           </div>
 

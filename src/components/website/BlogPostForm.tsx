@@ -71,7 +71,7 @@ export default function BlogPostForm({ post }: Props) {
             <label className="text-sm font-medium text-slate-700">
               URL Slug <span className="text-red-500 ml-0.5" aria-hidden="true">*</span>
             </label>
-            <div className="flex items-center rounded-lg border border-slate-300 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/30 focus-within:border-indigo-500 hover:border-slate-400 transition-all duration-150">
+            <div className="flex items-center rounded-lg border border-slate-300 overflow-hidden focus-within:ring-2 focus-within:ring-primary-500/30 focus-within:border-primary-500 hover:border-slate-400 transition-all duration-150">
               <span className="px-3 py-2 bg-slate-50 text-xs text-slate-400 border-r border-slate-200 shrink-0">/blog/</span>
               <input name="slug" required defaultValue={post?.slug}
                 placeholder="why-jaipur-is-best-real-estate-2025"

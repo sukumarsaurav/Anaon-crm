@@ -30,7 +30,7 @@ export default async function MarketingPage() {
         subtitle={
           <>
             {stats.activeCampaigns} active campaigns · {formatCurrency(stats.totalSpend)} spend · {formatCurrency(stats.totalRevenue)} revenue
-            {stats.overallROAS !== null && <span className="ml-2 font-medium text-indigo-600">{stats.overallROAS}x ROAS</span>}
+            {stats.overallROAS !== null && <span className="ml-2 font-medium text-primary-600">{stats.overallROAS}x ROAS</span>}
           </>
         }
       />
@@ -38,7 +38,7 @@ export default async function MarketingPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
-          { label: 'Active Campaigns', value: stats.activeCampaigns, icon: Megaphone, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+          { label: 'Active Campaigns', value: stats.activeCampaigns, icon: Megaphone, color: 'text-primary-600', bg: 'bg-primary-50' },
           { label: 'Paid Leads', value: stats.paidLeads, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
           { label: 'Site Visits', value: stats.totalSiteVisits, icon: MousePointerClick, color: 'text-amber-600', bg: 'bg-amber-50' },
           { label: 'Bookings', value: stats.totalBookings, icon: Target, color: 'text-emerald-600', bg: 'bg-emerald-50' },
@@ -168,7 +168,7 @@ export default async function MarketingPage() {
                       {c.budget > 0 && (
                         <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2">
                           <div
-                            className={`h-1.5 rounded-full ${c.spend > c.budget ? 'bg-red-500' : 'bg-indigo-500'}`}
+                            className={`h-1.5 rounded-full ${c.spend > c.budget ? 'bg-red-500' : 'bg-primary-500'}`}
                             style={{ width: `${Math.min(100, (c.spend / c.budget) * 100)}%` }}
                           />
                         </div>

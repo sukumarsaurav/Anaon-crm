@@ -46,11 +46,11 @@ export default async function LoanDetailPage({ params }: Props) {
             </h1>
             <div className="flex items-center gap-3 mt-0.5">
               {(loan as any).client?.phone && (
-                <a href={`tel:${(loan as any).client.phone}`} className="flex items-center gap-1 text-xs text-indigo-600 hover:underline">
+                <a href={`tel:${(loan as any).client.phone}`} className="flex items-center gap-1 text-xs text-primary-600 hover:underline">
                   <Phone size={11} /> {(loan as any).client.phone}
                 </a>
               )}
-              <Link href={`/clients/${loan.client_id}`} className="text-xs text-slate-400 hover:text-indigo-600">View Client →</Link>
+              <Link href={`/clients/${loan.client_id}`} className="text-xs text-slate-400 hover:text-primary-600">View Client →</Link>
             </div>
           </div>
         </div>
@@ -74,14 +74,14 @@ export default async function LoanDetailPage({ params }: Props) {
                 <div key={s.value} className="flex items-center flex-1">
                   <div className={`flex flex-col items-center ${i < activeStages.length - 1 ? 'flex-1' : ''}`}>
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 ${
-                      done ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-400'
+                      done ? 'bg-primary-600 border-primary-600 text-white' : 'bg-white border-slate-300 text-slate-400'
                     }`}>{s.step}</div>
-                    <p className={`text-xs mt-1 text-center leading-tight w-16 ${done ? 'text-indigo-700 font-medium' : 'text-slate-400'}`}>
+                    <p className={`text-xs mt-1 text-center leading-tight w-16 ${done ? 'text-primary-700 font-medium' : 'text-slate-400'}`}>
                       {s.label}
                     </p>
                   </div>
                   {i < activeStages.length - 1 && (
-                    <div className={`flex-1 h-0.5 mb-5 ${done ? 'bg-indigo-400' : 'bg-slate-200'}`} />
+                    <div className={`flex-1 h-0.5 mb-5 ${done ? 'bg-primary-400' : 'bg-slate-200'}`} />
                   )}
                 </div>
               )
@@ -188,7 +188,7 @@ export default async function LoanDetailPage({ params }: Props) {
               </div>
               <div className="text-xs text-slate-500 space-y-1">
                 {(loan as any).bank.rm_name && <p>RM: {(loan as any).bank.rm_name}</p>}
-                {(loan as any).bank.rm_phone && <a href={`tel:${(loan as any).bank.rm_phone}`} className="flex items-center gap-1 text-indigo-600 hover:underline"><Phone size={10} />{(loan as any).bank.rm_phone}</a>}
+                {(loan as any).bank.rm_phone && <a href={`tel:${(loan as any).bank.rm_phone}`} className="flex items-center gap-1 text-primary-600 hover:underline"><Phone size={10} />{(loan as any).bank.rm_phone}</a>}
                 {(loan as any).bank.turnaround_days && <p>TAT: {(loan as any).bank.turnaround_days} days</p>}
                 {(loan as any).bank.max_loan_pct && <p>Max: {(loan as any).bank.max_loan_pct}% of value</p>}
               </div>
@@ -204,7 +204,7 @@ export default async function LoanDetailPage({ params }: Props) {
               </div>
               <div className="text-xs text-slate-500 space-y-1">
                 {(loan as any).dsa.firm_name && <p>{(loan as any).dsa.firm_name}</p>}
-                {(loan as any).dsa.contact_phone && <a href={`tel:${(loan as any).dsa.contact_phone}`} className="flex items-center gap-1 text-indigo-600 hover:underline"><Phone size={10} />{(loan as any).dsa.contact_phone}</a>}
+                {(loan as any).dsa.contact_phone && <a href={`tel:${(loan as any).dsa.contact_phone}`} className="flex items-center gap-1 text-primary-600 hover:underline"><Phone size={10} />{(loan as any).dsa.contact_phone}</a>}
               </div>
             </div>
           )}

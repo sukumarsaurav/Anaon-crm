@@ -38,7 +38,7 @@ export default async function BrokersPage({ searchParams }: PageProps) {
   const stats = [
     { label: 'Total Brokers',  value: total,                                    icon: Users,       color: 'text-blue-600',   bg: 'bg-blue-50'  },
     { label: 'Approved',       value: topBrokers.length,                        icon: CheckCircle, color: 'text-green-600',  bg: 'bg-green-50' },
-    { label: 'Top Commission', value: topBrokers[0] ? `${topBrokers[0].commission_rate}%` : '—', icon: TrendingUp, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Top Commission', value: topBrokers[0] ? `${topBrokers[0].commission_rate}%` : '—', icon: TrendingUp, color: 'text-primary-600', bg: 'bg-primary-50' },
     { label: 'Total Earned',   value: formatCurrency(topBrokers.reduce((a, b) => a + b.total_commission_earned, 0)), icon: DollarSign, color: 'text-amber-600', bg: 'bg-amber-50' },
   ]
 
@@ -89,7 +89,7 @@ export default async function BrokersPage({ searchParams }: PageProps) {
         <form method="GET" className="flex-1 max-w-xs">
           {sp.status && <input type="hidden" name="status" value={sp.status} />}
           <input name="search" defaultValue={sp.search} placeholder="Search brokers..."
-            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30" />
         </form>
       </div>
 
@@ -121,7 +121,7 @@ export default async function BrokersPage({ searchParams }: PageProps) {
                 <td className="px-4 py-3 text-right font-semibold text-slate-900">{b.commission_rate}%</td>
                 <td className="px-4 py-3"><BrokerStatusBadge status={b.status as BrokerStatus} /></td>
                 <td className="px-4 py-3 text-right">
-                  <Link href={`/brokers/${b.id}`} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">View →</Link>
+                  <Link href={`/brokers/${b.id}`} className="text-xs text-primary-600 hover:text-primary-800 font-medium">View →</Link>
                 </td>
               </tr>
             ))}
@@ -134,7 +134,7 @@ export default async function BrokersPage({ searchParams }: PageProps) {
         <div className="flex justify-center gap-2">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
             <Link key={p} href={`?page=${p}${sp.status ? `&status=${sp.status}` : ''}${sp.search ? `&search=${sp.search}` : ''}`}
-              className={`px-3 py-1.5 text-sm rounded-lg border ${p === page ? 'bg-indigo-600 text-white border-indigo-600' : 'border-slate-200 hover:border-indigo-300 text-slate-700'}`}>
+              className={`px-3 py-1.5 text-sm rounded-lg border ${p === page ? 'bg-primary-600 text-white border-primary-600' : 'border-slate-200 hover:border-primary-300 text-slate-700'}`}>
               {p}
             </Link>
           ))}

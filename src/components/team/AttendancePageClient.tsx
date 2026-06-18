@@ -10,7 +10,7 @@ export default function AttendancePageClient() {
     <>
       <button
         onClick={() => setShowLeave(true)}
-        className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700"
+        className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700"
       >
         + Apply Leave
       </button>

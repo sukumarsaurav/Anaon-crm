@@ -10,8 +10,8 @@ export default function DemandLetterView({ data }: { data: DemandLetterData }) {
   return (
     <div className="max-w-2xl mx-auto bg-white p-10 print:p-8 font-serif">
       {/* Letterhead */}
-      <div className="text-center border-b-2 border-indigo-700 pb-6 mb-8">
-        <h1 className="text-3xl font-bold text-indigo-700 tracking-wide">ANON INDIA</h1>
+      <div className="text-center border-b-2 border-primary-700 pb-6 mb-8">
+        <h1 className="text-3xl font-bold text-primary-700 tracking-wide">ANON INDIA</h1>
         <p className="text-sm text-slate-500 mt-1">Real Estate Developers</p>
       </div>
 
@@ -47,7 +47,7 @@ export default function DemandLetterView({ data }: { data: DemandLetterData }) {
       <div className="border border-slate-300 rounded-lg overflow-hidden mb-6">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-indigo-600 text-white">
+            <tr className="bg-primary-600 text-white">
               <th className="text-left px-4 py-2.5 font-medium">Particulars</th>
               <th className="text-right px-4 py-2.5 font-medium">Amount (₹)</th>
             </tr>
@@ -68,9 +68,9 @@ export default function DemandLetterView({ data }: { data: DemandLetterData }) {
             )}
           </tbody>
           <tfoot>
-            <tr className="bg-indigo-50">
-              <td className="px-4 py-3 font-bold text-indigo-800">Total Amount Due</td>
-              <td className="px-4 py-3 text-right font-bold text-indigo-800 text-base">
+            <tr className="bg-primary-50">
+              <td className="px-4 py-3 font-bold text-primary-800">Total Amount Due</td>
+              <td className="px-4 py-3 text-right font-bold text-primary-800 text-base">
                 {formatCurrency(payment.amount_due + (payment.late_charge ?? 0))}
               </td>
             </tr>
@@ -110,7 +110,7 @@ export default function DemandLetterView({ data }: { data: DemandLetterData }) {
 
       <button
         onClick={() => window.print()}
-        className="print:hidden mt-6 px-6 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700"
+        className="print:hidden mt-6 px-6 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700"
       >
         🖨 Print / Save as PDF
       </button>

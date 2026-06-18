@@ -29,7 +29,7 @@ const ACTIVITY_COLORS: Record<string, string> = {
   call: 'bg-blue-100 text-blue-600',
   whatsapp: 'bg-green-100 text-green-600',
   email: 'bg-violet-100 text-violet-600',
-  sms: 'bg-indigo-100 text-indigo-600',
+  sms: 'bg-primary-100 text-primary-600',
   note: 'bg-yellow-100 text-yellow-600',
   stage_change: 'bg-orange-100 text-orange-600',
   assignment: 'bg-teal-100 text-teal-600',
@@ -142,6 +142,18 @@ export default function ActivityTimeline({ activities, leadId }: ActivityTimelin
                           Duration: {Math.floor(activity.call_duration_seconds / 60)}m{' '}
                           {activity.call_duration_seconds % 60}s
                         </p>
+                      )}
+
+                      {/* Call recording */}
+                      {activity.recording_url && (
+                        <a
+                          href={activity.recording_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-1.5 inline-block text-xs font-medium text-primary-600 hover:text-primary-700"
+                        >
+                          ▶ Play recording
+                        </a>
                       )}
 
                       {/* Performed by */}

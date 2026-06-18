@@ -120,7 +120,7 @@ export interface LoanDisbursement {
 export const LOAN_STAGES: { value: LoanStage; label: string; color: string; bg: string; step: number }[] = [
   { value: 'eligibility_check',     label: 'Eligibility Check',    color: 'text-gray-700',   bg: 'bg-gray-100',   step: 1 },
   { value: 'bank_selected',         label: 'Bank Selected',         color: 'text-blue-700',   bg: 'bg-blue-50',    step: 2 },
-  { value: 'application_submitted', label: 'Application Submitted', color: 'text-indigo-700', bg: 'bg-indigo-50',  step: 3 },
+  { value: 'application_submitted', label: 'Application Submitted', color: 'text-primary-700', bg: 'bg-primary-50',  step: 3 },
   { value: 'docs_submitted',        label: 'Docs Submitted',        color: 'text-purple-700', bg: 'bg-purple-50',  step: 4 },
   { value: 'sanction_received',     label: 'Sanction Received',     color: 'text-green-700',  bg: 'bg-green-50',   step: 5 },
   { value: 'disbursement',          label: 'Disbursement',          color: 'text-teal-700',   bg: 'bg-teal-50',    step: 6 },

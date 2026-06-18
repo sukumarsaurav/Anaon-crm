@@ -62,7 +62,7 @@ export default function KycChecklist({ client, canManage }: Props) {
                 checked
                   ? 'border-green-200 bg-green-50 text-green-700'
                   : 'border-slate-200 bg-slate-50 text-slate-500'
-              } ${canManage ? 'hover:border-indigo-300 cursor-pointer' : 'cursor-default'}`}
+              } ${canManage ? 'hover:border-primary-300 cursor-pointer' : 'cursor-default'}`}
             >
               {checked
                 ? <CheckCircle2 size={16} className="text-green-500 shrink-0" />

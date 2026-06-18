@@ -80,8 +80,8 @@ function Chip({
       className={cn(
         'px-2.5 py-1 text-xs font-medium rounded-full border transition-all',
         active
-          ? 'bg-indigo-600 text-white border-indigo-600'
-          : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300',
+          ? 'bg-primary-600 text-white border-primary-600'
+          : 'bg-white text-slate-600 border-slate-200 hover:border-primary-300',
       )}
     >
       {label}
@@ -209,11 +209,11 @@ export default function AssignmentRulesManager({
                   disabled={isPending}
                   className="sr-only peer"
                 />
-                <span className="w-9 h-5 bg-slate-200 rounded-full peer-checked:bg-indigo-600 relative transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
+                <span className="w-9 h-5 bg-slate-200 rounded-full peer-checked:bg-primary-600 relative transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
               </label>
               <button
                 onClick={() => openEdit(r)}
-                className="shrink-0 p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                className="shrink-0 p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg"
                 title="Edit"
               >
                 <Pencil size={15} />

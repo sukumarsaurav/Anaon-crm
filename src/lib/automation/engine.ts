@@ -1,5 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
 import type { TriggerEvent, AutomationContext, Automation, AutomationCondition } from '@/types/automation'
+import { sendTextMessage } from '@/lib/whatsapp/provider'
+import { sendEmail, emailConfigured } from '@/lib/email/client'
+import { genericEmail } from '@/lib/email/templates'
+import { notifyUsers } from '@/lib/notifications/notify'
+
+function fillTokens(text: string, ctx: AutomationContext): string {
+  return (text ?? '')
+    .replace(/\{\{\s*lead_name\s*\}\}/g, ctx.lead?.full_name ?? 'there')
+    .replace(/\{\{\s*client_name\s*\}\}/g, ctx.client?.full_name ?? 'there')
+    .replace(/\{\{\s*amount\s*\}\}/g, String(ctx.payment?.amount_due ?? ''))
+}
 
 // ── Condition evaluation ──────────────────────────────────────────────────────
 
@@ -42,13 +53,19 @@ async function executeAction(
 
   switch (automation.action_type) {
     case 'send_whatsapp': {
-      // Record intent — actual sending happens via WhatsApp module
       const phone = payload.recipient === 'lead' ? ctx.lead?.phone
         : payload.recipient === 'client' ? ctx.client?.phone
         : null
       if (!phone) return { success: false, error: 'No phone number in context' }
-      // Log as intent (actual delivery depends on WhatsApp integration being active)
-      return { success: true, result: { type: 'whatsapp_intent', template: payload.template_name, phone } }
+
+      // Free-text body if provided, else fall back to recording intent.
+      const body = payload.message_body ? fillTokens(payload.message_body, ctx) : null
+      if (!body) {
+        return { success: true, result: { type: 'whatsapp_intent', template: payload.template_name, phone } }
+      }
+      const sent = await sendTextMessage(phone, body)
+      if (!sent.success) return { success: false, error: sent.error }
+      return { success: true, result: { type: 'whatsapp_sent', messageId: sent.messageId, phone } }
     }
 
     case 'send_notification': {
@@ -65,19 +82,15 @@ async function executeAction(
         .replace('{{client_name}}', ctx.client?.full_name ?? 'Unknown')
         .replace('{{amount}}', String(ctx.payment?.amount_due ?? ''))
 
-      const notifications = (profiles ?? []).map(p => ({
-        user_id: p.id,
+      const userIds = (profiles ?? []).map(p => p.id)
+      await notifyUsers(userIds, {
         title: payload.notification_title ?? automation.name,
         message: body,
         type: 'automation',
         related_type: ctx.lead ? 'lead' : ctx.booking ? 'booking' : null,
         related_id: ctx.lead?.id ?? ctx.booking?.id ?? null,
-      }))
-
-      if (notifications.length > 0) {
-        await supabase.from('notifications').insert(notifications)
-      }
-      return { success: true, result: { notified: notifications.length } }
+      })
+      return { success: true, result: { notified: userIds.length } }
     }
 
     case 'create_followup': {
@@ -130,8 +143,18 @@ async function executeAction(
     }
 
     case 'send_email': {
-      // Placeholder — email delivery would go through an email provider
-      return { success: true, result: { type: 'email_intent', subject: payload.email_subject } }
+      const to = payload.recipient === 'lead' ? ctx.lead?.email
+        : payload.recipient === 'client' ? ctx.client?.email
+        : payload.email_to ?? null
+      if (!to) return { success: false, error: 'No email address in context' }
+      if (!emailConfigured()) return { success: false, error: 'Email not configured' }
+
+      const subject = fillTokens(payload.email_subject ?? 'A message from ANON INDIA', ctx)
+      const message = fillTokens(payload.email_body ?? '', ctx)
+      const tpl = genericEmail(subject, message)
+      const sent = await sendEmail({ to, subject: tpl.subject, html: tpl.html })
+      if (!sent.success) return { success: false, error: sent.error }
+      return { success: true, result: { type: 'email_sent', id: sent.id, to } }
     }
 
     default:

@@ -72,12 +72,12 @@ function DSACard({ dsa }: { dsa: any }) {
 
       <div className="flex items-center gap-4 text-xs">
         {dsa.contact_phone && (
-          <a href={`tel:${dsa.contact_phone}`} className="flex items-center gap-1 text-indigo-600 hover:underline">
+          <a href={`tel:${dsa.contact_phone}`} className="flex items-center gap-1 text-primary-600 hover:underline">
             <Phone size={14} /> {dsa.contact_phone}
           </a>
         )}
         {dsa.contact_email && (
-          <a href={`mailto:${dsa.contact_email}`} className="flex items-center gap-1 text-indigo-600 hover:underline">
+          <a href={`mailto:${dsa.contact_email}`} className="flex items-center gap-1 text-primary-600 hover:underline">
             <Mail size={14} /> {dsa.contact_email}
           </a>
         )}

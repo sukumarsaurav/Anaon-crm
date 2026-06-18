@@ -64,7 +64,7 @@ export default async function TeamPage() {
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-slate-800">Announcements</h2>
-          <Link href="/team/announcements" className="text-sm text-indigo-600 hover:underline">
+          <Link href="/team/announcements" className="text-sm text-primary-600 hover:underline">
             View all →
           </Link>
         </div>

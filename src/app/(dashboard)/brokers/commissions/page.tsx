@@ -29,7 +29,7 @@ export default async function CommissionsPage({ searchParams }: PageProps) {
   const stats = [
     { label: 'Pending Approval', value: formatCurrency(pendingTotal),  count: pending.length,  icon: Clock,       color: 'text-amber-600', bg: 'bg-amber-50'  },
     { label: 'Approved / Ready', value: formatCurrency(approvedTotal), count: approved.length, icon: CheckCircle, color: 'text-blue-600',  bg: 'bg-blue-50'   },
-    { label: 'Total Liability',  value: formatCurrency(pendingTotal + approvedTotal), count: pending.length + approved.length, icon: DollarSign, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Total Liability',  value: formatCurrency(pendingTotal + approvedTotal), count: pending.length + approved.length, icon: DollarSign, color: 'text-primary-600', bg: 'bg-primary-50' },
   ]
 
   const statusTabs = [

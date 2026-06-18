@@ -49,7 +49,7 @@ export default function IPWhitelistManager({ entries, enabled }: Props) {
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
           <input type="checkbox" defaultChecked={enabled} onChange={handleGlobalToggle} className="sr-only peer" />
-          <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600" />
+          <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600" />
         </label>
       </div>
 
@@ -89,7 +89,7 @@ export default function IPWhitelistManager({ entries, enabled }: Props) {
       {/* Add IP */}
       {!showAdd ? (
         <button onClick={() => setShowAdd(true)}
-          className="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700">
+          className="flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700">
           <Plus size={14} /> Add IP Address
         </button>
       ) : (
@@ -99,14 +99,14 @@ export default function IPWhitelistManager({ entries, enabled }: Props) {
             required
             placeholder="192.168.1.1"
             pattern="^(\d{1,3}\.){3}\d{1,3}$"
-            className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
           <input
             name="label"
             placeholder="Office / Home"
-            className="w-36 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-36 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
-          <button type="submit" className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
+          <button type="submit" className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700">
             Add
           </button>
           <button type="button" onClick={() => setShowAdd(false)}

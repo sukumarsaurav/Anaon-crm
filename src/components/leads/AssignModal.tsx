@@ -53,11 +53,11 @@ export default function AssignModal({ leadId, currentAdvisorId, advisors, open, 
             className={cn(
               'w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all',
               selected === advisor.id
-                ? 'border-indigo-500 bg-indigo-50'
+                ? 'border-primary-500 bg-primary-50'
                 : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
             )}
           >
-            <div className="w-9 h-9 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-semibold text-indigo-700 shrink-0">
+            <div className="w-9 h-9 bg-primary-100 rounded-full flex items-center justify-center text-sm font-semibold text-primary-700 shrink-0">
               {getInitials(advisor.full_name)}
             </div>
             <div>
@@ -65,7 +65,7 @@ export default function AssignModal({ leadId, currentAdvisorId, advisors, open, 
               <p className="text-xs text-slate-500 capitalize">{advisor.role.replace('_', ' ')}</p>
             </div>
             {selected === advisor.id && (
-              <div className="ml-auto w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center">
+              <div className="ml-auto w-5 h-5 bg-primary-600 rounded-full flex items-center justify-center">
                 <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                 </svg>

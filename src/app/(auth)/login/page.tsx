@@ -63,21 +63,32 @@ export default function LoginPage() {
         })
       }
 
-      router.push('/leads')
+      // Route by role: staff → dashboard, everyone else (clients) → client portal.
+      const STAFF_ROLES = ['admin', 'manager', 'sales_advisor', 'telecaller']
+      let dest = '/client-portal'
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .maybeSingle()
+        if (profile && STAFF_ROLES.includes(profile.role)) dest = '/'
+      }
+      router.push(dest)
       router.refresh()
     })
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-950 to-gray-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-primary-950 to-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-2xl mb-4 shadow-2xl">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl mb-4 shadow-2xl">
             <Building2 size={32} className="text-white" />
           </div>
           <h1 className="text-3xl font-bold text-white">ANON INDIA</h1>
-          <p className="text-indigo-300 mt-1 text-sm">Real Estate CRM</p>
+          <p className="text-primary-300 mt-1 text-sm">Real Estate CRM</p>
         </div>
 
         {/* Form */}
@@ -92,34 +103,34 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-indigo-200 block mb-1.5">Email address</label>
+              <label className="text-sm font-medium text-primary-200 block mb-1.5">Email address</label>
               <div className="relative">
-                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-300" />
+                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-300" />
                 <input
                   name="email"
                   type="email"
                   required
                   placeholder="you@anonIndia.com"
-                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 pl-10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 pl-10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-indigo-200 block mb-1.5">Password</label>
+              <label className="text-sm font-medium text-primary-200 block mb-1.5">Password</label>
               <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-300" />
+                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-300" />
                 <input
                   name="password"
                   type={showPassword ? 'text' : 'password'}
                   required
                   placeholder="••••••••"
-                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 pl-10 pr-10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 pl-10 pr-10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-300 hover:text-white"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-300 hover:text-white"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -129,7 +140,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isPending}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition-colors mt-2 disabled:opacity-60 flex items-center justify-center gap-2"
+              className="w-full bg-primary-600 hover:bg-primary-500 text-white font-semibold py-3 rounded-xl transition-colors mt-2 disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {isPending && (
                 <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -142,7 +153,7 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-indigo-400/60 text-xs mt-6">
+        <p className="text-center text-primary-400/60 text-xs mt-6">
           ANON INDIA CRM · Internal Portal
         </p>
       </div>

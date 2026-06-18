@@ -34,7 +34,7 @@ export default function MemberCard({ summary, rank }: Props) {
             {rank}
           </div>
         )}
-        <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm flex-shrink-0">
+        <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-sm flex-shrink-0">
           {member.photo_url ? (
             <img src={member.photo_url} alt={member.full_name} className="w-10 h-10 rounded-full object-cover" />
           ) : initials}

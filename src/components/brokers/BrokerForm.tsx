@@ -52,7 +52,7 @@ export default function BrokerForm({ broker }: Props) {
         min={opts?.min}
         step={opts?.step}
         defaultValue={broker ? String((broker as unknown as Record<string, unknown>)[name] ?? '') : ''}
-        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400"
+        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400"
       />
     </div>
   )
@@ -109,7 +109,7 @@ export default function BrokerForm({ broker }: Props) {
           rows={2}
           defaultValue={broker?.notes ?? ''}
           placeholder="Any internal notes about this broker..."
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400"
         />
       </div>
 
@@ -123,7 +123,7 @@ export default function BrokerForm({ broker }: Props) {
           Cancel
         </button>
         <button type="submit" disabled={loading}
-          className="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+          className="flex-1 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50">
           {loading ? 'Saving...' : broker ? 'Save Changes' : 'Add Broker'}
         </button>
       </div>

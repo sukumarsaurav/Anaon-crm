@@ -54,7 +54,7 @@ export default function ApprovalPanel({ bookingId }: Props) {
           onChange={(e) => setNotes(e.target.value)}
           rows={2}
           placeholder={mode === 'reject' ? 'State reason for rejection...' : 'Add notes (optional)...'}
-          className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+          className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
         />
       </div>
 

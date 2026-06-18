@@ -39,7 +39,7 @@ export default async function FinancialReportsPage({ searchParams }: PageProps) 
           { label: 'Collections', value: fmtL(collections.total), color: 'text-green-700', bg: 'bg-green-50' },
           { label: 'Outstanding', value: fmtL(outstanding.total), color: 'text-amber-700', bg: 'bg-amber-50' },
           { label: 'Overdue', value: fmtL(outstanding.overdue), color: 'text-red-700', bg: 'bg-red-50' },
-          { label: 'Commission Due', value: fmtL(brokerData.due), color: 'text-indigo-700', bg: 'bg-indigo-50' },
+          { label: 'Commission Due', value: fmtL(brokerData.due), color: 'text-primary-700', bg: 'bg-primary-50' },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={`${bg} border border-slate-200 rounded-xl p-4`}>
             <p className={`text-2xl font-bold ${color}`}>{value}</p>

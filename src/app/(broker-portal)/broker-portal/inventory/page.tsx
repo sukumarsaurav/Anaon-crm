@@ -70,7 +70,7 @@ export default async function BrokerInventoryPage() {
                     <p className="text-xs text-slate-500 mb-2">
                       {p.size_sqyd ? `${p.size_sqyd} sq yd` : p.size_sqft ? `${p.size_sqft} sq ft` : 'Size TBD'}
                     </p>
-                    <p className="text-sm font-bold text-indigo-700">{formatCurrency(p.total_price ?? p.base_price)}</p>
+                    <p className="text-sm font-bold text-primary-700">{formatCurrency(p.total_price ?? p.base_price)}</p>
                   </div>
                 )
               })}

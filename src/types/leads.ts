@@ -150,6 +150,8 @@ export interface LeadActivity {
   stage_from: LeadStage | null
   stage_to: LeadStage | null
   call_duration_seconds: number | null
+  call_sid: string | null
+  recording_url: string | null
   scheduled_at: string | null
   performed_by: string | null
   created_at: string
@@ -240,9 +242,9 @@ export const STAGE_CONFIG: Record<LeadStage, StageConfig> = {
   contacted: {
     label: 'Contacted',
     color: 'indigo',
-    bgColor: 'bg-indigo-50',
-    textColor: 'text-indigo-700',
-    borderColor: 'border-indigo-200',
+    bgColor: 'bg-primary-50',
+    textColor: 'text-primary-700',
+    borderColor: 'border-primary-200',
     slaHours: 24,
   },
   interested: {

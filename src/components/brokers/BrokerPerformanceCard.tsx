@@ -6,7 +6,7 @@ export default function BrokerPerformanceCard({ stats }: { stats: BrokerStats })
   const tiles = [
     { label: 'Leads Registered',   value: stats.total_leads,                 icon: Users,       color: 'text-blue-600',   bg: 'bg-blue-50' },
     { label: 'Bookings Converted', value: stats.total_bookings,              icon: BookOpen,    color: 'text-green-600',  bg: 'bg-green-50' },
-    { label: 'Conversion Rate',    value: `${stats.conversion_rate}%`,       icon: TrendingUp,  color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Conversion Rate',    value: `${stats.conversion_rate}%`,       icon: TrendingUp,  color: 'text-primary-600', bg: 'bg-primary-50' },
     { label: 'Commission Earned',  value: formatCurrency(stats.commission_earned), icon: DollarSign, color: 'text-amber-600', bg: 'bg-amber-50' },
   ]
 

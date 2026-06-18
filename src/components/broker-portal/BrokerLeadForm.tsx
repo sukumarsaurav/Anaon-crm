@@ -76,21 +76,21 @@ export default function BrokerLeadForm({ projects, onDone }: Props) {
             Client Name <span className="text-red-500">*</span>
           </label>
           <input name="client_name" required placeholder="Full name"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">
             Phone Number <span className="text-red-500">*</span>
           </label>
           <input name="client_phone" type="tel" required placeholder="+91 98765 43210"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">Project Interest</label>
         <select name="project_id"
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400">
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
           <option value="">Not specified</option>
           {projects.map((p) => (
             <option key={p.id} value={p.id}>{p.name} · {p.city}</option>
@@ -102,19 +102,19 @@ export default function BrokerLeadForm({ projects, onDone }: Props) {
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Budget Min (₹)</label>
           <input name="budget_min" type="number" min="0" step="100000" placeholder="5000000"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Budget Max (₹)</label>
           <input name="budget_max" type="number" min="0" step="100000" placeholder="10000000"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
         <textarea name="notes" rows={2} placeholder="Any additional details about the client..."
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
       </div>
 
       {error && (
@@ -122,7 +122,7 @@ export default function BrokerLeadForm({ projects, onDone }: Props) {
       )}
 
       <button type="submit" disabled={loading}
-        className="w-full px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+        className="w-full px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50">
         {loading ? 'Registering...' : 'Register Lead'}
       </button>
     </form>

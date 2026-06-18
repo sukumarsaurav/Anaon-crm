@@ -40,7 +40,7 @@ export default async function BlogManagementPage() {
           icon={<PenLine size={40} />}
           title="No blog posts yet"
           action={
-            <Link href="/blog/new" className="text-sm text-indigo-600 hover:text-indigo-700">
+            <Link href="/blog/new" className="text-sm text-primary-600 hover:text-primary-700">
               Write your first post →
             </Link>
           }
@@ -59,7 +59,7 @@ export default async function BlogManagementPage() {
                         : <EyeOff size={14} className="text-slate-400 shrink-0" />
                       }
                       <Link href={`/blog/${post.id}/edit`}
-                        className="font-semibold text-slate-900 hover:text-indigo-600 truncate text-sm">
+                        className="font-semibold text-slate-900 hover:text-primary-600 truncate text-sm">
                         {post.title}
                       </Link>
                     </div>
@@ -80,7 +80,7 @@ export default async function BlogManagementPage() {
                       size="sm"
                     />
                     <Link href={`/blog/${post.id}/edit`}
-                      className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100">
+                      className="p-1.5 text-slate-400 hover:text-primary-600 rounded-lg hover:bg-slate-100">
                       <PenLine size={14} />
                     </Link>
                     <BlogPostActions postId={post.id} />

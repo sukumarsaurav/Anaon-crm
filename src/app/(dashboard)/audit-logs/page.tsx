@@ -17,7 +17,7 @@ const ACTION_COLORS: Record<string, string> = {
   lead_created:           'bg-blue-100 text-blue-700',
   lead_updated:           'bg-blue-50 text-blue-600',
   lead_deleted:           'bg-red-100 text-red-700',
-  booking_created:        'bg-indigo-100 text-indigo-700',
+  booking_created:        'bg-primary-100 text-primary-700',
   payment_created:        'bg-emerald-100 text-emerald-700',
   document_viewed:        'bg-amber-100 text-amber-700',
   user_created:           'bg-purple-100 text-purple-700',
@@ -100,22 +100,22 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
       <form method="GET" className="bg-white border border-slate-200 rounded-xl p-4">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <select name="user_id" defaultValue={sp.user_id ?? ''}
-            className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400 bg-white text-slate-900">
+            className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 bg-white text-slate-900">
             <option value="">All Users</option>
             {users?.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
           </select>
           <select name="action" defaultValue={sp.action ?? ''}
-            className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400 bg-white text-slate-900">
+            className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 bg-white text-slate-900">
             <option value="">All Actions</option>
             {ACTIONS.map(a => <option key={a} value={a}>{a.replace(/_/g, ' ')}</option>)}
           </select>
           <input name="start_date" type="date" defaultValue={sp.start_date ?? ''}
-            className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400 text-slate-900" />
+            className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 text-slate-900" />
           <input name="end_date" type="date" defaultValue={sp.end_date ?? ''}
-            className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400 text-slate-900" />
+            className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 text-slate-900" />
           <div className="flex gap-2">
             <button type="submit"
-              className="flex-1 px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
+              className="flex-1 px-3 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700">
               Filter
             </button>
             <Link href="/audit-logs"

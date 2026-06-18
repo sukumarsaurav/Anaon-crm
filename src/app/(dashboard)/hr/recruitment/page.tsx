@@ -75,7 +75,7 @@ export default async function RecruitmentPage() {
                           )}
                         </div>
                         <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
-                          {c.listing && <span className="text-indigo-600 font-medium">{c.listing.title}</span>}
+                          {c.listing && <span className="text-primary-600 font-medium">{c.listing.title}</span>}
                           {c.current_company && <span className="flex items-center gap-1"><Building2 size={11} />{c.current_company}</span>}
                           {c.experience_years && <span>{c.experience_years}y exp</span>}
                           {c.expected_ctc && <span>Expected {formatCurrency(c.expected_ctc)}</span>}
@@ -99,7 +99,7 @@ export default async function RecruitmentPage() {
                       </div>
                       {c.resume_url && (
                         <a href={c.resume_url} target="_blank" rel="noopener noreferrer"
-                          className="shrink-0 text-xs text-indigo-600 border border-indigo-200 px-2 py-1 rounded-lg hover:bg-indigo-50">
+                          className="shrink-0 text-xs text-primary-600 border border-primary-200 px-2 py-1 rounded-lg hover:bg-primary-50">
                           Resume
                         </a>
                       )}

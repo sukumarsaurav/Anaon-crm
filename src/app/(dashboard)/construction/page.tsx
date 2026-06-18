@@ -21,8 +21,8 @@ export default async function ConstructionDashboardPage() {
       label:  'Active Projects',
       value:  data.projects.length,
       icon:   Building2,
-      color:  'text-indigo-600',
-      bg:     'bg-indigo-50',
+      color:  'text-primary-600',
+      bg:     'bg-primary-50',
     },
     {
       label:  'In Progress',
@@ -88,20 +88,20 @@ export default async function ConstructionDashboardPage() {
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <p className="font-semibold text-slate-900 group-hover:text-indigo-700">{p.name}</p>
+                    <p className="font-semibold text-slate-900 group-hover:text-primary-700">{p.name}</p>
                     <p className="text-xs text-slate-400">{p.city} · {p.type}</p>
                   </div>
-                  <ChevronRight size={16} className="text-slate-300 group-hover:text-indigo-400 mt-0.5" />
+                  <ChevronRight size={16} className="text-slate-300 group-hover:text-primary-400 mt-0.5" />
                 </div>
 
                 {/* Progress bar */}
                 <div className="mb-3">
                   <div className="flex justify-between text-xs text-slate-500 mb-1">
                     <span>Progress</span>
-                    <span className="font-semibold text-indigo-600">{p.overall_percentage}%</span>
+                    <span className="font-semibold text-primary-600">{p.overall_percentage}%</span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2">
-                    <div className="bg-indigo-600 h-2 rounded-full transition-all"
+                    <div className="bg-primary-600 h-2 rounded-full transition-all"
                       style={{ width: `${p.overall_percentage}%` }} />
                   </div>
                 </div>
@@ -181,7 +181,7 @@ export default async function ConstructionDashboardPage() {
                     )}
                   </div>
                   <Link href={`/inventory/${m.project_id}/construction`}
-                    className="shrink-0 px-3 py-1.5 text-xs text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg">
+                    className="shrink-0 px-3 py-1.5 text-xs text-primary-600 hover:text-primary-800 hover:bg-primary-50 rounded-lg">
                     View →
                   </Link>
                 </div>
@@ -217,7 +217,7 @@ export default async function ConstructionDashboardPage() {
                     </p>
                   </div>
                   <Link href={`/inventory/${m.project_id}/construction`}
-                    className="text-xs text-slate-400 hover:text-indigo-600 hover:bg-slate-50 px-3 py-1.5 rounded-lg">
+                    className="text-xs text-slate-400 hover:text-primary-600 hover:bg-slate-50 px-3 py-1.5 rounded-lg">
                     View →
                   </Link>
                 </div>

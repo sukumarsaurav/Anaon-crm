@@ -39,7 +39,7 @@ export default async function ReportsPage() {
         <KPICard label="Leads" value={exec.leads.curr} trend={exec.leads.trend} sub={`${exec.leads.prev} last month`} />
         <KPICard label="Site Visits" value={exec.visits.curr} trend={exec.visits.trend} />
         <KPICard label="Bookings" value={exec.bookings.curr} trend={exec.bookings.trend} />
-        <KPICard label="Revenue" value={fmtCrore(exec.revenue.curr)} trend={exec.revenue.trend} color="text-indigo-700" />
+        <KPICard label="Revenue" value={fmtCrore(exec.revenue.curr)} trend={exec.revenue.trend} color="text-primary-700" />
         <KPICard label="Collections" value={fmtCrore(exec.collections)} sub={`${fmtCrore(exec.outstanding)} outstanding`} />
       </div>
 
@@ -80,7 +80,7 @@ export default async function ReportsPage() {
                   <div key={r.month} className="flex items-center gap-2">
                     <span className="text-xs text-slate-400 w-14 shrink-0">{r.month.slice(5)}/{r.month.slice(0, 4).slice(2)}</span>
                     <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
-                      <div className="h-2 rounded-full bg-indigo-500" style={{ width: `${(r.revenue / maxRev) * 100}%` }} />
+                      <div className="h-2 rounded-full bg-primary-500" style={{ width: `${(r.revenue / maxRev) * 100}%` }} />
                     </div>
                     <span className="text-xs font-medium text-slate-700 w-16 text-right shrink-0">{fmtCrore(r.revenue)}</span>
                   </div>
@@ -113,15 +113,15 @@ export default async function ReportsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {reportSections.map(({ label, href, icon: Icon, desc }) => (
             <Link key={href} href={href}
-              className="bg-white border border-slate-200 rounded-xl p-5 hover:border-indigo-200 hover:shadow-sm transition-all group flex items-start gap-4">
-              <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0">
-                <Icon size={18} className="text-indigo-600" />
+              className="bg-white border border-slate-200 rounded-xl p-5 hover:border-primary-200 hover:shadow-sm transition-all group flex items-start gap-4">
+              <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center shrink-0">
+                <Icon size={18} className="text-primary-600" />
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-slate-900">{label}</p>
                 <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
               </div>
-              <ArrowRight size={16} className="text-slate-300 group-hover:text-indigo-400 mt-1 shrink-0 transition-colors" />
+              <ArrowRight size={16} className="text-slate-300 group-hover:text-primary-400 mt-1 shrink-0 transition-colors" />
             </Link>
           ))}
         </div>

@@ -42,7 +42,7 @@ export default async function LoansPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Active Applications', value: stats.activeApplications, icon: CreditCard, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+          { label: 'Active Applications', value: stats.activeApplications, icon: CreditCard, color: 'text-primary-600', bg: 'bg-primary-50' },
           { label: 'Total Sanctioned', value: fmt(stats.totalSanctioned), icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { label: 'Total Disbursed', value: fmt(stats.totalDisbursed), icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50' },
           { label: 'Pending Disbursals', value: stats.pendingDisbursements + stats.delayedDisbursements, icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-50' },
@@ -65,7 +65,7 @@ export default async function LoansPage() {
             const count = stats.byStage[s.value] ?? 0
             return (
               <Link key={s.value} href={`/loans?stage=${s.value}`}
-                className="text-center p-3 rounded-xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition-colors">
+                className="text-center p-3 rounded-xl border border-slate-100 hover:border-primary-200 hover:bg-primary-50/30 transition-colors">
                 <p className="text-2xl font-bold text-slate-900">{count}</p>
                 <p className="text-xs text-slate-500 mt-0.5 leading-tight">{s.label}</p>
               </Link>
@@ -142,7 +142,7 @@ export default async function LoansPage() {
                   return (
                     <tr key={app.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3">
-                        <Link href={`/loans/${app.id}`} className="font-medium text-slate-900 hover:text-indigo-600">
+                        <Link href={`/loans/${app.id}`} className="font-medium text-slate-900 hover:text-primary-600">
                           {(app as any).client?.full_name ?? '—'}
                         </Link>
                         <p className="text-xs text-slate-500">{(app as any).client?.phone}</p>

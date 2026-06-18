@@ -86,12 +86,12 @@ function BankCard({ bank }: { bank: any }) {
           {bank.rm_name && <p className="font-medium">{bank.rm_name}</p>}
           <div className="flex items-center gap-3">
             {bank.rm_phone && (
-              <a href={`tel:${bank.rm_phone}`} className="flex items-center gap-1 text-indigo-600 hover:underline">
+              <a href={`tel:${bank.rm_phone}`} className="flex items-center gap-1 text-primary-600 hover:underline">
                 <Phone size={14} /> {bank.rm_phone}
               </a>
             )}
             {bank.rm_email && (
-              <a href={`mailto:${bank.rm_email}`} className="flex items-center gap-1 text-indigo-600 hover:underline">
+              <a href={`mailto:${bank.rm_email}`} className="flex items-center gap-1 text-primary-600 hover:underline">
                 <Mail size={14} /> {bank.rm_email}
               </a>
             )}

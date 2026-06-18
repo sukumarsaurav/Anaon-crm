@@ -42,7 +42,7 @@ export default function BookingCard({ booking }: Props) {
       <div className="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center">
         <div>
           <p className="text-xs text-slate-400">Total Value</p>
-          <p className="text-sm font-bold text-indigo-700">{formatCurrency(booking.total_sale_value)}</p>
+          <p className="text-sm font-bold text-primary-700">{formatCurrency(booking.total_sale_value)}</p>
         </div>
         <div className="text-right">
           <p className="text-xs text-slate-400">Booking Amt</p>

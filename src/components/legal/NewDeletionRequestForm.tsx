@@ -27,7 +27,7 @@ export default function NewDeletionRequestForm() {
   if (!open) {
     return (
       <button onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700">
+        className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-xl hover:bg-primary-700">
         <Plus size={15} /> New Request
       </button>
     )
@@ -44,7 +44,7 @@ export default function NewDeletionRequestForm() {
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Requester Type</label>
             <select name="requester_type" required
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
               <option value="lead">Lead (Prospect)</option>
               <option value="client">Client</option>
             </select>
@@ -52,28 +52,28 @@ export default function NewDeletionRequestForm() {
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Full Name <span className="text-red-500">*</span></label>
             <input name="requester_name" required placeholder="Full name of requester"
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Phone</label>
             <input type="tel" name="requester_phone" placeholder="+91 98765 43210"
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
             <input type="email" name="requester_email" placeholder="email@example.com"
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
         </div>
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">Reason for deletion</label>
           <textarea name="reason" rows={2} placeholder="No longer interested / withdrawal of consent..."
-            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
         </div>
         {error && <p className="text-xs text-red-600">{error}</p>}
         <div className="flex gap-2">
           <button type="submit" disabled={loading}
-            className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+            className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50">
             {loading ? 'Saving...' : 'Submit Request'}
           </button>
           <button type="button" onClick={() => setOpen(false)}

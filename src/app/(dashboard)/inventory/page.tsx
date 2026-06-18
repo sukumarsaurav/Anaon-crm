@@ -48,17 +48,17 @@ export default async function InventoryPage({ searchParams }: PageProps) {
             name="search"
             defaultValue={params.search}
             placeholder="Search projects..."
-            className="flex-1 min-w-40 px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 min-w-40 px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
           <select name="status" defaultValue={params.status ?? ''}
-            className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
             <option value="">All Statuses</option>
             {statuses.map(([v, cfg]) => (
               <option key={v} value={v}>{cfg.label}</option>
             ))}
           </select>
           <select name="type" defaultValue={params.type ?? ''}
-            className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
             <option value="">All Types</option>
             {types.map(([v, label]) => (
               <option key={v} value={v}>{label}</option>

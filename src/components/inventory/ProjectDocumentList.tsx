@@ -40,24 +40,24 @@ export default function ProjectDocumentList({ projectId, documents, canManage }:
         <h3 className="font-semibold text-slate-900">Documents</h3>
         {canManage && (
           <button onClick={() => setShowForm((v) => !v)}
-            className="flex items-center gap-1 text-xs px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 font-medium">
+            className="flex items-center gap-1 text-xs px-3 py-1.5 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 font-medium">
             <Plus size={12} /> Add
           </button>
         )}
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="mb-4 p-4 bg-indigo-50 rounded-xl space-y-3">
+        <form onSubmit={handleSubmit} className="mb-4 p-4 bg-primary-50 rounded-xl space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
               <label className="block text-xs font-medium text-slate-600 mb-1">Document Name *</label>
               <input name="name" required placeholder="RERA Certificate 2024"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Category *</label>
               <select name="category" required
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                 {Object.entries(DOCUMENT_CATEGORY_LABELS).map(([v, label]) => (
                   <option key={v} value={v}>{label}</option>
                 ))}
@@ -66,7 +66,7 @@ export default function ProjectDocumentList({ projectId, documents, canManage }:
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Visibility</label>
               <select name="is_public"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                 <option value="false">Internal only</option>
                 <option value="true">Public (visible to all)</option>
               </select>
@@ -74,13 +74,13 @@ export default function ProjectDocumentList({ projectId, documents, canManage }:
             <div className="col-span-2">
               <label className="block text-xs font-medium text-slate-600 mb-1">File URL *</label>
               <input name="file_url" required type="url" placeholder="https://..."
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
           </div>
           {error && <p className="text-xs text-red-600">{error}</p>}
           <div className="flex gap-2">
             <button type="submit" disabled={isPending}
-              className="px-4 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-40">
+              className="px-4 py-1.5 bg-primary-600 text-white text-xs font-medium rounded-lg hover:bg-primary-700 disabled:opacity-40">
               {isPending ? 'Saving...' : 'Add Document'}
             </button>
             <button type="button" onClick={() => setShowForm(false)}
@@ -98,7 +98,7 @@ export default function ProjectDocumentList({ projectId, documents, canManage }:
           {documents.map((doc) => (
             <div key={doc.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-slate-100 hover:border-slate-200 bg-slate-50">
               <div className="flex items-center gap-3 min-w-0">
-                <FileText size={16} className="text-indigo-500 shrink-0" />
+                <FileText size={16} className="text-primary-500 shrink-0" />
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-slate-800 truncate">{doc.name}</p>
                   <p className="text-xs text-slate-500">
@@ -108,7 +108,7 @@ export default function ProjectDocumentList({ projectId, documents, canManage }:
                 </div>
               </div>
               <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
-                className="ml-3 p-1.5 text-slate-400 hover:text-indigo-600 shrink-0">
+                className="ml-3 p-1.5 text-slate-400 hover:text-primary-600 shrink-0">
                 <ExternalLink size={14} />
               </a>
             </div>

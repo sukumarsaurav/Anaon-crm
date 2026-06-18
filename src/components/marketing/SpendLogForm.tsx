@@ -40,7 +40,7 @@ export default function SpendLogForm({ campaignId, campaignName }: Props) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+        className="flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-800 font-medium"
       >
         <PlusCircle size={13} /> Log spend
       </button>
@@ -65,22 +65,22 @@ export default function SpendLogForm({ campaignId, campaignName }: Props) {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Date <span className="text-red-500">*</span></label>
                   <input name="log_date" type="date" required defaultValue={today}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Spend (₹) <span className="text-red-500">*</span></label>
                   <input name="spend" type="number" required min="0" step="0.01" placeholder="0"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Impressions</label>
                   <input name="impressions" type="number" min="0" placeholder="0"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Clicks</label>
                   <input name="clicks" type="number" min="0" placeholder="0"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                 </div>
               </div>
 
@@ -92,7 +92,7 @@ export default function SpendLogForm({ campaignId, campaignName }: Props) {
                   Cancel
                 </button>
                 <button type="submit" disabled={loading}
-                  className="flex-1 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50">
+                  className="flex-1 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-xl hover:bg-primary-700 disabled:opacity-50">
                   {loading ? 'Saving...' : 'Save'}
                 </button>
               </div>

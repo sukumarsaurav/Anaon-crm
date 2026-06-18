@@ -48,8 +48,8 @@ export default async function ClientPortalDocumentsPage() {
             {bookingDocs.map((doc) => (
               <div key={doc.label} className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-indigo-50 rounded-lg">
-                    <FileText size={16} className="text-indigo-600" />
+                  <div className="p-2 bg-primary-50 rounded-lg">
+                    <FileText size={16} className="text-primary-600" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-slate-900">{doc.label}</p>
@@ -57,7 +57,7 @@ export default async function ClientPortalDocumentsPage() {
                   </div>
                 </div>
                 <a href={doc.url!} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-medium rounded-lg hover:bg-indigo-100">
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 text-primary-700 text-xs font-medium rounded-lg hover:bg-primary-100">
                   <ExternalLink size={12} /> Download
                 </a>
               </div>
@@ -96,7 +96,7 @@ export default async function ClientPortalDocumentsPage() {
                     </span>
                     {doc.file_url && (
                       <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
-                        className="p-1.5 text-slate-400 hover:text-indigo-600">
+                        className="p-1.5 text-slate-400 hover:text-primary-600">
                         <ExternalLink size={14} />
                       </a>
                     )}

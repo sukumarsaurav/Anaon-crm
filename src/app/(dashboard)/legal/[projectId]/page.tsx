@@ -101,17 +101,17 @@ export default async function ProjectRERAPage({ params }: Props) {
                 <input type="hidden" name="project_id" value={projectId} />
                 <div className="space-y-2">
                   <input name="name" placeholder="Document name" required
-                    className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500" />
                   <select name="category" required
-                    className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500">
                     {RERA_CHECKLIST_ITEMS.map(item => (
                       <option key={item.key} value={item.key}>{item.label}</option>
                     ))}
                   </select>
                   <input type="url" name="file_url" placeholder="File URL (uploaded to storage)" required
-                    className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500" />
                   <button type="submit"
-                    className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700">
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white text-xs font-medium rounded-lg hover:bg-primary-700">
                     <Upload size={11} /> Upload Document
                   </button>
                 </div>
@@ -122,7 +122,7 @@ export default async function ProjectRERAPage({ params }: Props) {
           {/* RERA link */}
           {project.rera_website_url && (
             <a href={project.rera_website_url} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-3 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl text-sm hover:bg-indigo-100">
+              className="flex items-center gap-2 px-4 py-3 bg-primary-50 text-primary-700 border border-primary-100 rounded-xl text-sm hover:bg-primary-100">
               <ExternalLink size={14} />
               View on RERA Portal
             </a>
@@ -155,7 +155,7 @@ export default async function ProjectRERAPage({ params }: Props) {
                     <td className="px-4 py-3 text-right">
                       {doc.file_url && (
                         <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
-                          className="text-xs text-indigo-600 hover:underline">View</a>
+                          className="text-xs text-primary-600 hover:underline">View</a>
                       )}
                     </td>
                   </tr>

@@ -19,7 +19,8 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
   const closeMobile = useCallback(() => setMobileOpen(false), [])
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background-light">
+      <a href="#main-content" className="skip-link">Skip to content</a>
       {/* Mobile backdrop */}
       {mobileOpen && (
         <div
@@ -43,6 +44,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
       />
 
       <main
+        id="main-content"
         className={cn(
           'pt-16 min-h-screen transition-all duration-300',
           collapsed ? 'lg:ml-16' : 'lg:ml-64'

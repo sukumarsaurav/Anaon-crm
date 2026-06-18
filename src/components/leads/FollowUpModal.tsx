@@ -55,7 +55,7 @@ export default function FollowUpModal({ leadId, open, onClose }: FollowUpModalPr
                 key={t.label}
                 onClick={() => handleQuick(t.value)}
                 disabled={isPending}
-                className="px-3 py-2.5 text-sm text-slate-700 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200 hover:border-indigo-300 rounded-xl transition-all text-left"
+                className="px-3 py-2.5 text-sm text-slate-700 bg-slate-50 hover:bg-primary-50 hover:text-primary-700 border border-slate-200 hover:border-primary-300 rounded-xl transition-all text-left"
               >
                 {t.label}
               </button>
@@ -75,7 +75,7 @@ export default function FollowUpModal({ leadId, open, onClose }: FollowUpModalPr
             type="datetime-local"
             name="followup_at"
             defaultValue={format(addHours(new Date(), 24), "yyyy-MM-dd'T'HH:mm")}
-            className="w-full text-sm border border-slate-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full text-sm border border-slate-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
           <Button type="submit" loading={isPending} className="w-full justify-center">
             Schedule Follow-up

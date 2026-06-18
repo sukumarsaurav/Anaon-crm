@@ -60,7 +60,7 @@ export default function SiteVisitsCard({
     <Card padding="md">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-          <CalendarCheck size={16} className="text-indigo-600" />
+          <CalendarCheck size={16} className="text-primary-600" />
           Site Visits ({visits.length})
         </h3>
         <Button size="sm" variant="secondary" onClick={() => setShowSchedule(true)}>
@@ -87,7 +87,7 @@ export default function SiteVisitsCard({
                   {visit.status === 'scheduled' && (
                     <button
                       onClick={() => setOutcomeVisit(visit)}
-                      className="text-xs flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-medium"
+                      className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-800 font-medium"
                     >
                       <ClipboardCheck size={13} />
                       Record
@@ -127,7 +127,7 @@ export default function SiteVisitsCard({
               name="advisor_notes"
               rows={2}
               placeholder="Meeting point, directions, what to bring…"
-              className="mt-1.5 w-full rounded-lg border border-slate-300 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
+              className="mt-1.5 w-full rounded-lg border border-slate-300 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
             />
           </div>
           <div className="flex justify-end gap-2 pt-2">
@@ -162,7 +162,7 @@ export default function SiteVisitsCard({
                 name="client_feedback"
                 rows={2}
                 placeholder="What did the client think? Concerns, interest level…"
-                className="mt-1.5 w-full rounded-lg border border-slate-300 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
+                className="mt-1.5 w-full rounded-lg border border-slate-300 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
               />
             </div>
             <Input label="Next follow-up (optional)" name="followup_at" type="datetime-local" hint="Keeps the lead from going idle" />

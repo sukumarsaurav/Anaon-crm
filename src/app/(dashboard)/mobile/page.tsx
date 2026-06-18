@@ -110,7 +110,7 @@ export default async function MobileAdminPage() {
         </Card>
         <Card padding="sm">
           <p className="text-xs text-slate-500">Site Visits Today</p>
-          <p className="text-2xl font-bold text-indigo-700 mt-1">
+          <p className="text-2xl font-bold text-primary-700 mt-1">
             {agents.reduce((s, a) => s + a.site_visits_today, 0)}
           </p>
         </Card>
@@ -160,7 +160,7 @@ export default async function MobileAdminPage() {
                     <span className="text-sm text-slate-700">{fmt(agent.today_check_out_time)}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="font-semibold text-indigo-700">{agent.site_visits_today}</span>
+                    <span className="font-semibold text-primary-700">{agent.site_visits_today}</span>
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-slate-700">{agent.leads_assigned}</span>
@@ -171,7 +171,7 @@ export default async function MobileAdminPage() {
                         href={`https://maps.google.com?q=${agent.last_location_lat},${agent.last_location_lng}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:underline"
+                        className="inline-flex items-center gap-1 text-xs text-primary-600 hover:underline"
                       >
                         <MapPin size={14} /> View
                       </a>

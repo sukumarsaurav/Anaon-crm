@@ -37,37 +37,37 @@ export default function PriceEscalationPanel({ projectId, escalations, canManage
         <h3 className="font-semibold text-slate-900">Price Escalations</h3>
         {canManage && (
           <button onClick={() => setShowForm((v) => !v)}
-            className="text-xs px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 font-medium">
+            className="text-xs px-3 py-1.5 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 font-medium">
             + Schedule
           </button>
         )}
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="mb-4 p-4 bg-indigo-50 rounded-xl space-y-3">
+        <form onSubmit={handleSubmit} className="mb-4 p-4 bg-primary-50 rounded-xl space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Escalation Date *</label>
               <input name="escalation_date" type="date" required
                 min={new Date().toISOString().split('T')[0]}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">% Increase *</label>
               <input name="percentage_increase" type="number" step="0.1" min="0.1" required
                 placeholder="5"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div className="col-span-2">
               <label className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
               <input name="notes" placeholder="Q2 2025 price revision"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
           </div>
           {error && <p className="text-xs text-red-600">{error}</p>}
           <div className="flex gap-2">
             <button type="submit" disabled={isPending}
-              className="px-4 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-40">
+              className="px-4 py-1.5 bg-primary-600 text-white text-xs font-medium rounded-lg hover:bg-primary-700 disabled:opacity-40">
               {isPending ? 'Saving...' : 'Schedule'}
             </button>
             <button type="button" onClick={() => setShowForm(false)}

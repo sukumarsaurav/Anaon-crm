@@ -63,10 +63,10 @@ export default function MilestoneTimeline({ milestones, projectId }: Props) {
               </span>
             )}
           </div>
-          <span className="text-xl font-bold text-indigo-600">{overall}%</span>
+          <span className="text-xl font-bold text-primary-600">{overall}%</span>
         </div>
         <div className="w-full bg-slate-100 rounded-full h-2.5">
-          <div className="bg-indigo-600 h-2.5 rounded-full transition-all"
+          <div className="bg-primary-600 h-2.5 rounded-full transition-all"
             style={{ width: `${overall}%` }} />
         </div>
         <div className="flex gap-4 mt-2 text-xs text-slate-500">
@@ -90,7 +90,7 @@ export default function MilestoneTimeline({ milestones, projectId }: Props) {
             return (
               <div key={m.id} className="relative z-10">
                 {/* Row */}
-                <div className={`bg-white border rounded-xl transition-all ${isOpen ? 'border-indigo-200 shadow-sm' : 'border-slate-200'}`}>
+                <div className={`bg-white border rounded-xl transition-all ${isOpen ? 'border-primary-200 shadow-sm' : 'border-slate-200'}`}>
                   <button
                     onClick={() => toggleExpand(m.id)}
                     className="w-full flex items-center gap-3 p-4 text-left"
@@ -142,7 +142,7 @@ export default function MilestoneTimeline({ milestones, projectId }: Props) {
                       {/* Progress bar */}
                       <div className="mt-3 mb-3">
                         <div className="w-full bg-slate-100 rounded-full h-1.5">
-                          <div className={`h-1.5 rounded-full ${m.status === 'completed' ? 'bg-green-500' : m.status === 'delayed' ? 'bg-red-500' : 'bg-indigo-500'}`}
+                          <div className={`h-1.5 rounded-full ${m.status === 'completed' ? 'bg-green-500' : m.status === 'delayed' ? 'bg-red-500' : 'bg-primary-500'}`}
                             style={{ width: `${m.completion_percentage}%` }} />
                         </div>
                       </div>
@@ -174,7 +174,7 @@ export default function MilestoneTimeline({ milestones, projectId }: Props) {
                         <div className="flex flex-wrap gap-2">
                           <button
                             onClick={() => { setProgressForm(m.id); setDelayForm(null) }}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-medium rounded-lg hover:bg-indigo-100">
+                            className="flex items-center gap-1 px-3 py-1.5 bg-primary-50 text-primary-700 text-xs font-medium rounded-lg hover:bg-primary-100">
                             <Pencil size={11} /> Update Progress
                           </button>
                           {m.status !== 'delayed' && (

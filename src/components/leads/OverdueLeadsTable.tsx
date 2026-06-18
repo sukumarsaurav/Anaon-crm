@@ -54,11 +54,11 @@ export default function OverdueLeadsTable({ leads, advisors }: OverdueLeadsTable
                 <tr key={lead.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3">
                     <Link href={`/leads/${lead.id}`} className="flex items-center gap-2.5 group">
-                      <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-xs font-semibold text-indigo-700 shrink-0">
+                      <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center text-xs font-semibold text-primary-700 shrink-0">
                         {getInitials(lead.full_name)}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-slate-900 group-hover:text-indigo-600 truncate">
+                        <p className="font-semibold text-slate-900 group-hover:text-primary-600 truncate">
                           {lead.full_name}
                         </p>
                         <p className="text-xs text-slate-500">{formatPhone(lead.phone)}</p>
@@ -107,7 +107,7 @@ export default function OverdueLeadsTable({ leads, advisors }: OverdueLeadsTable
                       </a>
                       <button
                         onClick={() => setReassignLead(lead)}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                         title="Reassign"
                       >
                         <UserCog size={15} />

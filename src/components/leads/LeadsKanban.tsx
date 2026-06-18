@@ -56,10 +56,10 @@ function LeadKanbanCard({ lead }: { lead: Lead }) {
       {/* Name */}
       <Link href={`/leads/${lead.id}`} className="block group">
         <div className="flex items-center gap-2 mb-0.5">
-          <div className="w-7 h-7 bg-indigo-100 rounded-full flex items-center justify-center text-xs font-semibold text-indigo-700 shrink-0">
+          <div className="w-7 h-7 bg-primary-100 rounded-full flex items-center justify-center text-xs font-semibold text-primary-700 shrink-0">
             {getInitials(lead.full_name)}
           </div>
-          <span className="font-semibold text-sm text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
+          <span className="font-semibold text-sm text-slate-900 group-hover:text-primary-600 transition-colors truncate">
             {lead.full_name}
           </span>
         </div>
@@ -118,7 +118,7 @@ function LeadKanbanCard({ lead }: { lead: Lead }) {
       <div className="relative mt-2 pt-2 border-t border-slate-100">
         <button
           onClick={() => setShowStageMenu((v) => !v)}
-          className="w-full flex items-center justify-between text-xs text-slate-500 hover:text-indigo-600 transition-colors"
+          className="w-full flex items-center justify-between text-xs text-slate-500 hover:text-primary-600 transition-colors"
         >
           <StageBadge stage={lead.stage} size="sm" />
           <ChevronDown size={12} className={cn('transition-transform', showStageMenu && 'rotate-180')} />

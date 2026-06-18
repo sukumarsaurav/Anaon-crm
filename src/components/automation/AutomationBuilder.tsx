@@ -65,7 +65,7 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
     })
   }
 
-  const inputCls = 'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400'
+  const inputCls = 'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400'
   const selectCls = `${inputCls} bg-white`
 
   return (
@@ -88,7 +88,7 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
         <div className="flex items-center gap-3">
           <input type="checkbox" id="is_active" name="is_active" value="true"
             defaultChecked={automation?.is_active ?? true}
-            className="w-4 h-4 rounded text-indigo-600" />
+            className="w-4 h-4 rounded text-primary-600" />
           <label htmlFor="is_active" className="text-sm text-slate-700">Active (fires immediately when conditions match)</label>
         </div>
       </div>
@@ -116,7 +116,7 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
             <h3 className="font-semibold text-slate-900">Conditions (optional) — Filter when to fire</h3>
           </div>
           <button type="button" onClick={addCondition}
-            className="flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+            className="flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-800 font-medium">
             <Plus size={13} /> Add Condition
           </button>
         </div>
@@ -164,9 +164,9 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
         <div className="flex items-center gap-3">
           <input type="number" value={delayValue} onChange={e => setDelayValue(parseInt(e.target.value) || 0)}
             min="0" max="365"
-            className="w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+            className="w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           <select value={delayUnit} onChange={e => setDelayUnit(e.target.value as any)}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400">
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
             <option value="minutes">Minutes</option>
             <option value="hours">Hours</option>
             <option value="days">Days</option>
@@ -238,7 +238,7 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
                           ? [...(p.notify_roles ?? []), role]
                           : (p.notify_roles ?? []).filter(r => r !== role)
                       }))}
-                      className="rounded text-indigo-600" />
+                      className="rounded text-primary-600" />
                     {role.replace('_', ' ')}
                   </label>
                 ))}
@@ -318,7 +318,7 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
           Cancel
         </button>
         <button type="submit" disabled={loading}
-          className="flex-1 py-3 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50">
+          className="flex-1 py-3 bg-primary-600 text-white text-sm font-medium rounded-xl hover:bg-primary-700 disabled:opacity-50">
           {loading ? 'Saving...' : automation ? 'Update Automation' : 'Create Automation'}
         </button>
       </div>

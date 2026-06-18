@@ -53,18 +53,18 @@ export default function MilestoneProgressForm({ milestone, projectId, onClose }:
       <div>
         <div className="flex justify-between text-xs text-slate-600 mb-1">
           <label className="font-medium">Completion</label>
-          <span className="font-bold text-indigo-600">{completion}%</span>
+          <span className="font-bold text-primary-600">{completion}%</span>
         </div>
         <input type="range" min={0} max={100} step={5} value={completion}
           onChange={(e) => handleCompletionChange(parseInt(e.target.value, 10))}
-          className="w-full accent-indigo-600" />
+          className="w-full accent-primary-600" />
       </div>
 
       {/* Status */}
       <div>
         <label className="block text-xs font-medium text-slate-600 mb-1">Status</label>
         <select value={status} onChange={(e) => setStatus(e.target.value as MilestoneStatus)}
-          className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400">
+          className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
           <option value="pending">Pending</option>
           <option value="in_progress">In Progress</option>
           <option value="completed">Completed</option>
@@ -77,7 +77,7 @@ export default function MilestoneProgressForm({ milestone, projectId, onClose }:
           <label className="block text-xs font-medium text-slate-600 mb-1">Completion Date</label>
           <input type="date" name="completion_date"
             defaultValue={milestone.actual_completion_date ?? new Date().toISOString().split('T')[0]}
-            className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+            className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
       )}
 
@@ -99,7 +99,7 @@ export default function MilestoneProgressForm({ milestone, projectId, onClose }:
               e.target.form?.appendChild(input)
             })
           }}
-          className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400 font-mono" />
+          className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 font-mono" />
       </div>
 
       {/* Notes */}
@@ -107,7 +107,7 @@ export default function MilestoneProgressForm({ milestone, projectId, onClose }:
         <label className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
         <textarea name="notes" rows={2} defaultValue={milestone.notes ?? ''}
           placeholder="Describe work completed, next steps..."
-          className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+          className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
       </div>
 
       {error && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
@@ -118,7 +118,7 @@ export default function MilestoneProgressForm({ milestone, projectId, onClose }:
           Cancel
         </button>
         <button type="submit" disabled={loading}
-          className="flex-1 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+          className="flex-1 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50">
           {loading ? 'Saving...' : 'Save Progress'}
         </button>
       </div>

@@ -156,7 +156,7 @@ export default async function BookingDetailPage({ params }: PageProps) {
                     <div className="flex items-center gap-2">
                       {doc.sentAt && <span className="text-xs text-emerald-600">Sent {formatDate(doc.sentAt)}</span>}
                       <a href={doc.url} target="_blank" rel="noopener noreferrer"
-                        className="p-1 text-slate-400 hover:text-indigo-600">
+                        className="p-1 text-slate-400 hover:text-primary-600">
                         <ExternalLink size={16} />
                       </a>
                     </div>
@@ -175,7 +175,7 @@ export default async function BookingDetailPage({ params }: PageProps) {
             <h3 className="font-semibold text-slate-900">Payment Schedule</h3>
             <Link
               href={`/clients/${booking.client_id}/bookings/${id}/payments`}
-              className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+              className="text-xs text-primary-600 hover:text-primary-700 font-medium"
             >
               Full view →
             </Link>

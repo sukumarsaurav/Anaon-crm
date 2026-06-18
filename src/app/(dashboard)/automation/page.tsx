@@ -32,7 +32,7 @@ export default async function AutomationPage() {
             <LayoutTemplate size={15} /> Templates
           </Link>
           <Link href="/automation/new"
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700">
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-xl hover:bg-primary-700">
             <Plus size={15} /> New Automation
           </Link>
         </div>
@@ -41,7 +41,7 @@ export default async function AutomationPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Total', value: stats.total, icon: Zap, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+          { label: 'Total', value: stats.total, icon: Zap, color: 'text-primary-600', bg: 'bg-primary-50' },
           { label: 'Active', value: stats.active, icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50' },
           { label: 'Fired (7d)', value: stats.last7dFired, icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
           { label: 'Failed (7d)', value: stats.last7dFailed, icon: XCircle, color: 'text-red-600', bg: 'bg-red-50' },
@@ -66,7 +66,7 @@ export default async function AutomationPage() {
             <p className="text-xs text-slate-400 mt-1 mb-4">Start with a template or build your own</p>
             <div className="flex items-center justify-center gap-3">
               <Link href="/automation/templates" className="px-4 py-2 border border-slate-300 text-sm text-slate-600 rounded-xl hover:bg-slate-50">Browse Templates</Link>
-              <Link href="/automation/new" className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700">Build Custom</Link>
+              <Link href="/automation/new" className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-xl hover:bg-primary-700">Build Custom</Link>
             </div>
           </div>
         ) : (
@@ -75,7 +75,7 @@ export default async function AutomationPage() {
               <div key={auto.id} className="flex items-start gap-4 p-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <Link href={`/automation/${auto.id}`} className="font-semibold text-slate-900 text-sm hover:text-indigo-600 truncate">
+                    <Link href={`/automation/${auto.id}`} className="font-semibold text-slate-900 text-sm hover:text-primary-600 truncate">
                       {auto.name}
                     </Link>
                     {auto.template_key && (

@@ -62,8 +62,8 @@ export default function CommissionBatchPanel({ commissions }: Props) {
     <div className="space-y-4">
       {/* Action bar */}
       {selected.size > 0 && (
-        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex flex-wrap items-center gap-3">
-          <p className="text-sm font-medium text-indigo-800">
+        <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 flex flex-wrap items-center gap-3">
+          <p className="text-sm font-medium text-primary-800">
             {selected.size} selected · {formatCurrency(totalSelected)}
           </p>
           <div className="flex-1" />
@@ -79,7 +79,7 @@ export default function CommissionBatchPanel({ commissions }: Props) {
                 value={utr}
                 onChange={(e) => setUtr(e.target.value)}
                 placeholder="UTR number"
-                className="border border-slate-300 rounded-lg px-2 py-1.5 text-xs w-32 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400"
+                className="border border-slate-300 rounded-lg px-2 py-1.5 text-xs w-32 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400"
               />
               <button onClick={handleMarkPaid} disabled={loading || !utr.trim()}
                 className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 disabled:opacity-50">
@@ -122,7 +122,7 @@ export default function CommissionBatchPanel({ commissions }: Props) {
             {commissions.map((c) => {
               const cfg = COMMISSION_STATUS_CONFIG[c.status as CommissionStatus]
               return (
-                <tr key={c.id} className={selected.has(c.id) ? 'bg-indigo-50' : 'hover:bg-slate-50'}>
+                <tr key={c.id} className={selected.has(c.id) ? 'bg-primary-50' : 'hover:bg-slate-50'}>
                   <td className="px-4 py-3">
                     {['pending','approved'].includes(c.status) && (
                       <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)}
@@ -135,7 +135,7 @@ export default function CommissionBatchPanel({ commissions }: Props) {
                   </td>
                   <td className="px-4 py-3 text-slate-600">{c.booking?.booking_number ?? '—'}</td>
                   <td className="px-4 py-3 text-right text-slate-900">{formatCurrency(c.booking_value)}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-indigo-700">
+                  <td className="px-4 py-3 text-right font-semibold text-primary-700">
                     {formatCurrency(c.commission_amount ?? 0)}
                     {c.commission_pct && <span className="text-xs text-slate-400 ml-1">({c.commission_pct}%)</span>}
                   </td>

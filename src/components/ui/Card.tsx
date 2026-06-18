@@ -49,7 +49,7 @@ export function StatCard({
   value,
   sub,
   icon,
-  iconBg = 'bg-indigo-50',
+  iconBg = 'bg-primary-50',
   trend,
   accent,
   href,
@@ -73,7 +73,7 @@ export function StatCard({
             </div>
           )}
         </div>
-        <div className={cn('p-3 rounded-xl shrink-0', iconBg)}>{icon}</div>
+        <div className={cn('size-9 rounded-lg flex items-center justify-center shrink-0', iconBg)}>{icon}</div>
       </div>
     </div>
   )

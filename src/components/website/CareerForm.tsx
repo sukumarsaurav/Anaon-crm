@@ -34,7 +34,7 @@ export default function CareerForm() {
   if (!open) {
     return (
       <button onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 border border-dashed border-slate-300 text-slate-500 text-sm rounded-xl hover:border-indigo-300 hover:text-indigo-600">
+        className="flex items-center gap-2 px-4 py-2 border border-dashed border-slate-300 text-slate-500 text-sm rounded-xl hover:border-primary-300 hover:text-primary-600">
         <Plus size={16} /> Add Job Listing
       </button>
     )
@@ -48,19 +48,19 @@ export default function CareerForm() {
         <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-slate-700 mb-1">Job Title <span className="text-red-500">*</span></label>
           <input name="title" required placeholder="e.g. Sales Advisor — Jaipur"
-            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Department <span className="text-red-500">*</span></label>
           <input name="department" required placeholder="e.g. Sales, HR, Marketing"
-            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Employment Type</label>
           <select name="employment_type"
-            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400">
+            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
             {EMPLOYMENT_TYPES.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
@@ -70,21 +70,21 @@ export default function CareerForm() {
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
           <input name="location" defaultValue="Jaipur"
-            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
 
         <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-slate-700 mb-1">Description <span className="text-red-500">*</span></label>
           <textarea name="description" required rows={4}
             placeholder="Describe the role, responsibilities, and what success looks like"
-            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
 
         <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-slate-700 mb-1">Requirements</label>
           <textarea name="requirements" rows={3}
             placeholder="Required qualifications, experience, and skills"
-            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
       </div>
 
@@ -96,7 +96,7 @@ export default function CareerForm() {
           Cancel
         </button>
         <button type="submit" disabled={loading}
-          className="flex-1 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50">
+          className="flex-1 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-xl hover:bg-primary-700 disabled:opacity-50">
           {loading ? 'Creating...' : 'Create Listing'}
         </button>
       </div>

@@ -44,20 +44,20 @@ export default async function ClientPortalSupportPage() {
 
       {/* Advisor card */}
       {advisor ? (
-        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-5">
+        <div className="bg-primary-50 border border-primary-200 rounded-xl p-5">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+            <div className="w-12 h-12 bg-primary-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
               {advisor.full_name.charAt(0)}
             </div>
             <div>
-              <p className="font-semibold text-indigo-900">{advisor.full_name}</p>
-              <p className="text-sm text-indigo-600">Your Dedicated Advisor</p>
+              <p className="font-semibold text-primary-900">{advisor.full_name}</p>
+              <p className="text-sm text-primary-600">Your Dedicated Advisor</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             {advisor.phone && (
               <a href={`tel:${advisor.phone}`}
-                className="flex items-center gap-2 px-4 py-3 bg-white border border-indigo-200 rounded-xl text-sm font-medium text-indigo-700 hover:bg-indigo-50">
+                className="flex items-center gap-2 px-4 py-3 bg-white border border-primary-200 rounded-xl text-sm font-medium text-primary-700 hover:bg-primary-50">
                 <Phone size={16} /> Call Now
               </a>
             )}
@@ -83,11 +83,11 @@ export default async function ClientPortalSupportPage() {
           <Building2 size={16} className="text-slate-400" />
           <span>Main Office · Jaipur, Rajasthan</span>
         </div>
-        <a href="mailto:support@aноnindia.com" className="flex items-center gap-3 text-sm text-indigo-600 hover:underline">
+        <a href="mailto:support@aноnindia.com" className="flex items-center gap-3 text-sm text-primary-600 hover:underline">
           <Mail size={16} />
           <span>support@aноnindia.com</span>
         </a>
-        <a href="tel:+911234567890" className="flex items-center gap-3 text-sm text-indigo-600 hover:underline">
+        <a href="tel:+911234567890" className="flex items-center gap-3 text-sm text-primary-600 hover:underline">
           <Phone size={16} />
           <span>+91 12345 67890</span>
         </a>

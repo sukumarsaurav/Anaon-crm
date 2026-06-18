@@ -9,8 +9,8 @@ export default function AllotmentLetterView({ data }: { data: AllotmentLetterDat
   return (
     <div className="max-w-2xl mx-auto bg-white p-10 print:p-8 font-serif">
       {/* Letterhead */}
-      <div className="text-center border-b-2 border-indigo-700 pb-6 mb-8">
-        <h1 className="text-3xl font-bold text-indigo-700 tracking-wide">ANON INDIA</h1>
+      <div className="text-center border-b-2 border-primary-700 pb-6 mb-8">
+        <h1 className="text-3xl font-bold text-primary-700 tracking-wide">ANON INDIA</h1>
         <p className="text-sm text-slate-500 mt-1">Real Estate Developers</p>
         <p className="text-xs text-slate-400 mt-0.5">
           {project?.address ?? project?.city ?? ''} &nbsp;|&nbsp; CIN: XXXXXXXXXXXX
@@ -47,7 +47,7 @@ export default function AllotmentLetterView({ data }: { data: AllotmentLetterDat
       {/* Property table */}
       <table className="w-full mb-6 border border-slate-300 text-sm">
         <thead>
-          <tr className="bg-indigo-600 text-white">
+          <tr className="bg-primary-600 text-white">
             <th className="text-left px-4 py-2 font-medium">Particulars</th>
             <th className="text-left px-4 py-2 font-medium">Details</th>
           </tr>
@@ -102,7 +102,7 @@ export default function AllotmentLetterView({ data }: { data: AllotmentLetterDat
 
       <button
         onClick={() => window.print()}
-        className="print:hidden mt-6 px-6 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700"
+        className="print:hidden mt-6 px-6 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700"
       >
         🖨 Print / Save as PDF
       </button>

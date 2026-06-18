@@ -46,7 +46,7 @@ export default async function BrokerPortalDashboard() {
     { label: 'Leads Registered',  value: stats.total_leads,                       icon: Users,       color: 'text-blue-600',   bg: 'bg-blue-50'   },
     { label: 'Bookings Converted', value: stats.total_bookings,                   icon: BookOpen,    color: 'text-green-600',  bg: 'bg-green-50'  },
     { label: 'Commission Earned',  value: formatCurrency(stats.commission_earned), icon: DollarSign,  color: 'text-amber-600',  bg: 'bg-amber-50'  },
-    { label: 'Conversion Rate',    value: `${stats.conversion_rate}%`,             icon: TrendingUp,  color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Conversion Rate',    value: `${stats.conversion_rate}%`,             icon: TrendingUp,  color: 'text-primary-600', bg: 'bg-primary-50' },
   ]
 
   return (
@@ -76,7 +76,7 @@ export default async function BrokerPortalDashboard() {
         <div className="bg-white border border-slate-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-slate-900">Recent Leads</h3>
-            <Link href="/broker-portal/leads" className="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
+            <Link href="/broker-portal/leads" className="text-xs text-primary-600 hover:text-primary-800 font-medium flex items-center gap-1">
               View all <ArrowRight size={12} />
             </Link>
           </div>
@@ -84,7 +84,7 @@ export default async function BrokerPortalDashboard() {
             <div className="text-center py-8">
               <p className="text-sm text-slate-400">No leads registered yet</p>
               <Link href="/broker-portal/leads"
-                className="mt-3 inline-block px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
+                className="mt-3 inline-block px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700">
                 Register First Lead
               </Link>
             </div>
@@ -110,7 +110,7 @@ export default async function BrokerPortalDashboard() {
         <div className="bg-white border border-slate-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-slate-900">Commission Statement</h3>
-            <Link href="/broker-portal/commissions" className="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
+            <Link href="/broker-portal/commissions" className="text-xs text-primary-600 hover:text-primary-800 font-medium flex items-center gap-1">
               Full statement <ArrowRight size={12} />
             </Link>
           </div>

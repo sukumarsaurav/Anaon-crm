@@ -34,6 +34,7 @@ export interface AutomationCondition {
 export interface AutomationActionPayload {
   // send_whatsapp
   template_name?: string
+  message_body?: string
   recipient?: 'lead' | 'client' | 'advisor' | 'manager'
   // send_notification
   notification_title?: string
@@ -50,6 +51,7 @@ export interface AutomationActionPayload {
   // send_email
   email_subject?: string
   email_body?: string
+  email_to?: string
 }
 
 export interface Automation {
@@ -100,7 +102,7 @@ export interface AutomationContext {
     utm_source?: string | null
     score?: number | null
   }
-  client?: { id: string; full_name: string; phone: string; date_of_birth?: string | null }
+  client?: { id: string; full_name: string; phone: string; email?: string | null; date_of_birth?: string | null }
   booking?: { id: string; booking_date?: string; project_id?: string }
   payment?: { id: string; amount_due?: number; due_date?: string }
   milestone?: { id: string; name: string; project_id?: string }

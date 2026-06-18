@@ -43,7 +43,7 @@ export default async function LegalPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'RERA Registered', value: `${stats.reraRegistered}/${stats.totalProjects}`, icon: Shield, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+          { label: 'RERA Registered', value: `${stats.reraRegistered}/${stats.totalProjects}`, icon: Shield, color: 'text-primary-600', bg: 'bg-primary-50' },
           { label: 'Expiring (60d)', value: stats.expiringSoon, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
           { label: 'Expired', value: stats.expired, icon: XCircle, color: 'text-red-600', bg: 'bg-red-50' },
           { label: 'Pending Deletions', value: stats.pendingDeletions, icon: Lock, color: 'text-purple-600', bg: 'bg-purple-50' },
@@ -92,14 +92,14 @@ export default async function LegalPage() {
 
       {/* Quick navigation */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Link href="/legal/documents" className="bg-white border border-slate-200 rounded-xl p-5 hover:border-indigo-300 hover:shadow-sm transition-all group">
-          <FileText size={20} className="text-indigo-500 mb-3" />
-          <p className="font-semibold text-slate-900 text-sm group-hover:text-indigo-700">Legal Templates</p>
+        <Link href="/legal/documents" className="bg-white border border-slate-200 rounded-xl p-5 hover:border-primary-300 hover:shadow-sm transition-all group">
+          <FileText size={20} className="text-primary-500 mb-3" />
+          <p className="font-semibold text-slate-900 text-sm group-hover:text-primary-700">Legal Templates</p>
           <p className="text-xs text-slate-500 mt-1">{stats.totalTemplates} document templates — booking form, ATS, allotment letter</p>
         </Link>
-        <Link href="/legal/privacy" className="bg-white border border-slate-200 rounded-xl p-5 hover:border-indigo-300 hover:shadow-sm transition-all group">
+        <Link href="/legal/privacy" className="bg-white border border-slate-200 rounded-xl p-5 hover:border-primary-300 hover:shadow-sm transition-all group">
           <Lock size={20} className="text-purple-500 mb-3" />
-          <p className="font-semibold text-slate-900 text-sm group-hover:text-indigo-700">Data Privacy (DPDP)</p>
+          <p className="font-semibold text-slate-900 text-sm group-hover:text-primary-700">Data Privacy (DPDP)</p>
           <p className="text-xs text-slate-500 mt-1">{stats.pendingDeletions} pending deletion requests · consent management</p>
         </Link>
         <div className="bg-white border border-slate-200 rounded-xl p-5">
@@ -134,7 +134,7 @@ export default async function LegalPage() {
                 {projects.map(p => (
                   <tr key={p.projectId} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
-                      <Link href={`/legal/${p.projectId}`} className="font-medium text-slate-900 hover:text-indigo-600">
+                      <Link href={`/legal/${p.projectId}`} className="font-medium text-slate-900 hover:text-primary-600">
                         {p.projectName}
                       </Link>
                     </td>

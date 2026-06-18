@@ -29,7 +29,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
             className={cn(
               'flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
               isTabActive(href)
-                ? 'border-indigo-500 text-indigo-700'
+                ? 'border-primary-500 text-primary-700'
                 : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
             )}
           >

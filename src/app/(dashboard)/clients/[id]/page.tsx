@@ -65,7 +65,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
         backHref="/clients"
         title={
           <span className="flex items-center gap-3 flex-wrap">
-            <span className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-base shrink-0">
+            <span className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-base shrink-0">
               {client.photo_url
                 ? <img src={client.photo_url} alt={client.full_name} className="w-full h-full rounded-full object-cover" />
                 : initials}
@@ -97,7 +97,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
             href={`/clients/${id}?tab=${t.key}`}
             className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors ${
               activeTab === t.key
-                ? 'border-indigo-600 text-indigo-600'
+                ? 'border-primary-600 text-primary-600'
                 : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
           >

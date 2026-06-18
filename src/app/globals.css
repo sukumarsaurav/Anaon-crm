@@ -7,11 +7,40 @@
   --topbar-height: 4rem;
 }
 
+@theme {
+  /* ── Brand / primary (anchored on #136dec) ───────────────────── */
+  --color-primary-50: #eef5fe;
+  --color-primary-100: #d9e8fc;
+  --color-primary-200: #b6d2fa;
+  --color-primary-300: #88b5f6;
+  --color-primary-400: #4d93f1;
+  --color-primary-500: #2b82ef;
+  --color-primary-600: #136dec;
+  --color-primary-700: #1060d4;
+  --color-primary-800: #154fa6;
+  --color-primary-900: #173f80;
+  /* Bare alias so `bg-primary` / `text-primary` / `ring-primary` work */
+  --color-primary: #136dec;
+  --color-primary-hover: #1060d4;
+
+  /* ── Semantic ────────────────────────────────────────────────── */
+  --color-secondary: #6366f1;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  /* ── Surfaces / background ───────────────────────────────────── */
+  --color-surface-light: #ffffff;
+  --color-background-light: #f6f7f8;
+}
+
+/* Fonts go in a separate `inline` block — Tailwind v4 only allows var()
+   references inside `@theme inline`. Keeping this out of the block above
+   is what lets the color tokens register. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-manrope), var(--font-devanagari), ui-sans-serif,
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 html {
@@ -19,12 +48,59 @@ html {
 }
 
 body {
-  background-color: rgb(248 250 252); /* slate-50 */
+  background-color: var(--color-background-light);
   color: rgb(15 23 42); /* slate-900 */
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-manrope), var(--font-devanagari), ui-sans-serif,
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Shared focus ring (composed by all interactive primitives) ── */
+@utility focus-ring {
+  &:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px #ffffff,
+      0 0 0 4px var(--color-primary);
+  }
+}
+
+/* ── Skip-to-content link ───────────────────────────────────────── */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+}
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ── Loading shimmer ────────────────────────────────────────────── */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgb(241 245 249) 25%,
+    rgb(226 232 240) 37%,
+    rgb(241 245 249) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease infinite;
 }
 
 /* Subtle custom scrollbars */
@@ -43,10 +119,10 @@ body {
   background: rgb(148 163 184); /* slate-400 */
 }
 
-/* Sidebar inner scrollbar — thinner, darker */
+/* Sidebar inner scrollbar — thinner */
 aside ::-webkit-scrollbar {
   width: 3px;
 }
 aside ::-webkit-scrollbar-thumb {
-  background: rgb(51 65 85); /* slate-700 */
+  background: rgb(203 213 225); /* slate-300 (light sidebar) */
 }

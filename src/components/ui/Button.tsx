@@ -16,28 +16,28 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const baseClass =
-  'inline-flex items-center justify-center gap-2 font-medium rounded-lg transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none'
+  'inline-flex items-center justify-center gap-2 font-bold rounded-lg transition-all duration-150 active:scale-[0.98] focus-ring disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 select-none'
 
 const variantClass: Record<ButtonVariant, string> = {
   primary:
-    'bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800 focus-visible:ring-indigo-500 shadow-sm hover:shadow-md',
+    'bg-primary text-white hover:bg-primary-hover shadow-lg shadow-primary/30',
   secondary:
-    'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 focus-visible:ring-indigo-500 shadow-sm',
+    'bg-slate-100 text-slate-700 hover:bg-slate-200',
   ghost:
-    'text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-slate-400',
+    'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
   danger:
-    'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 focus-visible:ring-red-500 shadow-sm hover:shadow-md',
+    'bg-error text-white hover:bg-red-600 shadow-lg shadow-error/30',
   outline:
-    'border border-indigo-500 text-indigo-600 hover:bg-indigo-50 focus-visible:ring-indigo-500',
+    'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400',
   success:
-    'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 focus-visible:ring-emerald-500 shadow-sm hover:shadow-md',
+    'bg-success text-white hover:bg-emerald-600 shadow-lg shadow-success/30',
 }
 
 const sizeClass: Record<ButtonSize, string> = {
-  xs: 'px-2.5 py-1 text-xs',
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-4 py-2 text-sm',
-  lg: 'px-5 py-2.5 text-base',
+  xs: 'h-7 px-2.5 text-xs',
+  sm: 'h-8 px-3 text-xs',
+  md: 'h-10 px-4 text-sm',
+  lg: 'h-12 px-6 text-base',
 }
 
 const Spinner = () => (

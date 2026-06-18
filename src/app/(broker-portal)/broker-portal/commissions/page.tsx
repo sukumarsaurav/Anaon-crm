@@ -21,7 +21,7 @@ export default async function BrokerCommissionsPage() {
   ])
 
   const kpis = [
-    { label: 'Total Earned',  value: formatCurrency(stats.commission_earned),  icon: TrendingUp,  color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Total Earned',  value: formatCurrency(stats.commission_earned),  icon: TrendingUp,  color: 'text-primary-600', bg: 'bg-primary-50' },
     { label: 'Pending',       value: formatCurrency(stats.commission_pending),  icon: Clock,       color: 'text-amber-600',  bg: 'bg-amber-50'  },
     { label: 'Paid',          value: formatCurrency(stats.commission_paid),     icon: CheckCircle, color: 'text-green-600',  bg: 'bg-green-50'  },
     { label: 'Bookings',      value: stats.total_bookings,                      icon: DollarSign,  color: 'text-blue-600',   bg: 'bg-blue-50'   },
@@ -74,7 +74,7 @@ export default async function BrokerCommissionsPage() {
                   <td className="px-4 py-3 font-medium text-slate-900">{c.booking?.booking_number ?? '—'}</td>
                   <td className="px-4 py-3 text-right text-slate-600">{formatCurrency(c.booking_value)}</td>
                   <td className="px-4 py-3 text-right text-slate-600">{c.commission_pct ?? broker.commission_rate}%</td>
-                  <td className="px-4 py-3 text-right font-bold text-indigo-700">{formatCurrency(c.commission_amount ?? 0)}</td>
+                  <td className="px-4 py-3 text-right font-bold text-primary-700">{formatCurrency(c.commission_amount ?? 0)}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${cfg?.color} ${cfg?.bg}`}>{cfg?.label}</span>
                   </td>

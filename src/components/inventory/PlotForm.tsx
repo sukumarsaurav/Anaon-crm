@@ -105,7 +105,7 @@ export default function PlotForm({ projectId, plot }: Props) {
         </div>
         <div className="flex justify-between text-sm font-semibold text-slate-800 pt-2 border-t border-slate-200">
           <span>Total Price</span>
-          <span className="text-indigo-700">{formatCurrency(total, { mode: 'exact' })}</span>
+          <span className="text-primary-700">{formatCurrency(total, { mode: 'exact' })}</span>
         </div>
       </div>
 

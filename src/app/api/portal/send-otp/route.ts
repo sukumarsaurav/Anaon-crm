@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     const result = await sendPortalOtp(phone)
     if (!result.success) return NextResponse.json({ error: result.error }, { status: 400 })
 
-    return NextResponse.json({ success: true, otp: result.otp })
+    return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }

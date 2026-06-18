@@ -35,7 +35,7 @@ export default function PageHeader({
           </Link>
         )}
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3 flex-wrap">{title}</h1>
+          <h1 className="text-2xl font-black text-slate-900 flex items-center gap-3 flex-wrap">{title}</h1>
           {subtitle && (
             <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>
           )}

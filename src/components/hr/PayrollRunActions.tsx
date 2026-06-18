@@ -37,7 +37,7 @@ export default function PayrollRunActions({ existingMonths }: Props) {
     <div>
       {!open ? (
         <button onClick={() => setOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 border border-dashed border-slate-300 text-slate-500 text-sm rounded-xl hover:border-indigo-300 hover:text-indigo-600">
+          className="flex items-center gap-2 px-4 py-2 border border-dashed border-slate-300 text-slate-500 text-sm rounded-xl hover:border-primary-300 hover:text-primary-600">
           <Plus size={16} /> New Payroll Run
         </button>
       ) : (
@@ -47,12 +47,12 @@ export default function PayrollRunActions({ existingMonths }: Props) {
             <div>
               <label className="block text-xs text-slate-600 mb-1">Year</label>
               <input name="year" type="number" required defaultValue={defaultYear} min={2020} max={2099}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
             </div>
             <div>
               <label className="block text-xs text-slate-600 mb-1">Month</label>
               <select name="month" required defaultValue={defaultMonth}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400">
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
                 {MONTH_NAMES.slice(1).map((m, i) => (
                   <option key={i+1} value={i+1}>{m}</option>
                 ))}
@@ -61,7 +61,7 @@ export default function PayrollRunActions({ existingMonths }: Props) {
             <div className="col-span-2">
               <label className="block text-xs text-slate-600 mb-1">Notes</label>
               <input name="notes" placeholder="e.g. Includes Diwali bonus"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
             </div>
           </div>
           {error && <p className="text-xs text-red-600">{error}</p>}
@@ -69,7 +69,7 @@ export default function PayrollRunActions({ existingMonths }: Props) {
             <button type="button" onClick={() => setOpen(false)}
               className="px-3 py-2 text-sm border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-50">Cancel</button>
             <button type="submit" disabled={loading}
-              className="flex-1 py-2 text-sm bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50">
+              className="flex-1 py-2 text-sm bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 disabled:opacity-50">
               {loading ? 'Generating...' : 'Generate Payslips'}
             </button>
           </div>

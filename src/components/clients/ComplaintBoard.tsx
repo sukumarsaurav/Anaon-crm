@@ -66,7 +66,7 @@ export default function ComplaintBoard({ clientId, bookings, complaints, canMana
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Category *</label>
               <select name="category" required
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                 {Object.entries(COMPLAINT_CATEGORY_LABELS).map(([v, label]) => (
                   <option key={v} value={v}>{label}</option>
                 ))}
@@ -75,7 +75,7 @@ export default function ComplaintBoard({ clientId, bookings, complaints, canMana
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Priority</label>
               <select name="priority" defaultValue="normal"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                 {(['low', 'normal', 'high', 'urgent'] as ComplaintPriority[]).map((p) => (
                   <option key={p} value={p}>{COMPLAINT_PRIORITY_CONFIG[p].label}</option>
                 ))}
@@ -85,7 +85,7 @@ export default function ComplaintBoard({ clientId, bookings, complaints, canMana
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Booking (optional)</label>
                 <select name="booking_id"
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                   <option value="">— None —</option>
                   {bookings.map((b) => <option key={b.id} value={b.id}>{b.booking_number}</option>)}
                 </select>
@@ -94,7 +94,7 @@ export default function ComplaintBoard({ clientId, bookings, complaints, canMana
             <div className="col-span-2">
               <label className="block text-xs font-medium text-slate-600 mb-1">Description *</label>
               <textarea name="description" required rows={3}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
             </div>
           </div>
           {error && <p className="text-xs text-red-600">{error}</p>}

@@ -95,7 +95,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
             </div>
             <div>
               <p className="text-xs text-slate-500">Revenue Booked</p>
-              <p className="text-xl font-bold text-indigo-700">{formatCurrency(stats.revenue_booked)}</p>
+              <p className="text-xl font-bold text-primary-700">{formatCurrency(stats.revenue_booked)}</p>
             </div>
           </div>
           <div>
@@ -104,7 +104,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
               <span>{soldPct}%</span>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-2">
-              <div className="bg-indigo-500 h-2 rounded-full" style={{ width: `${soldPct}%` }} />
+              <div className="bg-primary-500 h-2 rounded-full" style={{ width: `${soldPct}%` }} />
             </div>
           </div>
         </Card>
@@ -125,22 +125,22 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           )}
           {project.google_maps_pin && (
             <a href={project.google_maps_pin} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700">
+              className="flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700">
               <MapPin size={14} /> View on Maps <ExternalLink size={14} />
             </a>
           )}
           <div className="flex flex-wrap gap-2 pt-1">
             {project.brochure_url && (
               <a href={project.brochure_url} target="_blank" rel="noopener noreferrer"
-                className="text-xs px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100">Brochure</a>
+                className="text-xs px-2 py-1 bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100">Brochure</a>
             )}
             {project.price_list_url && (
               <a href={project.price_list_url} target="_blank" rel="noopener noreferrer"
-                className="text-xs px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100">Price List</a>
+                className="text-xs px-2 py-1 bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100">Price List</a>
             )}
             {project.video_url && (
               <a href={project.video_url} target="_blank" rel="noopener noreferrer"
-                className="text-xs px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100">Video Tour</a>
+                className="text-xs px-2 py-1 bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100">Video Tour</a>
             )}
           </div>
         </Card>

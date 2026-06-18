@@ -5,7 +5,7 @@ import {
   Clock, Edit2, UserCheck, ArrowLeft,
   Banknote, Target, Zap
 } from 'lucide-react'
-import { getLeadById, getLeadActivities, getSiteVisits, getActiveAdvisors, getProjects } from '@/lib/leads/queries'
+import { getLeadById, getLeadActivities, getSiteVisits, getActiveAdvisors, getProjects, checkDuplicate } from '@/lib/leads/queries'
 import { STAGE_CONFIG, STAGE_ORDER, SOURCE_LABELS } from '@/types/leads'
 import StageBadge from '@/components/leads/StageBadge'
 import TemperatureBadge from '@/components/leads/TemperatureBadge'
@@ -13,6 +13,8 @@ import ScoreBadge from '@/components/leads/ScoreBadge'
 import ActivityTimeline from '@/components/leads/ActivityTimeline'
 import LeadDetailActions from '@/components/leads/LeadDetailActions'
 import SiteVisitsCard from '@/components/leads/SiteVisitsCard'
+import LeadDuplicatesPanel from '@/components/leads/LeadDuplicatesPanel'
+import ClickToCallButton from '@/components/leads/ClickToCallButton'
 import { Card } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
@@ -43,6 +45,11 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
 
   const advisors = await getActiveAdvisors(profile?.branch_id ?? undefined)
 
+  const canMerge = ['admin', 'manager'].includes(profile?.role ?? '')
+  const duplicates = canMerge
+    ? (await checkDuplicate(lead.phone, lead.email ?? undefined, lead.id)).leads
+    : []
+
   const currentStageIndex = STAGE_ORDER.indexOf(lead.stage)
 
   return (
@@ -53,9 +60,7 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
         subtitle={<>Lead #{lead.id.slice(0, 8).toUpperCase()} · Added <RelativeTime date={lead.created_at} /></>}
         actions={
           <>
-            <Button href={`tel:${lead.phone}`} variant="secondary" size="sm">
-              <Phone size={16} /> Call
-            </Button>
+            <ClickToCallButton leadId={lead.id} />
             <Button
               href={`https://wa.me/${lead.phone}`}
               external
@@ -158,7 +163,7 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
               <div className="flex items-center gap-2.5">
                 <Phone size={15} className="text-slate-400 shrink-0" />
                 <div>
-                  <a href={`tel:${lead.phone}`} className="text-sm text-indigo-600 hover:underline font-medium">
+                  <a href={`tel:${lead.phone}`} className="text-sm text-primary-600 hover:underline font-medium">
                     {formatPhone(lead.phone)}
                   </a>
                   {lead.alternate_phone && (
@@ -169,7 +174,7 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
               {lead.email && (
                 <div className="flex items-center gap-2.5">
                   <Mail size={15} className="text-slate-400 shrink-0" />
-                  <a href={`mailto:${lead.email}`} className="text-sm text-indigo-600 hover:underline">
+                  <a href={`mailto:${lead.email}`} className="text-sm text-primary-600 hover:underline">
                     {lead.email}
                   </a>
                 </div>
@@ -265,7 +270,7 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
             <h3 className="text-sm font-semibold text-slate-900 mb-3">Assignment</h3>
             {lead.assigned_profile ? (
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-semibold text-indigo-700">
+                <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center text-sm font-semibold text-primary-700">
                   {lead.assigned_profile.full_name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()}
                 </div>
                 <div>
@@ -286,6 +291,11 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
             lead={lead}
             advisors={advisors}
           />
+
+          {/* Possible duplicates (admin/manager) */}
+          {canMerge && duplicates.length > 0 && (
+            <LeadDuplicatesPanel currentLeadId={lead.id} duplicates={duplicates} />
+          )}
 
           {/* Site visits */}
           <SiteVisitsCard

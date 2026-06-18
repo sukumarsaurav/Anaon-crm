@@ -89,7 +89,7 @@ export default async function InventoryReportsPage() {
                       <td className="px-4 py-2.5 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <div className="w-16 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                            <div className="h-1.5 rounded-full bg-indigo-500" style={{ width: `${soldPct}%` }} />
+                            <div className="h-1.5 rounded-full bg-primary-500" style={{ width: `${soldPct}%` }} />
                           </div>
                           <span className="text-xs font-medium text-slate-600">{soldPct}%</span>
                         </div>

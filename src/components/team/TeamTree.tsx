@@ -54,8 +54,8 @@ export default function TeamTree({ data }: { data: TeamsData }) {
         <div className="bg-white rounded-xl border border-slate-200 p-4 mb-2">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
-                <Network size={15} className="text-indigo-600" />
+              <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center shrink-0">
+                <Network size={15} className="text-primary-600" />
               </div>
               <div className="min-w-0">
                 <p className="font-semibold text-slate-900 truncate">{team.name}</p>
@@ -156,7 +156,7 @@ function AddJuniorModal({ team, onClose }: { team: TeamRow; onClose: () => void 
             <div className="flex items-center justify-between mt-1">
               <p><span className="text-slate-400">Password:</span> <span className="font-mono font-medium">{created.pw}</span></p>
               <button onClick={() => { navigator.clipboard.writeText(`${created.email} / ${created.pw}`); setCopied(true); setTimeout(() => setCopied(false), 1500) }}
-                className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg">
+                className="p-1.5 text-slate-400 hover:text-primary-600 rounded-lg">
                 {copied ? <Check size={15} className="text-green-600" /> : <Copy size={15} />}
               </button>
             </div>

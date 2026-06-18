@@ -12,7 +12,7 @@ export default function BookingStatsBar({ stats }: Props) {
     { label: 'Pending Approval',  value: stats.pending_approval, color: 'text-amber-600'  },
     { label: 'Confirmed',         value: stats.confirmed,        color: 'text-emerald-700' },
     { label: 'Cancelled',         value: stats.cancelled,        color: 'text-red-600'    },
-    { label: 'Confirmed Value',   value: formatCurrency(stats.total_value), color: 'text-indigo-700' },
+    { label: 'Confirmed Value',   value: formatCurrency(stats.total_value), color: 'text-primary-700' },
   ]
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">

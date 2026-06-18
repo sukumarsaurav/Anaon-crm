@@ -69,28 +69,28 @@ export default function PaymentPlanBuilder({ bookingId, clientId, totalValue, pa
 
       {/* Add form */}
       {canManage && showAdd && (
-        <form onSubmit={handleAdd} className="mb-4 p-4 bg-indigo-50 rounded-xl space-y-3">
+        <form onSubmit={handleAdd} className="mb-4 p-4 bg-primary-50 rounded-xl space-y-3">
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Amount (₹) *</label>
               <input name="amount_due" type="number" min="1" required
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Due Date *</label>
               <input name="due_date" type="date" required
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Description</label>
               <input name="description" placeholder="Booking amount / EMI..."
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
           </div>
           {error && <p className="text-xs text-red-600">{error}</p>}
           <div className="flex gap-2">
             <button type="submit" disabled={isPending}
-              className="px-4 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-40">
+              className="px-4 py-1.5 bg-primary-600 text-white text-xs font-medium rounded-lg hover:bg-primary-700 disabled:opacity-40">
               {isPending ? 'Adding...' : 'Add'}
             </button>
             <button type="button" onClick={() => setShowAdd(false)}
@@ -101,7 +101,7 @@ export default function PaymentPlanBuilder({ bookingId, clientId, totalValue, pa
 
       {canManage && !showAdd && (
         <button onClick={() => setShowAdd(true)}
-          className="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700 font-medium mb-3">
+          className="flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 font-medium mb-3">
           <Plus size={15} /> Add Installment
         </button>
       )}

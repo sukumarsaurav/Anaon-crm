@@ -86,7 +86,7 @@ export default function CandidateStageActions({ candidateId, stage, interviewers
         )}
         {stage === 'interview_done' && (
           <button onClick={() => setPanel('offer')}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700">
             <Gift size={13} /> Make Offer
           </button>
         )}
@@ -112,12 +112,12 @@ export default function CandidateStageActions({ candidateId, stage, interviewers
             <div className="col-span-2">
               <label className="block text-xs text-slate-600 mb-1">Date & Time</label>
               <input name="interview_date" type="datetime-local" required min={today}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
             </div>
             <div>
               <label className="block text-xs text-slate-600 mb-1">Mode</label>
               <select name="interview_mode" required
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400">
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
                 <option value="in_person">In Person</option>
                 <option value="video">Video Call</option>
                 <option value="phone">Phone</option>
@@ -126,7 +126,7 @@ export default function CandidateStageActions({ candidateId, stage, interviewers
             <div>
               <label className="block text-xs text-slate-600 mb-1">Interviewer</label>
               <select name="interviewer_id"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400">
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
                 <option value="">Assign later</option>
                 {interviewers.map(i => (
                   <option key={i.id} value={i.id}>{i.full_name}</option>
@@ -151,7 +151,7 @@ export default function CandidateStageActions({ candidateId, stage, interviewers
           <div>
             <label className="block text-xs text-slate-600 mb-1">Rating (1-5)</label>
             <select name="interview_rating" required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400">
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
               {[5,4,3,2,1].map(r => <option key={r} value={r}>{r} — {['','Poor','Below Avg','Average','Good','Excellent'][r]}</option>)}
             </select>
           </div>
@@ -159,12 +159,12 @@ export default function CandidateStageActions({ candidateId, stage, interviewers
             <label className="block text-xs text-slate-600 mb-1">Feedback</label>
             <textarea name="interview_feedback" rows={3} required
               placeholder="Skills assessment, strengths, concerns..."
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           <div>
             <label className="block text-xs text-slate-600 mb-1">Recommendation</label>
             <select name="recommendation"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400">
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
               <option value="yes">Recommend for Offer</option>
               <option value="no">Do Not Recommend</option>
               <option value="maybe">On Hold</option>
@@ -188,19 +188,19 @@ export default function CandidateStageActions({ candidateId, stage, interviewers
             <div>
               <label className="block text-xs text-slate-600 mb-1">Offer CTC (₹/year)</label>
               <input name="offer_ctc" type="number" min="0" required placeholder="600000"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
             </div>
             <div>
               <label className="block text-xs text-slate-600 mb-1">Offer Date</label>
               <input name="offer_date" type="date" required defaultValue={today}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-slate-400" />
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
             </div>
           </div>
           <div className="flex gap-2">
             <button type="button" onClick={() => setPanel(null)}
               className="px-3 py-1.5 text-xs border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-100">Cancel</button>
             <button type="submit" disabled={loading}
-              className="px-4 py-1.5 text-xs bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+              className="px-4 py-1.5 text-xs bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50">
               {loading ? 'Saving...' : 'Send Offer'}
             </button>
           </div>

@@ -33,7 +33,7 @@ export default function InstallTemplateButton({ templateKey }: Props) {
   return (
     <div>
       <button onClick={handleInstall} disabled={loading}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50">
         <Download size={12} />
         {loading ? 'Installing...' : 'Install'}
       </button>

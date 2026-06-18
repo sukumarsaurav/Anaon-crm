@@ -56,9 +56,9 @@ export default async function LegalDocumentsPage() {
                   {items.map(tpl => (
                     <div key={tpl.id} className="flex items-start gap-4 px-4 py-4">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
-                        tpl.is_active ? 'bg-indigo-50' : 'bg-slate-100'
+                        tpl.is_active ? 'bg-primary-50' : 'bg-slate-100'
                       }`}>
-                        <FileText size={15} className={tpl.is_active ? 'text-indigo-600' : 'text-slate-400'} />
+                        <FileText size={15} className={tpl.is_active ? 'text-primary-600' : 'text-slate-400'} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
@@ -74,7 +74,7 @@ export default async function LegalDocumentsPage() {
                       <div className="shrink-0 flex items-center gap-2">
                         {tpl.file_url ? (
                           <a href={tpl.file_url} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100">
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100">
                             <Download size={12} /> Download
                           </a>
                         ) : (
