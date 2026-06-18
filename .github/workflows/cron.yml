@@ -1,0 +1,38 @@
+name: Scheduled crons (sub-daily)
+
+# Vercel Hobby allows only ONE run/day per cron, so vercel.json keeps a daily
+# baseline and this free GitHub Actions schedule restores frequent execution.
+# The cron routes accept POST with `Authorization: Bearer $CRON_SECRET`.
+#
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   CRON_BASE_URL  e.g. https://dashboard.anonindia.com   (no trailing slash)
+#   CRON_SECRET    same value as the Vercel env var
+
+on:
+  schedule:
+    - cron: "*/15 * * * *" # every 15 minutes
+  workflow_dispatch: {} # allow manual run from the Actions tab
+
+concurrency:
+  group: scheduled-crons
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Follow-up reminders
+        run: |
+          curl -fsS -X POST "$CRON_BASE_URL/api/cron/followup-reminders" \
+            -H "Authorization: Bearer $CRON_SECRET" || echo "followup-reminders failed (non-fatal)"
+        env:
+          CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+      - name: Automations
+        run: |
+          curl -fsS -X POST "$CRON_BASE_URL/api/cron/automations" \
+            -H "Authorization: Bearer $CRON_SECRET" || echo "automations failed (non-fatal)"
+        env:
+          CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
