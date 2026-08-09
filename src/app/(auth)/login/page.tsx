@@ -3,11 +3,9 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Building2, Mail, Lock, Eye, EyeOff } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const router = useRouter()
-  const supabase = createClient()
   const [isPending, startTransition] = useTransition()
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -20,61 +18,31 @@ export default function LoginPage() {
     setError(null)
 
     startTransition(async () => {
-      // Check lockout status first
-      const checkRes = await fetch('/api/auth/login-event', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'check', email }),
-      })
-      if (!checkRes.ok) {
-        let errorMsg = 'Login failed'
-        try {
-          const data = await checkRes.json()
-          errorMsg = data.error ?? errorMsg
-        } catch { /* non-JSON error response */ }
-        setError(errorMsg)
+      // Lockout check, sign-in, and audit recording all happen server-side so
+      // they cannot be skipped — see src/app/api/auth/login/route.ts.
+      let res: Response
+      try {
+        res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        })
+      } catch {
+        setError('Could not reach the server. Check your connection and try again.')
         return
       }
 
-      const { error: authError, data } = await supabase.auth.signInWithPassword({ email, password })
+      let payload: { redirectTo?: string; error?: string } = {}
+      try {
+        payload = await res.json()
+      } catch { /* non-JSON response */ }
 
-      if (authError) {
-        // Record failure for lockout tracking
-        await fetch('/api/auth/login-event', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'failure', email }),
-        })
-        setError(authError.message)
+      if (!res.ok) {
+        setError(payload.error ?? 'Login failed. Please try again.')
         return
       }
 
-      // Record success
-      if (data.session) {
-        await fetch('/api/auth/login-event', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'success',
-            userId: data.user.id,
-            sessionId: data.session.access_token.slice(-20),
-            deviceInfo: navigator.userAgent.slice(0, 200),
-          }),
-        })
-      }
-
-      // Route by role: staff → dashboard, everyone else (clients) → client portal.
-      const STAFF_ROLES = ['admin', 'manager', 'sales_advisor', 'telecaller']
-      let dest = '/client-portal'
-      if (data.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .maybeSingle()
-        if (profile && STAFF_ROLES.includes(profile.role)) dest = '/'
-      }
-      router.push(dest)
+      router.replace(payload.redirectTo ?? '/')
       router.refresh()
     })
   }

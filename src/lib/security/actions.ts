@@ -21,83 +21,8 @@ async function getAuth() {
   return { supabase, user, profile, svc: serviceSupabase() }
 }
 
-// ── Login with lockout check ──────────────────────────────────────────────────
-
-export async function secureLogin(email: string, password: string) {
-  const svc = serviceSupabase()
-
-  // Find profile by email to check lockout
-  const { data: { users } } = await svc.auth.admin.listUsers()
-  const authUser = users.find(u => u.email === email)
-
-  if (authUser) {
-    const { data: profile } = await svc.from('profiles')
-      .select('id, failed_login_count, lockout_until')
-      .eq('id', authUser.id)
-      .single()
-
-    if (profile?.lockout_until && new Date(profile.lockout_until) > new Date()) {
-      const mins = Math.ceil((new Date(profile.lockout_until).getTime() - Date.now()) / 60000)
-      return { success: false, error: `Account locked. Try again in ${mins} minute(s).` }
-    }
-  }
-
-  // Attempt sign-in via browser client (returns session)
-  // We return a signal and let the client complete the actual Supabase auth
-  // The actual lockout increment is handled via a separate API route on failure
-  return { success: true, proceedWithClient: true }
-}
-
-export async function recordLoginFailure(email: string) {
-  const svc = serviceSupabase()
-  const { data: { users } } = await svc.auth.admin.listUsers()
-  const authUser = users.find(u => u.email === email)
-  if (!authUser) return
-
-  const { data: settings } = await svc.from('security_settings')
-    .select('max_failed_attempts, lockout_minutes').limit(1).single()
-
-  const maxAttempts = settings?.max_failed_attempts ?? 5
-  const lockoutMinutes = settings?.lockout_minutes ?? 30
-
-  const { data: profile } = await svc.from('profiles')
-    .select('failed_login_count').eq('id', authUser.id).single()
-
-  const newCount = (profile?.failed_login_count ?? 0) + 1
-  const lockout = newCount >= maxAttempts
-    ? new Date(Date.now() + lockoutMinutes * 60000).toISOString()
-    : null
-
-  await svc.from('profiles').update({
-    failed_login_count: newCount,
-    lockout_until: lockout,
-  }).eq('id', authUser.id)
-
-  await writeAuditLog({
-    userId: authUser.id,
-    action: lockout ? 'login_locked' : 'login_failed',
-    metadata: { email, attempt: newCount },
-  })
-}
-
-export async function recordLoginSuccess(userId: string, sessionId: string, deviceInfo: string, ip: string) {
-  const svc = serviceSupabase()
-  await svc.from('profiles').update({
-    failed_login_count: 0,
-    lockout_until: null,
-    last_login_at: new Date().toISOString(),
-    last_login_ip: ip || null,
-  }).eq('id', userId)
-
-  await svc.from('user_sessions').insert({
-    user_id: userId,
-    session_id: sessionId,
-    device_info: deviceInfo,
-    ip_address: ip || null,
-  })
-
-  await writeAuditLog({ userId, action: 'login', metadata: { session_id: sessionId } })
-}
+// Login lockout lives in `./login.ts` — it must not be a server action, since
+// that would expose an unauthenticated email-existence oracle.
 
 // ── Session management ────────────────────────────────────────────────────────
 
