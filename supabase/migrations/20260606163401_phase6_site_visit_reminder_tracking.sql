@@ -1,0 +1,1 @@
+ALTER TABLE site_visits ADD COLUMN IF NOT EXISTS reminded_at timestamptz;

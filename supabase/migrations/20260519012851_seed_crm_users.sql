@@ -1,0 +1,21 @@
+-- Originally seeded four demo staff accounts (admin@ / manager@ / advisor@ /
+-- telecaller@anonIndia.com) directly into auth.users, all sharing one hardcoded
+-- plaintext password.
+--
+-- Emptied deliberately on 2026-09-25 for two reasons:
+--
+--   1. Those accounts were deleted from the project that day; every record they
+--      owned was re-pointed to the real admin. Re-creating them on a rebuild
+--      would silently undo that.
+--   2. The original body carried the demo password in plaintext, which does not
+--      belong in version control.
+--
+-- This version is already recorded as applied in schema_migrations, so `db push`
+-- skips it. The empty body only matters when rebuilding from scratch — where the
+-- correct outcome is no seeded users at all. Create the first admin with the
+-- Supabase admin API or the dashboard, then invite the rest through the CRM.
+--
+-- The original statement remains recoverable from the project's own
+-- schema_migrations row and from the 2026-08-17 cluster backup.
+
+SELECT 1;
