@@ -78,7 +78,9 @@ export async function proxy(request: NextRequest) {
   }
 
   // 2FA gate: admin/manager with 2FA enabled must verify per browser session.
-  if (pathname !== '/verify-2fa' && !request.cookies.get('mfa_verified')?.value) {
+  // The cookie is bound to the user id, so another user's mfa_verified cookie on
+  // the same browser does not satisfy this gate.
+  if (pathname !== '/verify-2fa' && request.cookies.get('mfa_verified')?.value !== userId) {
     const { role, twoFactorEnabled } = await getUserGate(supabase, userId)
     if (twoFactorEnabled && role && ['admin', 'manager'].includes(role)) {
       return NextResponse.redirect(new URL('/verify-2fa', request.url))

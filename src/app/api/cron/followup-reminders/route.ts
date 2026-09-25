@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { checkBearer } from '@/lib/security/secrets'
 import { createServiceClient } from '@/lib/supabase/service'
 import { fireAutomations } from '@/lib/automation/engine'
 import { notifyUsers } from '@/lib/notifications/notify'
 
-const CRON_SECRET = process.env.CRON_SECRET ?? 'anon_india_cron_secret'
+const CRON_SECRET = process.env.CRON_SECRET
 
 // Stages where a follow-up reminder no longer makes sense.
 const CLOSED_STAGES_FILTER = '("closed_won","not_interested")'
@@ -21,8 +22,7 @@ const CLOSED_STAGES_FILTER = '("closed_won","not_interested")'
  *   GET|POST /api/cron/followup-reminders   Authorization: Bearer <CRON_SECRET>
  */
 async function handler(req: NextRequest) {
-  const auth = req.headers.get('authorization')
-  if (auth !== `Bearer ${CRON_SECRET}`) {
+  if (!checkBearer(req.headers.get('authorization'), CRON_SECRET)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

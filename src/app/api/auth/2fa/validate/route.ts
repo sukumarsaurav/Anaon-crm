@@ -22,9 +22,11 @@ export async function POST(req: NextRequest) {
 
   await writeAuditLog({ userId: user.id, action: 'login', metadata: { mfa: true } })
 
-  // Set mfa_verified cookie (httpOnly, same-site, 8h)
+  // Bind the cookie to this user id, not a constant '1'. Otherwise the cookie
+  // from one signed-in user's 2FA check would satisfy the proxy gate for a
+  // different user on the same browser, letting them skip 2FA.
   const res = NextResponse.json({ success: true })
-  res.cookies.set('mfa_verified', '1', {
+  res.cookies.set('mfa_verified', user.id, {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',

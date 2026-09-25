@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
+import { matchesSecret, verifyHmacSha256 } from '@/lib/security/secrets'
 
-const META_VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN ?? 'anon_india_meta_verify'
+// Fail closed: unset env → no valid token / no valid signature.
+const META_VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN
+const META_APP_SECRET = process.env.META_APP_SECRET
 
 // GET — webhook verification by Meta
 export async function GET(req: NextRequest) {
@@ -10,7 +13,7 @@ export async function GET(req: NextRequest) {
   const token = searchParams.get('hub.verify_token')
   const challenge = searchParams.get('hub.challenge')
 
-  if (mode === 'subscribe' && token === META_VERIFY_TOKEN) {
+  if (mode === 'subscribe' && matchesSecret(META_VERIFY_TOKEN, token)) {
     return new NextResponse(challenge, { status: 200 })
   }
   return new NextResponse('Forbidden', { status: 403 })
@@ -18,9 +21,16 @@ export async function GET(req: NextRequest) {
 
 // POST — incoming lead events from Meta
 export async function POST(req: NextRequest) {
+  // Verify the payload actually came from Meta (HMAC over the raw body) before
+  // trusting anything in it — the handler writes via the service-role client.
+  const rawBody = await req.text()
+  if (!verifyHmacSha256(rawBody, req.headers.get('x-hub-signature-256'), META_APP_SECRET)) {
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+  }
+
   let body: any
   try {
-    body = await req.json()
+    body = JSON.parse(rawBody)
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }

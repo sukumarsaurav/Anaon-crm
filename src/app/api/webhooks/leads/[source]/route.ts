@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { matchesSecret } from '@/lib/security/secrets'
 import { ingestLead } from '@/lib/leads/ingest'
 import type { LeadSource } from '@/types/leads'
 
-const WEBHOOK_SECRET = process.env.LEAD_WEBHOOK_SECRET ?? 'anon_india_lead_secret'
+const WEBHOOK_SECRET = process.env.LEAD_WEBHOOK_SECRET
 
 // Maps the URL slug → canonical lead_source enum value.
 const SOURCE_MAP: Record<string, LeadSource> = {
@@ -50,7 +51,7 @@ export async function POST(
 
   // Auth via shared secret (header or ?token=). Portals can't send Bearer auth.
   const token = req.nextUrl.searchParams.get('token') ?? req.headers.get('x-webhook-secret')
-  if (token !== WEBHOOK_SECRET) {
+  if (!matchesSecret(WEBHOOK_SECRET, token)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { checkBearer } from '@/lib/security/secrets'
 import { createServiceClient } from '@/lib/supabase/service'
 import { fireAutomations } from '@/lib/automation/engine'
 
-const CRON_SECRET = process.env.CRON_SECRET ?? 'anon_india_cron_secret'
+const CRON_SECRET = process.env.CRON_SECRET
 
 export async function POST(req: NextRequest) {
-  const auth = req.headers.get('authorization')
-  if (auth !== `Bearer ${CRON_SECRET}`) {
+  if (!checkBearer(req.headers.get('authorization'), CRON_SECRET)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

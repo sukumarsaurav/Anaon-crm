@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
+import { matchesSecret } from '@/lib/security/secrets'
+
+// Fail closed: unset env → endpoint rejects everything. Configure the Exotel
+// callback URL as .../api/webhooks/exotel?token=<EXOTEL_WEBHOOK_TOKEN>.
+const EXOTEL_WEBHOOK_TOKEN = process.env.EXOTEL_WEBHOOK_TOKEN
+
+function authorized(req: NextRequest): boolean {
+  const token = req.nextUrl.searchParams.get('token') ?? req.headers.get('x-webhook-token')
+  return matchesSecret(EXOTEL_WEBHOOK_TOKEN, token)
+}
 
 /**
  * Exotel call status callback. Completes the click-to-call activity (recording +
@@ -61,6 +71,7 @@ async function handle(params: URLSearchParams) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!authorized(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   let params: URLSearchParams
   const ct = req.headers.get('content-type') ?? ''
   if (ct.includes('application/json')) {
@@ -75,6 +86,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  if (!authorized(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await handle(req.nextUrl.searchParams)
   return NextResponse.json({ status: 'ok' })
 }
