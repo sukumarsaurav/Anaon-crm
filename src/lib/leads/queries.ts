@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
+import { getActiveProjectOptions } from '@/lib/cache/referenceData'
 import type { Lead, LeadActivity, LeadFilters, SiteVisit, DuplicateCheck } from '@/types/leads'
 import { computeSlaStatus } from '@/lib/utils'
 
@@ -267,14 +268,14 @@ export async function getActiveAdvisors(branchId?: string) {
   return data ?? []
 }
 
+/**
+ * Active projects for the lead screens' project picker.
+ *
+ * Served from the shared reference-data cache — the row set is the same for
+ * every user, so re-querying it on each render was a round-trip for nothing.
+ */
 export async function getProjects() {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('projects')
-    .select('id, name, city, type, status')
-    .eq('is_active', true)
-    .order('name')
-  return data ?? []
+  return getActiveProjectOptions()
 }
 
 export async function getRoundRobinAdvisor(branchId?: string): Promise<string | null> {

@@ -1,6 +1,7 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
+import { PROJECTS_TAG } from '@/lib/cache/referenceData'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 
@@ -50,6 +51,7 @@ export async function createProject(formData: FormData) {
 
   if (error || !data) return { success: false, error: error?.message ?? 'Failed' }
   revalidatePath('/inventory')
+  updateTag(PROJECTS_TAG)
   return { success: true, id: data.id }
 }
 
@@ -88,6 +90,7 @@ export async function updateProject(id: string, formData: FormData) {
   if (error) return { success: false, error: error.message }
   revalidatePath('/inventory')
   revalidatePath(`/inventory/${id}`)
+  updateTag(PROJECTS_TAG)
   return { success: true }
 }
 
