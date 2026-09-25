@@ -42,14 +42,13 @@ export async function getProjectById(id: string): Promise<Project | null> {
   return data as Project | null
 }
 
-export async function getProjectStats(projectId: string): Promise<ProjectStats> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('plots')
-    .select('status, total_price')
-    .eq('project_id', projectId)
+/** Empty stats, so callers can render a project with no plots without branching. */
+const emptyStats = (): ProjectStats => ({
+  total: 0, available: 0, soft_hold: 0, booked: 0, registered: 0, sold: 0,
+  not_for_sale: 0, revenue_potential: 0, revenue_booked: 0,
+})
 
-  const plots = data ?? []
+function tallyPlots(plots: { status: string; total_price: number | null }[]): ProjectStats {
   const sum = (statuses: string[]) =>
     plots.filter((p) => statuses.includes(p.status)).reduce((acc, p) => acc + (p.total_price ?? 0), 0)
 
@@ -64,6 +63,49 @@ export async function getProjectStats(projectId: string): Promise<ProjectStats> 
     revenue_potential: sum(['available']),
     revenue_booked:    sum(['booked', 'registered', 'sold']),
   }
+}
+
+/**
+ * Stats for many projects in a single query.
+ *
+ * The inventory listing previously called `getProjectStats` once per project —
+ * 26 round-trips to render one page. They ran in parallel, but each still cost
+ * a full request to Supabase, and the page stayed ~1.3s while every other route
+ * got faster. One `in` query returns the same rows.
+ */
+export async function getProjectStatsBulk(
+  projectIds: string[],
+): Promise<Record<string, ProjectStats>> {
+  const out: Record<string, ProjectStats> = Object.fromEntries(
+    projectIds.map((id) => [id, emptyStats()]),
+  )
+  if (projectIds.length === 0) return out
+
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('plots')
+    .select('project_id, status, total_price')
+    .in('project_id', projectIds)
+
+  const grouped = new Map<string, { status: string; total_price: number | null }[]>()
+  for (const plot of data ?? []) {
+    const list = grouped.get(plot.project_id)
+    if (list) list.push(plot)
+    else grouped.set(plot.project_id, [plot])
+  }
+
+  for (const [id, plots] of grouped) out[id] = tallyPlots(plots)
+  return out
+}
+
+export async function getProjectStats(projectId: string): Promise<ProjectStats> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('plots')
+    .select('status, total_price')
+    .eq('project_id', projectId)
+
+  return tallyPlots(data ?? [])
 }
 
 // ── Plots ────────────────────────────────────────────────────

@@ -36,17 +36,30 @@ async function getLockoutPolicy(
 /**
  * Resolve an auth user id from an email.
  *
- * `listUsers()` defaults to 50 users per page, so the previous single-call
- * `.find()` silently stopped matching anyone past the first page. This walks
- * every page instead.
+ * Reads `profiles`, which mirrors the email and is indexed — one cheap query.
+ * Falls back to paging the admin user list only when that misses, since
+ * `profiles.email` can be null on rows created before the column was populated.
+ *
+ * The fallback pages deliberately: `listUsers()` defaults to 50 per page, so a
+ * single call plus `.find()` silently stops matching anyone past the first page.
+ * It is also slow enough to dominate login latency (~2s), which is why it is no
+ * longer the primary path.
  */
 async function findAuthUserIdByEmail(
   svc: ReturnType<typeof serviceSupabase>,
   email: string,
 ): Promise<string | null> {
   const needle = email.trim().toLowerCase()
-  const perPage = 1000
 
+  const { data: profile } = await svc
+    .from('profiles')
+    .select('id')
+    .ilike('email', needle)
+    .maybeSingle()
+
+  if (profile?.id) return profile.id
+
+  const perPage = 1000
   for (let page = 1; ; page++) {
     const { data, error } = await svc.auth.admin.listUsers({ page, perPage })
     if (error) return null
@@ -80,16 +93,31 @@ export type LockoutStatus =
 export async function checkAccountLockout(email: string): Promise<LockoutStatus> {
   const svc = serviceSupabase()
 
-  const userId = await findAuthUserIdByEmail(svc, email)
-  if (!userId) return { locked: false, userId: null }
-
+  // Resolve the user and read their lockout in one query — this runs before
+  // every sign-in, so a second round-trip here is paid on every login.
   const { data: profile } = await svc
     .from('profiles')
-    .select('lockout_until')
-    .eq('id', userId)
+    .select('id, lockout_until')
+    .ilike('email', email.trim().toLowerCase())
     .maybeSingle()
 
-  const until = profile?.lockout_until ? new Date(profile.lockout_until) : null
+  let userId = profile?.id ?? null
+  let lockoutUntil = profile?.lockout_until ?? null
+
+  if (!userId) {
+    // Profile row missing or email not mirrored — fall back to the admin API.
+    userId = await findAuthUserIdByEmail(svc, email)
+    if (!userId) return { locked: false, userId: null }
+
+    const { data: fallback } = await svc
+      .from('profiles')
+      .select('lockout_until')
+      .eq('id', userId)
+      .maybeSingle()
+    lockoutUntil = fallback?.lockout_until ?? null
+  }
+
+  const until = lockoutUntil ? new Date(lockoutUntil) : null
   if (until && until > new Date()) {
     return {
       locked: true,
@@ -140,28 +168,40 @@ export async function recordLoginFailure(email: string, userId?: string | null) 
   })
 }
 
+/**
+ * Records a successful sign-in and returns the user's role.
+ *
+ * The three writes are independent, so they go out together rather than in
+ * sequence — on the login path each round-trip is latency the user watches. The
+ * role comes back from the profile update itself, which saves the caller a
+ * further query just to decide where to redirect.
+ */
 export async function recordLoginSuccess(
   userId: string,
   sessionId: string,
   deviceInfo: string,
   ip: string,
-) {
+): Promise<{ role: string | null }> {
   const svc = serviceSupabase()
 
-  await svc.from('profiles').update({
-    failed_login_count: 0,
-    lockout_until: null,
-    last_failed_login_at: null,
-    last_login_at: new Date().toISOString(),
-    last_login_ip: ip || null,
-  }).eq('id', userId)
+  const [profileRes] = await Promise.all([
+    svc.from('profiles').update({
+      failed_login_count: 0,
+      lockout_until: null,
+      last_failed_login_at: null,
+      last_login_at: new Date().toISOString(),
+      last_login_ip: ip || null,
+    }).eq('id', userId).select('role').maybeSingle(),
 
-  await svc.from('user_sessions').insert({
-    user_id: userId,
-    session_id: sessionId,
-    device_info: deviceInfo,
-    ip_address: ip || null,
-  })
+    svc.from('user_sessions').insert({
+      user_id: userId,
+      session_id: sessionId,
+      device_info: deviceInfo,
+      ip_address: ip || null,
+    }),
 
-  await writeAuditLog({ userId, action: 'login', metadata: { session_id: sessionId } })
+    writeAuditLog({ userId, action: 'login', metadata: { session_id: sessionId } }),
+  ])
+
+  return { role: profileRes.data?.role ?? null }
 }

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { revalidatePath } from 'next/cache'
 import { writeAuditLog } from './audit'
+import { invalidateSecuritySettings } from './proxyCache'
 
 function serviceSupabase() {
   return createServiceClient(
@@ -86,6 +87,7 @@ export async function toggleIPWhitelistGlobal(enabled: boolean) {
   const { user, profile, svc } = await getAuth()
   if (profile?.role !== 'admin') throw new Error('Unauthorized')
   await svc.from('security_settings').update({ ip_whitelist_enabled: enabled, updated_by: user.id, updated_at: new Date().toISOString() })
+  invalidateSecuritySettings()
   await writeAuditLog({ userId: user.id, action: 'ip_whitelist_updated', metadata: { global_enabled: enabled } })
   revalidatePath('/admin/security')
 }

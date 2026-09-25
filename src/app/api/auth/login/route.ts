@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import {
   checkAccountLockout,
@@ -63,26 +62,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: INVALID_CREDENTIALS }, { status: 401 })
     }
 
-    await recordLoginSuccess(
+    // The role comes back from the same write that records the login, through
+    // the service client — so profile RLS can never turn a valid sign-in into a
+    // failed redirect, and it costs no extra round-trip.
+    const { role } = await recordLoginSuccess(
       data.user.id,
       data.session.access_token.slice(-20),
       req.headers.get('user-agent')?.slice(0, 200) ?? '',
       ip,
     )
 
-    // Role lookup through the service client so profile RLS can never turn a
-    // valid sign-in into a failed redirect.
-    const svc = createServiceClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    )
-    const { data: profile } = await svc
-      .from('profiles')
-      .select('role')
-      .eq('id', data.user.id)
-      .maybeSingle()
-
-    if (!profile || !STAFF_ROLES.includes(profile.role)) {
+    if (!role || !STAFF_ROLES.includes(role)) {
       // No CRM role means there is nowhere valid to land — the client portal runs
       // on its own OTP session and would bounce them straight back to a login page.
       await supabase.auth.signOut()
@@ -92,7 +82,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    return NextResponse.json({ redirectTo: '/' })
+    // Straight to the real page: '/' is only a redirect to /dashboard, and
+    // bouncing through it costs a full extra proxy pass on every login.
+    return NextResponse.json({ redirectTo: '/dashboard' })
   } catch (err) {
     console.error('[auth/login]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

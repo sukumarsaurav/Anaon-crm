@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic'
 
-import { getProjects } from '@/lib/inventory/queries'
-import { getProjectStats } from '@/lib/inventory/queries'
+import { getProjects, getProjectStatsBulk } from '@/lib/inventory/queries'
 import ProjectCard from '@/components/inventory/ProjectCard'
 import { PROJECT_STATUS_CONFIG, PROJECT_TYPE_LABELS } from '@/types/inventory'
 import { Plus, Building2 } from 'lucide-react'
@@ -22,9 +21,8 @@ export default async function InventoryPage({ searchParams }: PageProps) {
     search: params.search,
   })
 
-  // Fetch stats for all projects in parallel
-  const statsArr = await Promise.all(projects.map((p) => getProjectStats(p.id)))
-  const statsMap = Object.fromEntries(projects.map((p, i) => [p.id, statsArr[i]]))
+  // Stats for every project in one query, not one query per project.
+  const statsMap = await getProjectStatsBulk(projects.map((p) => p.id))
 
   const statuses = Object.entries(PROJECT_STATUS_CONFIG)
   const types    = Object.entries(PROJECT_TYPE_LABELS)

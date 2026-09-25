@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { getSecuritySettings, getUserGate } from '@/lib/security/proxyCache'
 
 const PUBLIC_PATHS = [
   '/login',
@@ -13,6 +14,8 @@ const PUBLIC_PATHS = [
   '/broker-portal',
   '/client-portal',
 ]
+
+const STAFF_ROLES = ['admin', 'manager', 'sales_advisor', 'telecaller']
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some(p => pathname.startsWith(p))
@@ -47,52 +50,50 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // The project signs JWTs with an asymmetric key (ES256), so getClaims()
+  // verifies the token locally via WebCrypto against a cached JWKS — no network
+  // call, unlike getUser(). It still refreshes an about-to-expire session, so
+  // cookie rotation keeps working.
+  //
+  // Trade-off vs getUser(): a token stays valid locally until it expires, so a
+  // user deleted or banned mid-session keeps passing this gate for the
+  // remainder of their access token's life. Mutations still go through RLS,
+  // which is evaluated by the database against live state.
+  const { data: claimsData } = await supabase.auth.getClaims()
+  const userId = (claimsData?.claims?.sub as string | undefined) ?? null
 
   // Public paths — let through, redirect logged-in users away from /login (by role).
   if (isPublic(pathname)) {
-    if (user && pathname === '/login') {
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
-      const isStaff = !!profile && ['admin', 'manager', 'sales_advisor', 'telecaller'].includes(profile.role)
-      return NextResponse.redirect(new URL(isStaff ? '/' : '/client-portal', request.url))
+    if (userId && pathname === '/login') {
+      const { role } = await getUserGate(supabase, userId)
+      const isStaff = !!role && STAFF_ROLES.includes(role)
+      return NextResponse.redirect(new URL(isStaff ? '/dashboard' : '/client-portal', request.url))
     }
     return supabaseResponse
   }
 
   // Not authenticated → login
-  if (!user) {
+  if (!userId) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // 2FA gate: admin/manager with 2FA enabled must verify per browser session
-  if (pathname !== '/verify-2fa') {
-    const mfaVerified = request.cookies.get('mfa_verified')?.value
-    if (!mfaVerified) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role, two_factor_enabled')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.two_factor_enabled && ['admin', 'manager'].includes(profile.role)) {
-        return NextResponse.redirect(new URL('/verify-2fa', request.url))
-      }
+  // 2FA gate: admin/manager with 2FA enabled must verify per browser session.
+  if (pathname !== '/verify-2fa' && !request.cookies.get('mfa_verified')?.value) {
+    const { role, twoFactorEnabled } = await getUserGate(supabase, userId)
+    if (twoFactorEnabled && role && ['admin', 'manager'].includes(role)) {
+      return NextResponse.redirect(new URL('/verify-2fa', request.url))
     }
   }
 
   // IP whitelist (dashboard routes only, skip API)
   if (!pathname.startsWith('/api')) {
-    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-      ?? request.headers.get('x-real-ip')
-      ?? '127.0.0.1'
+    const { ipWhitelistEnabled } = await getSecuritySettings(supabase)
 
-    const { data: settings } = await supabase
-      .from('security_settings')
-      .select('ip_whitelist_enabled')
-      .limit(1)
-      .maybeSingle()
+    if (ipWhitelistEnabled) {
+      const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+        ?? request.headers.get('x-real-ip')
+        ?? '127.0.0.1'
 
-    if (settings?.ip_whitelist_enabled) {
       const { data: allowed } = await supabase
         .from('ip_whitelist')
         .select('id')

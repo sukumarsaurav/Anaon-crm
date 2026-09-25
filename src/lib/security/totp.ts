@@ -1,5 +1,6 @@
 import * as OTPAuth from 'otpauth'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { invalidateGate } from './proxyCache'
 
 const serviceSupabase = () => createServiceClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -53,6 +54,9 @@ export async function enableTOTP(userId: string, secret: string) {
     .from('profiles')
     .update({ two_factor_enabled: true, two_factor_secret: secret })
     .eq('id', userId)
+  // Without this the proxy would keep serving the cached "2FA off" gate for up
+  // to its TTL, leaving the user unprotected right after they enrolled.
+  invalidateGate(userId)
 }
 
 export async function disableTOTP(userId: string) {
@@ -60,4 +64,5 @@ export async function disableTOTP(userId: string) {
     .from('profiles')
     .update({ two_factor_enabled: false, two_factor_secret: null })
     .eq('id', userId)
+  invalidateGate(userId)
 }
