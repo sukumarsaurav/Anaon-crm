@@ -20,13 +20,13 @@ export default async function AdminSecurityPage() {
     supabase.from('ip_whitelist').select('*').order('created_at', { ascending: false }),
     supabase.from('security_settings').select('*').limit(1).maybeSingle(),
     supabase.from('profiles')
-      .select('id, full_name, role, failed_login_count, lockout_until, last_login_at, two_factor_enabled, is_active')
+      .select('id, full_name, role, failed_login_count, lockout_until, last_login_at, is_active')
       .in('role', ['admin', 'manager', 'sales_advisor', 'telecaller'])
       .eq('is_active', true)
       .order('full_name'),
     supabase.from('audit_logs')
       .select('id, action, created_at, ip_address, metadata, profiles:user_id(full_name)')
-      .in('action', ['login_failed', 'login_locked', '2fa_failed'])
+      .in('action', ['login_failed', 'login_locked'])
       .order('created_at', { ascending: false })
       .limit(20),
   ])
@@ -80,7 +80,6 @@ export default async function AdminSecurityPage() {
               <tr className="bg-slate-50 border-b border-slate-100">
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">User</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Role</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">2FA</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Failed Logins</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Status</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Last Login</th>
@@ -89,19 +88,10 @@ export default async function AdminSecurityPage() {
             <tbody className="divide-y divide-slate-50">
               {(teamRes.data ?? []).map(p => {
                 const isLocked = p.lockout_until && new Date(p.lockout_until) > new Date()
-                const needs2FA = ['admin', 'manager'].includes(p.role) && !p.two_factor_enabled
                 return (
                   <tr key={p.id} className={`hover:bg-slate-50 ${isLocked ? 'bg-red-50/40' : ''}`}>
                     <td className="px-4 py-3 font-medium text-slate-900">{p.full_name}</td>
                     <td className="px-4 py-3 text-slate-500 capitalize">{p.role?.replace('_', ' ')}</td>
-                    <td className="px-4 py-3">
-                      {p.two_factor_enabled
-                        ? <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">On</span>
-                        : needs2FA
-                          ? <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">Required</span>
-                          : <span className="text-xs text-slate-400">—</span>
-                      }
-                    </td>
                     <td className="px-4 py-3">
                       <span className={`font-semibold ${p.failed_login_count > 0 ? 'text-red-600' : 'text-slate-400'}`}>
                         {p.failed_login_count}
@@ -145,7 +135,7 @@ export default async function AdminSecurityPage() {
             {recentFailedRes.data?.map(log => {
               const action = log.action === 'login_locked' ? 'Account Locked'
                 : log.action === 'login_failed' ? 'Failed Login'
-                : '2FA Failed'
+                : 'Security Event'
               return (
                 <div key={log.id} className="flex items-center justify-between text-sm py-2 border-b border-slate-50 last:border-0">
                   <div className="flex items-center gap-3">

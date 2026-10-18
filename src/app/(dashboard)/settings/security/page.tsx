@@ -3,7 +3,6 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { notFound } from 'next/navigation'
-import TwoFactorSetup from '@/components/security/TwoFactorSetup'
 import ActiveSessions from '@/components/security/ActiveSessions'
 import { getActiveSessions } from '@/lib/security/actions'
 
@@ -14,7 +13,7 @@ export default async function SecuritySettingsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, role, two_factor_enabled, last_login_at, last_login_ip')
+    .select('full_name, role, last_login_at, last_login_ip')
     .eq('id', user.id)
     .single()
 
@@ -43,14 +42,6 @@ export default async function SecuritySettingsPage() {
           <span className="text-slate-800 font-medium capitalize">{profile?.role?.replace('_', ' ') ?? '—'}</span>
         </div>
       </div>
-
-      {/* 2FA setup (admin + manager only) */}
-      {['admin', 'manager'].includes(profile?.role ?? '') && (
-        <TwoFactorSetup
-          enabled={profile?.two_factor_enabled ?? false}
-          userId={user.id}
-        />
-      )}
 
       {/* Active sessions */}
       <ActiveSessions sessions={sessions ?? []} currentUserId={user.id} />

@@ -4,7 +4,6 @@ import { getSecuritySettings, getUserGate } from '@/lib/security/proxyCache'
 
 const PUBLIC_PATHS = [
   '/login',
-  '/verify-2fa',
   '/api/auth',
   '/api/mobile',
   '/api/webhooks',
@@ -75,16 +74,6 @@ export async function proxy(request: NextRequest) {
   // Not authenticated → login
   if (!userId) {
     return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  // 2FA gate: admin/manager with 2FA enabled must verify per browser session.
-  // The cookie is bound to the user id, so another user's mfa_verified cookie on
-  // the same browser does not satisfy this gate.
-  if (pathname !== '/verify-2fa' && request.cookies.get('mfa_verified')?.value !== userId) {
-    const { role, twoFactorEnabled } = await getUserGate(supabase, userId)
-    if (twoFactorEnabled && role && ['admin', 'manager'].includes(role)) {
-      return NextResponse.redirect(new URL('/verify-2fa', request.url))
-    }
   }
 
   // IP whitelist (dashboard routes only, skip API)
