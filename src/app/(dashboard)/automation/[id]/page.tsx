@@ -15,7 +15,7 @@ export default async function AutomationDetailPage({ params }: Props) {
   const { id } = await params
 
   const supabase = await createClient()
-  const { data: templates } = await supabase.from('whatsapp_templates').select('name').eq('status', 'approved').order('name')
+  const { data: templates } = await supabase.from('whatsapp_templates').select('name, category').eq('status', 'approved').order('name')
   const [automation, advisors, logsAll] = await Promise.all([
     getAutomationById(id),
     supabase.from('profiles').select('id, full_name').in('role', ['sales_advisor', 'manager']).eq('is_active', true).order('full_name'),

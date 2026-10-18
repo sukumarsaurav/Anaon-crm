@@ -92,8 +92,15 @@ const REPLACEABLE_BY: Record<string, string[]> = {
 const OPT_OUT = new Set(['stop', 'unsubscribe', 'stop promotions', 'stop all', 'opt out', 'optout', 'cancel subscription'])
 const OPT_IN = new Set(['start', 'subscribe', 'unstop', 'resume promotions'])
 
-function optChange(text: string | null | undefined): boolean | null {
-  const t = (text ?? '').trim().toLowerCase()
+/**
+ * The contact's opt-out state after this message, or null when it says nothing new.
+ * AgencyX reports it on every received message (contact.opted_out), which also covers
+ * a tapped "Stop promotions" button; the phrase match is the fallback for payloads
+ * without it.
+ */
+function optChange(event: AgencyXMessageEvent): boolean | null {
+  if (typeof event.contact?.opted_out === 'boolean') return event.contact.opted_out
+  const t = (event.message?.text ?? '').trim().toLowerCase()
   if (OPT_OUT.has(t)) return true
   if (OPT_IN.has(t)) return false
   return null
@@ -120,7 +127,7 @@ async function upsertConversation(
 
   const { data: existing } = await supabase
     .from('whatsapp_conversations')
-    .select('id, unread_count, last_message_at, lead_id')
+    .select('id, unread_count, last_message_at, lead_id, opted_out')
     .eq('wa_id', waId)
     .maybeSingle()
 
@@ -135,8 +142,9 @@ async function upsertConversation(
       update.unread_count = (existing.unread_count ?? 0) + 1
       update.status = 'in_progress'
       if (event.contact?.name) update.contact_name = event.contact.name
-      const opted = optChange(event.message?.text)
-      if (opted !== null) {
+      const opted = optChange(event)
+      // Only a change moves opted_out_at; every message carries the flag.
+      if (opted !== null && opted !== Boolean(existing.opted_out)) {
         update.opted_out = opted
         update.opted_out_at = opted ? atIso : null
       }
@@ -162,7 +170,7 @@ async function upsertConversation(
     assignedTo = lead?.assigned_to ?? null
     branchId = lead?.branch_id ?? null
   }
-  const opted = inbound ? optChange(event.message?.text) : null
+  const opted = inbound ? optChange(event) : null
 
   const { data: created, error } = await supabase
     .from('whatsapp_conversations')
@@ -316,6 +324,67 @@ export async function mirrorOptOut(event: AgencyXOptOutEvent): Promise<boolean> 
 
   if (error) {
     console.error('[agencyx] opt-out update failed', error)
+    return false
+  }
+  return true
+}
+
+/** Payload for whatsapp.template.status events. */
+export interface AgencyXTemplateStatusEvent {
+  template?: {
+    name?: string | null
+    language?: string | null
+    status?: string | null
+    rejected_reason?: string | null
+    rejection_info?: { reason?: string | null; recommendation?: string | null } | null
+  }
+}
+
+// Meta's statuses → wa_template_status. The enum has one slot for both PAUSED and
+// DISABLED; rejection_reason says which.
+export const META_TEMPLATE_STATUS: Record<string, string> = {
+  APPROVED: 'approved',
+  PENDING: 'pending_approval',
+  IN_APPEAL: 'pending_approval',
+  REJECTED: 'rejected',
+  PAUSED: 'disabled',
+  DISABLED: 'disabled',
+}
+
+/**
+ * Applies Meta's review verdict to the CRM's template as it happens, instead of waiting
+ * for someone to press Sync. A template the CRM doesn't have yet is left to the next
+ * Sync, which imports it with its body and variables.
+ */
+export async function mirrorTemplateStatus(event: AgencyXTemplateStatusEvent): Promise<boolean> {
+  const t = event.template
+  const status = t?.status ? META_TEMPLATE_STATUS[t.status.toUpperCase()] : undefined
+  if (!t?.name || !status) return true
+
+  const supabase = createServiceClient()
+  const { data: rows } = await supabase
+    .from('whatsapp_templates')
+    .select('id, language, status, is_active')
+    .eq('name', t.name)
+  // Exact language first; a CRM template saved as "en" also answers for "en_US".
+  const lang = t.language ?? ''
+  const row = rows?.find((r) => r.language === lang) ?? rows?.find((r) => r.language === lang.split('_')[0])
+  if (!row) return true
+
+  const info = t.rejection_info
+  const reason = status === 'approved' || status === 'pending_approval' ? null
+    : [info?.reason ?? t.rejected_reason, info?.recommendation].filter(Boolean).join(' — ')
+      || (t.status === 'PAUSED' ? 'Paused by WhatsApp (quality)' : t.status === 'DISABLED' ? 'Disabled by WhatsApp' : null)
+
+  const { error } = await supabase.from('whatsapp_templates').update({
+    status,
+    rejection_reason: reason,
+    // Becoming approved switches it on; after that the Active toggle is the user's.
+    is_active: status === 'approved' ? (row.status === 'approved' ? row.is_active : true) : false,
+    updated_at: new Date().toISOString(),
+  }).eq('id', row.id)
+  if (error) {
+    console.error('[agencyx] template status update failed', error)
     return false
   }
   return true

@@ -28,7 +28,7 @@ export interface DeliverOtpResult {
  */
 export async function deliverOtp(phone: string, otp: string): Promise<DeliverOtpResult> {
   // 1. WhatsApp template (primary)
-  const wa = await sendWhatsAppTemplate({ to: toMsg91Mobile(phone), name: WHATSAPP_OTP_TEMPLATE, language: 'en', variables: [otp] })
+  const wa = await sendWhatsAppTemplate({ to: toMsg91Mobile(phone), name: WHATSAPP_OTP_TEMPLATE, language: 'en', variables: [otp], category: 'authentication' })
   if (wa.success) return { success: true, channel: 'whatsapp' }
 
   // 2. SMS fallback

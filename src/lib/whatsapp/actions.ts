@@ -16,8 +16,12 @@ import {
 } from './agencyx-api'
 import { renderTemplate, namedVariables, toPositionalBody, sampleValueFor } from './template-render'
 import { queueBroadcast, processBroadcast } from './broadcast'
+import { isMarketingCategory } from './send'
+import { META_TEMPLATE_STATUS } from './agencyx-mirror'
 import { toWhatsAppNumber } from './phone'
 import { getTemplateById } from './queries'
+import { validateTemplateButtons, normalizeTemplateButtons } from './template-buttons'
+import type { WaTemplateButton } from '@/types/whatsapp'
 
 type ServerClient = Awaited<ReturnType<typeof createClient>>
 
@@ -59,7 +63,8 @@ export async function sendMessage(conversationId: string, text: string) {
     .single()
 
   if (!conv) return { success: false, error: 'Conversation not found' }
-  if (conv.opted_out) return { success: false, error: 'Contact has opted out' }
+  // No opt-out check: free text only reaches someone who messaged in the last 24 hours,
+  // so this is answering them, not marketing to them. A STOP blocks marketing only.
 
   // With AgencyX connected it owns the number, so every thread replies through it — not
   // only threads it created. Replying also pauses its bot on this chat (pauseAutoReply):
@@ -111,8 +116,11 @@ export async function sendTemplateToConversation(
   ])
 
   if (!conv.data) return { success: false, error: 'Conversation not found' }
-  if (conv.data.opted_out) return { success: false, error: 'Contact has opted out' }
   if (!template) return { success: false, error: 'Template not found' }
+  const marketing = isMarketingCategory(template.category)
+  if (conv.data.opted_out && marketing) {
+    return { success: false, error: 'Contact has opted out of WhatsApp marketing — only utility templates can be sent' }
+  }
 
   if (template.status !== 'approved') return { success: false, error: 'This template is not approved by WhatsApp yet' }
   const variables = template.variable_names.map((name) => (variableValues[name] ?? '').trim())
@@ -127,6 +135,8 @@ export async function sendTemplateToConversation(
         from: conv.data.waba_phone_number_id,
         template: { name: template.name, language: template.language, variables },
         pauseAutoReply: true,
+        respectOptOut: marketing,
+        categoryHint: marketing ? 'marketing' : 'utility',
       })
     : await sendTemplateMessage(to, template.name, template.language, variables)
 
@@ -249,6 +259,7 @@ interface TemplateInput {
   header_text: string | null
   body: string
   footer: string | null
+  buttons: WaTemplateButton[]
 }
 
 function readTemplateForm(formData: FormData): TemplateInput | { error: string } {
@@ -261,6 +272,15 @@ function readTemplateForm(formData: FormData): TemplateInput | { error: string }
   if (header && (header.length > 60 || header.includes('{{'))) return { error: 'Header: up to 60 characters, no variables' }
   const footer = String(formData.get('footer') ?? '').trim() || null
   if (footer && footer.length > 60) return { error: 'Footer is limited to 60 characters' }
+  let buttons: WaTemplateButton[]
+  try {
+    buttons = JSON.parse(String(formData.get('buttons') ?? '[]'))
+    if (!Array.isArray(buttons)) throw new Error()
+  } catch {
+    return { error: 'Invalid buttons' }
+  }
+  const buttonError = validateTemplateButtons(buttons)
+  if (buttonError) return { error: buttonError }
   return {
     name,
     display_name: String(formData.get('display_name') ?? '').trim() || name,
@@ -269,6 +289,7 @@ function readTemplateForm(formData: FormData): TemplateInput | { error: string }
     header_text: header,
     body,
     footer,
+    buttons: normalizeTemplateButtons(buttons),
   }
 }
 
@@ -290,7 +311,7 @@ export async function createTemplate(formData: FormData) {
     header_content: input.header_text,
     body: input.body,
     footer: input.footer,
-    buttons: [],
+    buttons: input.buttons,
     variable_names: variableNames,
     is_active: false,
     created_by: auth.user.id,
@@ -363,6 +384,7 @@ export async function submitTemplateForApproval(id: string, examples: Record<str
     body: toPositionalBody(t.body, names),
     headerText: t.header_type === 'text' ? t.header_content : null,
     footer: t.footer,
+    buttons: (t.buttons as WaTemplateButton[] | null) ?? [],
     variableLabels: names,
     examples: names.map((n) => examples[n]?.trim() || sampleValueFor(n)),
   })
@@ -378,15 +400,6 @@ export async function submitTemplateForApproval(id: string, examples: Record<str
 
   revalidatePath('/whatsapp/templates')
   return { success: true, status: result.status }
-}
-
-const META_STATUS: Record<string, string> = {
-  APPROVED: 'approved',
-  PENDING: 'pending_approval',
-  IN_APPEAL: 'pending_approval',
-  REJECTED: 'rejected',
-  PAUSED: 'disabled',
-  DISABLED: 'disabled',
 }
 
 /**
@@ -414,7 +427,7 @@ export async function syncTemplateStatuses() {
   let added = 0
   const remote = new Set<string>()
   for (const r of res.templates ?? []) {
-    const status = META_STATUS[r.status] ?? 'pending_approval'
+    const status = META_TEMPLATE_STATUS[r.status] ?? 'pending_approval'
     // A CRM template saved as "en" is the same as Meta's "en" only; match exactly, then
     // fall back to the base language so "en" finds "en_US".
     const existing = byKey.get(key(r.name, r.language)) ?? byKey.get(key(r.name, r.language.split('_')[0]))
@@ -424,6 +437,10 @@ export async function syncTemplateStatuses() {
         status,
         rejection_reason: r.rejected_reason ?? null,
         language: r.language,
+        // What WhatsApp holds is what it sends: keep buttons and footer in step with it.
+        // The body stays the CRM's (it names its variables; Meta's is positional).
+        ...(r.buttons?.length ? { buttons: r.buttons } : {}),
+        ...(r.footer ? { footer: r.footer } : {}),
         // Becoming approved switches it on; after that the Active toggle is the user's.
         is_active: status === 'approved' ? (existing.status === 'approved' ? existing.is_active : true) : false,
         updated_at: new Date().toISOString(),
@@ -441,7 +458,10 @@ export async function syncTemplateStatuses() {
         rejection_reason: r.rejected_reason ?? null,
         body: r.body ?? `[${r.name}]`,
         variable_names: names,
-        buttons: [],
+        header_type: r.header === 'none' ? null : r.header,
+        header_content: r.header === 'text' ? r.header_text : r.header_media_url,
+        footer: r.footer,
+        buttons: r.buttons ?? [],
         is_active: status === 'approved',
         created_by: auth.user.id,
       })
@@ -657,10 +677,11 @@ export async function deleteTemplate(id: string) {
     }
   }
 
-  // Only attempt AgencyX deletion for submitted templates (not local drafts).
-  if (!['draft', 'rejected'].includes(t.status as string) && agencyXConfigured()) {
+  // Everything but a local draft exists at Meta — rejected ones included, and they'd
+  // linger in WhatsApp Manager. Already gone there (404) is fine.
+  if (t.status !== 'draft' && agencyXConfigured()) {
     const result = await deleteAgencyXTemplate(t.name as string, t.language as string)
-    if (!result.success) return { success: false, error: result.error }
+    if (!result.success && !result.notFound) return { success: false, error: result.error }
   }
 
   await supabase.from('whatsapp_templates').delete().eq('id', id)

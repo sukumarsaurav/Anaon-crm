@@ -79,9 +79,10 @@ export default function BroadcastForm({ templates }: Props) {
         >
           <option value="">Select a template...</option>
           {approvedTemplates.map((t) => (
-            <option key={t.id} value={t.id}>{t.display_name}</option>
+            <option key={t.id} value={t.id}>{t.display_name} ({t.category})</option>
           ))}
         </select>
+        <p className="text-xs text-gray-400 mt-1">Marketing templates skip contacts who replied STOP; utility templates reach everyone.</p>
         {approvedTemplates.length === 0 && (
           <p className="text-xs text-amber-600 mt-1">No approved templates available. Create and get templates approved first.</p>
         )}

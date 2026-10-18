@@ -18,7 +18,7 @@ export default async function NewAutomationPage() {
   // Approved ones only — anything else fails at send time.
   const { data: templates } = await supabase
     .from('whatsapp_templates')
-    .select('name')
+    .select('name, category')
     .eq('status', 'approved')
     .order('name')
 

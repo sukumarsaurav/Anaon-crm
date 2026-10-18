@@ -13,7 +13,7 @@ interface Props {
   automation?: Automation
   templates?: { id: string; name: string }[]
   advisors?: { id: string; full_name: string }[]
-  whatsappTemplates?: { name: string }[]
+  whatsappTemplates?: { name: string; category?: string | null }[]
 }
 
 const GROUPED_TRIGGERS = TRIGGER_OPTIONS.reduce((acc, t) => {
@@ -196,7 +196,7 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
               {whatsappTemplates.length > 0 ? (
                 <select value={payload.template_name ?? ''} onChange={e => setPayload(p => ({ ...p, template_name: e.target.value }))} className={selectCls}>
                   <option value="">Select template</option>
-                  {whatsappTemplates.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+                  {whatsappTemplates.map(t => <option key={t.name} value={t.name}>{t.name}{t.category ? ` (${t.category})` : ''}</option>)}
                 </select>
               ) : (
                 <input value={payload.template_name ?? ''} onChange={e => setPayload(p => ({ ...p, template_name: e.target.value }))}
@@ -210,6 +210,9 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
                 <option value="client">Client</option>
               </select>
             </div>
+            <p className="col-span-2 text-xs text-slate-500">
+              Marketing templates skip contacts who replied STOP; utility templates (payment reminders, booking updates) still reach them.
+            </p>
           </div>
         )}
 

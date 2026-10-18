@@ -26,7 +26,10 @@ export default function ReplyBox({ conversationId, templates, isOptedOut }: Prop
     setError(null)
     startTransition(async () => {
       const result = await sendMessage(conversationId, msg)
-      if (!result.success) setError(result.error ?? 'Failed to send')
+      if (!result.success) {
+        setError(result.error ?? 'Failed to send')
+        setText(msg) // don't lose what they typed
+      }
     })
   }
 
@@ -37,16 +40,13 @@ export default function ReplyBox({ conversationId, templates, isOptedOut }: Prop
     }
   }
 
-  if (isOptedOut) {
-    return (
-      <div className="px-4 py-3 bg-red-50 border-t border-red-200 text-center text-sm text-red-600">
-        This contact has opted out of WhatsApp messages
-      </div>
-    )
-  }
-
   return (
     <div className="border-t border-gray-200 bg-white">
+      {isOptedOut && (
+        <div className="px-4 py-2 bg-amber-50 border-b border-amber-200 text-xs text-amber-700">
+          Opted out of WhatsApp marketing (replied STOP). You can still reply to their messages and send utility templates.
+        </div>
+      )}
       {showTemplates && (
         <TemplateSelector
           templates={templates}

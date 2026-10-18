@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import type { WaTemplateButton } from '@/types/whatsapp'
 
 /**
  * Client for AgencyX's Send API. AgencyX owns the WhatsApp number (it holds the Meta
@@ -36,8 +37,10 @@ export interface AgencyXSendResult {
   windowClosed?: boolean
   /** 409 opted_out: respect_opt_out was true and the contact replied STOP. */
   optedOut?: boolean
-  /** 429: the key's per-minute limit. Stop the batch; resume later. */
+  /** 429: the key's per-minute limit, or WhatsApp throttling the number. Stop the batch; resume later. */
   rateLimited?: boolean
+  /** 400 reconnect_required: the number's WhatsApp access expired. Nothing will send until an admin reconnects it. */
+  reconnectRequired?: boolean
   /** true when the same client_reference was already sent — original result returned. */
   idempotentReplay?: boolean
 }
@@ -74,6 +77,9 @@ async function call(
       cache: 'no-store',
     })
     const data = await res.json().catch(() => ({}))
+    // 429 carries the wait in a header; keep it with the body so errors can quote it.
+    const retryAfter = res.headers.get('retry-after')
+    if (retryAfter && data.retry_after == null) data.retry_after = retryAfter
     return { ok: res.ok, status: res.status, data }
   } catch (err) {
     return { ok: false, status: 0, data: { error: String(err) } }
@@ -81,6 +87,12 @@ async function call(
 }
 
 function errorOf(status: number, data: Record<string, unknown>): string {
+  if (data.code === 'reconnect_required') {
+    return 'The WhatsApp number\'s access has expired — an AgencyX admin must reconnect it (WhatsApp → Numbers). Retrying will not help.'
+  }
+  if (data.code === 'meta_rate_limited') {
+    return `WhatsApp is throttling this number — try again in ${data.retry_after ?? 'a few'} seconds`
+  }
   if (data.error === 'window_closed') {
     return 'The customer has not messaged in the last 24 hours, so WhatsApp only allows an approved template. Send a template instead.'
   }
@@ -180,6 +192,7 @@ export async function sendViaAgencyX(input: {
       windowClosed: data.error === 'window_closed',
       optedOut: data.error === 'opted_out',
       rateLimited: status === 429,
+      reconnectRequired: data.code === 'reconnect_required',
     }
   }
   return {
@@ -236,7 +249,7 @@ export interface AgencyXTemplate {
   header_text: string | null
   header_media_url: string | null
   footer: string | null
-  buttons: { type: string; text: string; url?: string; phone_number?: string }[]
+  buttons: WaTemplateButton[]
   /** The keys `variables` takes, in {{1}}, {{2}}… order. */
   variables: string[]
   /** Buttons that need a per-send value (dynamic URL suffix, coupon code, OTP). */
@@ -288,14 +301,10 @@ export interface SubmitTemplateInput {
   /** A media header instead of a text header. Fetched once; stored and shown on every send. */
   header?: { format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'; url: string } | null
   footer?: string | null
-  buttons?: {
-    type: 'QUICK_REPLY' | 'URL' | 'PHONE_NUMBER' | 'COPY_CODE'
-    text: string
-    url?: string
-    phone_number?: string
+  buttons?: (WaTemplateButton & {
     /** Full sample URL for URL buttons ending in {{1}}, or the sample coupon for COPY_CODE. */
     example?: string
-  }[]
+  })[]
   variableLabels: string[]
   examples: string[]
 }
@@ -358,12 +367,12 @@ export async function editAgencyXTemplate(
 export async function deleteAgencyXTemplate(
   name: string,
   language: string,
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; notFound?: boolean }> {
   const qs = new URLSearchParams({ language })
   const { ok, status, data } = await call(
     'DELETE',
     `/v1/templates/${encodeURIComponent(name)}?${qs}`,
   )
-  if (!ok) return { success: false, error: errorOf(status, data) }
+  if (!ok) return { success: false, error: errorOf(status, data), notFound: status === 404 }
   return { success: true }
 }

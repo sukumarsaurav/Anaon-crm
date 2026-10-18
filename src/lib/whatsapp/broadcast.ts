@@ -1,5 +1,5 @@
 import { createServiceClient } from '@/lib/supabase/service'
-import { sendWhatsAppTemplate, recordOutboundWhatsApp } from './send'
+import { sendWhatsAppTemplate, recordOutboundWhatsApp, isMarketingCategory } from './send'
 import { fillTemplateVariables } from './variables'
 import { renderTemplate } from './template-render'
 import { toWhatsAppNumber } from './phone'
@@ -36,7 +36,7 @@ export async function queueBroadcast(broadcastId: string): Promise<{ success: bo
   const supabase = createServiceClient()
   const { data: broadcast } = await supabase
     .from('whatsapp_broadcasts')
-    .select('id, status, audience_filters, created_by, template:whatsapp_templates(id, name, language, status, is_active, body, variable_names)')
+    .select('id, status, audience_filters, created_by, template:whatsapp_templates(id, name, language, category, status, is_active, body, variable_names)')
     .eq('id', broadcastId)
     .single()
 
@@ -45,7 +45,7 @@ export async function queueBroadcast(broadcastId: string): Promise<{ success: bo
     return { success: false, error: 'This broadcast has already been started' }
   }
   const template = broadcast.template as unknown as {
-    name: string; language: string; status: string; is_active: boolean; body: string; variable_names: string[]
+    name: string; language: string; category: string; status: string; is_active: boolean; body: string; variable_names: string[]
   } | null
   if (!template) return { success: false, error: 'The broadcast has no template' }
   if (template.status !== 'approved') return { success: false, error: 'The template is not approved by WhatsApp yet' }
@@ -86,8 +86,10 @@ export async function queueBroadcast(broadcastId: string): Promise<{ success: bo
   }
   const numbers = [...byNumber.keys()]
 
+  // A STOP opts out of marketing only; a utility broadcast (e.g. a possession update)
+  // still reaches everyone.
   const optedOut = new Set<string>()
-  for (let i = 0; i < numbers.length; i += 500) {
+  for (let i = 0; isMarketingCategory(template.category) && i < numbers.length; i += 500) {
     const { data } = await supabase
       .from('whatsapp_conversations')
       .select('wa_id')
@@ -149,10 +151,10 @@ export async function processBroadcast(
 
   const { data: broadcast } = await supabase
     .from('whatsapp_broadcasts')
-    .select('id, created_by, template:whatsapp_templates(name, language, body, variable_names)')
+    .select('id, created_by, template:whatsapp_templates(name, language, category, body, variable_names)')
     .eq('id', broadcastId)
     .single()
-  const template = broadcast?.template as unknown as { name: string; language: string; body: string; variable_names: string[] } | null
+  const template = broadcast?.template as unknown as { name: string; language: string; category: string; body: string; variable_names: string[] } | null
 
   if (broadcast && template) {
     outer: while (Date.now() - started < budgetMs) {
@@ -180,6 +182,7 @@ export async function processBroadcast(
           language: template.language,
           variables: namedVars,
           reference: `bcast_${r.id}`,
+          category: template.category,
         })
         if (result.rateLimited) {
           rateLimited = true
@@ -205,7 +208,12 @@ export async function processBroadcast(
         } else {
           failed++
           await supabase.from('whatsapp_broadcast_recipients')
-            .update({ status: 'failed', failed_reason: result.error ?? 'Send failed' })
+            // AgencyX knew of an opt-out the CRM hadn't mirrored yet (respect_opt_out).
+            .update({
+              status: 'failed',
+              failed_reason: result.optedOut ? 'Opted out of WhatsApp' : result.error ?? 'Send failed',
+              skipped_opted_out: Boolean(result.optedOut),
+            })
             .eq('id', r.id)
         }
       }

@@ -1,7 +1,7 @@
 import { after } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import type { TriggerEvent, AutomationContext, Automation, AutomationCondition } from '@/types/automation'
-import { sendWhatsAppText, sendWhatsAppTemplate, isWhatsAppOptedOut, recordOutboundWhatsApp } from '@/lib/whatsapp/send'
+import { sendWhatsAppText, sendWhatsAppTemplate, isWhatsAppOptedOut, isMarketingCategory, recordOutboundWhatsApp } from '@/lib/whatsapp/send'
 import { fillTemplateVariables } from '@/lib/whatsapp/variables'
 import { renderTemplate } from '@/lib/whatsapp/template-render'
 import { sendEmail, emailConfigured } from '@/lib/email/client'
@@ -67,8 +67,9 @@ async function executeAction(
         : recipient === 'client' ? ctx.client?.phone
         : null
       if (!phone) return { success: false, error: 'No phone number in context' }
-      if (await isWhatsAppOptedOut(phone)) return { success: false, error: 'Contact has opted out of WhatsApp' }
       const leadId = ctx.lead?.id ?? null
+      const optedOut = await isWhatsAppOptedOut(phone)
+      const OPTED_OUT = { success: false, error: 'Contact has opted out of WhatsApp marketing' }
 
       // A template is the only thing WhatsApp delivers to someone who hasn't messaged in
       // the last 24 hours — i.e. almost every automation recipient. Free text is kept for
@@ -76,7 +77,7 @@ async function executeAction(
       if (payload.template_name) {
         const { data: template } = await supabase
           .from('whatsapp_templates')
-          .select('name, language, status, body, variable_names')
+          .select('name, language, category, status, body, variable_names')
           .eq('name', payload.template_name)
           .eq('status', 'approved')
           .limit(1)
@@ -84,6 +85,8 @@ async function executeAction(
         if (!template) {
           return { success: false, error: `WhatsApp template "${payload.template_name}" is not approved — submit it from WhatsApp → Templates` }
         }
+        // A STOP blocks marketing; a payment reminder or booking update still goes.
+        if (optedOut && isMarketingCategory(template.category)) return OPTED_OUT
         const names = (template.variable_names as string[]) ?? []
         const { values, missing } = fillTemplateVariables(names, {
           name: ctx.lead?.full_name ?? ctx.client?.full_name ?? 'there',
@@ -101,6 +104,7 @@ async function executeAction(
           language: template.language,
           variables: values,
           reference: reference ?? undefined,
+          category: template.category,
         })
         if (!sent.success) return { success: false, error: sent.error }
         const vars = Object.fromEntries(names.map((n, i) => [n, values[i]]))
@@ -111,6 +115,7 @@ async function executeAction(
         return { success: true, result: { type: 'whatsapp_template_sent', template: template.name, messageId: sent.messageId, phone } }
       }
 
+      if (optedOut) return OPTED_OUT
       const body = payload.message_body ? fillTokens(payload.message_body, ctx) : null
       if (!body) return { success: false, error: 'Choose a WhatsApp template or write a message' }
       const sent = await sendWhatsAppText({ to: phone, text: body, reference: reference ?? undefined })

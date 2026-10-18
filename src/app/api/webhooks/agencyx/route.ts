@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createHmac } from 'node:crypto'
 import { safeEqual } from '@/lib/security/secrets'
 import { ingestLead, INVALID_PHONE } from '@/lib/leads/ingest'
@@ -6,10 +6,13 @@ import {
   mirrorMessage,
   mirrorStatus,
   mirrorOptOut,
+  mirrorTemplateStatus,
+  type AgencyXTemplateStatusEvent,
   type AgencyXMessageEvent,
   type AgencyXStatusEvent,
   type AgencyXOptOutEvent,
 } from '@/lib/whatsapp/agencyx-mirror'
+import { persistWhatsAppMedia } from '@/lib/whatsapp/media'
 
 // The signing secret AgencyX shows once when the endpoint is created (Developers →
 // Webhook endpoints). Fails closed: unset → every request is rejected.
@@ -84,6 +87,8 @@ function failure(error: string | undefined) {
  *   - `whatsapp.message.sent` + `whatsapp.message.status` — replies and ticks, so the
  *     CRM thread matches AgencyX's (and broadcast delivered/read counts)
  *   - `chatbot.lead.captured` — what AgencyX's AI chatbot learned, onto the lead
+ *   - `whatsapp.contact.opt_out` — STOP / START, mirrored onto the conversation
+ *   - `whatsapp.template.status` — Meta's review verdicts, onto the CRM's templates
  * Put the signing secret in AGENCYX_WEBHOOK_SECRET.
  */
 export async function POST(req: NextRequest) {
@@ -144,6 +149,8 @@ export async function POST(req: NextRequest) {
     if (!(await mirrorMessage(payload, 'inbound', result.id ?? null))) {
       return NextResponse.json({ error: 'Message could not be saved' }, { status: 500 })
     }
+    // The file's link expires in a week; copy it once AgencyX has its 200 (10 s budget).
+    if (message?.media?.url) after(() => persistWhatsAppMedia(message.id))
     return NextResponse.json({ ok: true, lead_id: result.id ?? null, duplicate: result.duplicate ?? false })
   }
 
@@ -184,9 +191,11 @@ export async function POST(req: NextRequest) {
   // Replies from AgencyX — a person in its inbox, its bot, a keyword rule, the API, or
   // typed on the phone in the WhatsApp Business app — so the CRM shows both sides.
   if (event === 'whatsapp.message.sent') {
-    if (!(await mirrorMessage(body as AgencyXMessageEvent, 'outbound', null))) {
+    const payload = body as AgencyXMessageEvent
+    if (!(await mirrorMessage(payload, 'outbound', null))) {
       return NextResponse.json({ error: 'Message could not be saved' }, { status: 500 })
     }
+    if (payload.message?.media?.url) after(() => persistWhatsAppMedia(payload.message?.id))
     return NextResponse.json({ ok: true })
   }
 
@@ -207,11 +216,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
-  // A template's review status changed (approved, rejected, paused, disabled, reinstated).
-  // We don't sync here automatically — the templates page's Sync button calls
-  // syncAgencyXTemplateStatuses() which does a full pull. Acknowledge to stop retries.
+  // Meta approved, rejected, paused, disabled or reinstated a template: the CRM's copy
+  // follows at once, so a broadcast can go out without anyone pressing Sync.
   if (event === 'whatsapp.template.status') {
-    return NextResponse.json({ ok: true, event })
+    if (!(await mirrorTemplateStatus(body as AgencyXTemplateStatusEvent))) {
+      return NextResponse.json({ error: 'Template status could not be saved' }, { status: 500 })
+    }
+    return NextResponse.json({ ok: true })
   }
 
   // ping (the "Send test" button) and any event we don't act on: acknowledge, so

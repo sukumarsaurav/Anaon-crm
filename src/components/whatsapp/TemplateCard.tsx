@@ -67,6 +67,20 @@ export default function TemplateCard({ template, canSubmit }: Props) {
         <p className="text-sm text-gray-700 whitespace-pre-wrap line-clamp-3">{template.body}</p>
       </div>
 
+      {template.buttons?.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-3">
+          {template.buttons.map((b, i) => (
+            <span
+              key={i}
+              title={b.url ?? b.phone_number ?? undefined}
+              className="text-xs border border-green-200 text-green-700 px-2 py-0.5 rounded-md"
+            >
+              {b.type === 'URL' ? '🔗 ' : b.type === 'PHONE_NUMBER' ? '📞 ' : ''}{b.text}
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* Variables */}
       {template.variable_names.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-3">

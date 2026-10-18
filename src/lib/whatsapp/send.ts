@@ -51,11 +51,18 @@ export async function sendWhatsAppTemplate(input: {
    */
   variables: Record<string, string> | string[]
   reference?: string
+  /**
+   * The template's category. Marketing sends ask AgencyX to refuse opted-out contacts
+   * (respect_opt_out); utility and authentication sends (OTPs, payment reminders,
+   * receipts) go regardless, as WhatsApp allows.
+   */
+  category?: string | null
 }): Promise<SendResult> {
   const to = toWhatsAppNumber(input.to)
   if (!to) return { success: false, error: `Not a usable WhatsApp number: ${input.to ?? '(none)'}` }
   const provider = activeWhatsAppProvider()
   if (provider === 'agencyx') {
+    const marketing = isMarketingCategory(input.category)
     return {
       ...(await sendViaAgencyX({
         to,
@@ -66,6 +73,8 @@ export async function sendWhatsAppTemplate(input: {
           variables: input.variables,
         },
         reference: input.reference,
+        respectOptOut: marketing,
+        categoryHint: marketing ? 'marketing' : 'utility',
       })),
       to,
     }
@@ -104,8 +113,18 @@ export async function sendWhatsAppMedia(input: {
 }
 
 /**
- * True when the contact sent STOP (or similar). AgencyX's Send API does not check this —
- * its docs leave honouring opt-out to the caller — so every marketing send asks here.
+ * Only marketing is blocked by an opt-out; a STOP doesn't stop an OTP or a payment
+ * reminder. Unknown (free text, a template without a category) counts as marketing.
+ */
+export function isMarketingCategory(category: string | null | undefined): boolean {
+  const c = (category ?? '').toLowerCase()
+  return c !== 'utility' && c !== 'authentication'
+}
+
+/**
+ * True when the contact sent STOP (or similar). AgencyX also refuses marketing to them
+ * when respect_opt_out is sent, but checking here first skips the call entirely — and
+ * covers the Meta direct path, which has no such check.
  */
 export async function isWhatsAppOptedOut(phone: string | null | undefined): Promise<boolean> {
   const waId = toWhatsAppNumber(phone)

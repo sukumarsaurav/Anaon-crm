@@ -98,10 +98,12 @@ export interface WaTemplate {
   updated_at: string
 }
 
+/** Same shape AgencyX's template API takes and returns. */
 export interface WaTemplateButton {
-  type: 'QUICK_REPLY' | 'URL' | 'PHONE'
+  type: 'QUICK_REPLY' | 'URL' | 'PHONE_NUMBER' | 'COPY_CODE'
   text: string
-  value: string
+  url?: string
+  phone_number?: string
 }
 
 export interface WaBroadcast {

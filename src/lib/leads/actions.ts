@@ -7,7 +7,7 @@ import { calculateLeadScore } from './scoring'
 import { getLeadActivities } from './queries'
 import { resolveAssignee } from './assignment'
 import { notifyUsers } from '@/lib/notifications/notify'
-import { sendWhatsAppText, sendWhatsAppTemplate, isWhatsAppOptedOut, recordOutboundWhatsApp } from '@/lib/whatsapp/send'
+import { sendWhatsAppText, sendWhatsAppTemplate, isWhatsAppOptedOut, isMarketingCategory, recordOutboundWhatsApp } from '@/lib/whatsapp/send'
 import { fillTemplateVariables } from '@/lib/whatsapp/variables'
 import { renderTemplate } from '@/lib/whatsapp/template-render'
 import type { LeadStage, FollowUpOutcome, Lead } from '@/types/leads'
@@ -383,12 +383,12 @@ export async function bulkSendWhatsApp(
   if (leadIds.length > 200) return { success: false, error: 'Send to at most 200 leads at once — use a Broadcast for more' }
   if (!templateId && !message.trim()) return { success: false, error: 'Message is empty' }
 
-  type Tpl = { name: string; language: string; body: string; variable_names: string[] }
+  type Tpl = { name: string; language: string; category: string; body: string; variable_names: string[] }
   let template: Tpl | null = null
   if (templateId) {
     const { data } = await supabase
       .from('whatsapp_templates')
-      .select('name, language, body, variable_names, status')
+      .select('name, language, category, body, variable_names, status')
       .eq('id', templateId)
       .single()
     if (!data || data.status !== 'approved') return { success: false, error: 'Template is not approved' }
@@ -407,7 +407,8 @@ export async function bulkSendWhatsApp(
   let failed = 0
   const errors: string[] = []
   for (const lead of leads ?? []) {
-    if (await isWhatsAppOptedOut(lead.phone as string)) {
+    // An opt-out blocks marketing only; a utility template still goes.
+    if (isMarketingCategory(template?.category) && await isWhatsAppOptedOut(lead.phone as string)) {
       failed++
       errors.push(`${lead.full_name}: opted out`)
       continue
@@ -427,7 +428,7 @@ export async function bulkSendWhatsApp(
       }
       const vars = Object.fromEntries(template.variable_names.map((n, i) => [n, values[i]]))
       body = renderTemplate(template.body, template.variable_names, vars)
-      res = await sendWhatsAppTemplate({ to: lead.phone as string, name: template.name, language: template.language, variables: values })
+      res = await sendWhatsAppTemplate({ to: lead.phone as string, name: template.name, language: template.language, variables: values, category: template.category })
       if (res.success) {
         await recordOutboundWhatsApp({ to: res.to!, body, type: 'template', waMessageId: res.messageId, templateName: template.name, templateParams: vars, sentBy: user.id, leadId: lead.id })
       }

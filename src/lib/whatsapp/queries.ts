@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
+import { signWhatsAppMedia } from './media'
 import type { WaConversation, WaMessage, WaTemplate, WaBroadcast } from '@/types/whatsapp'
 
 export async function getConversations(filters: {
@@ -67,10 +68,13 @@ export async function getMessages(conversationId: string): Promise<WaMessage[]> 
       sender:profiles!whatsapp_messages_sent_by_fkey(id, full_name, photo_url)
     `)
     .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: true })
+    // The latest 200, shown oldest-first. Ascending + limit would show a long chat's first
+    // 200 messages and never its newest.
+    .order('created_at', { ascending: false })
     .limit(200)
   if (error) return []
-  return data as WaMessage[]
+  // Read through RLS above, so the reader may see these; only then sign the files.
+  return signWhatsAppMedia((data as WaMessage[]).reverse())
 }
 
 export async function getTemplates(activeOnly = true): Promise<WaTemplate[]> {
