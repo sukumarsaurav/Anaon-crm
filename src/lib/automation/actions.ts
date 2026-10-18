@@ -14,6 +14,17 @@ async function getAuthUser() {
   return user
 }
 
+/** Rejects an action that could only ever fail when it fires. */
+function payloadProblem(actionType: string, p: AutomationActionPayload): string | null {
+  if (actionType === 'send_whatsapp') {
+    if (p.recipient && p.recipient !== 'lead' && p.recipient !== 'client') return 'WhatsApp can go to the lead or the client'
+    if (!p.template_name && !p.message_body?.trim()) return 'Choose a WhatsApp template (or write a message)'
+  }
+  if (actionType === 'send_email' && !p.email_body?.trim()) return 'Write the email body'
+  if (actionType === 'change_lead_stage' && !p.new_stage) return 'Choose the new stage'
+  return null
+}
+
 export async function createAutomation(formData: FormData) {
   try {
     const user = await getAuthUser()
@@ -23,6 +34,8 @@ export async function createAutomation(formData: FormData) {
     const payloadRaw = formData.get('action_payload') as string
     const conditions: AutomationCondition[] = conditionsRaw ? JSON.parse(conditionsRaw) : []
     const action_payload: AutomationActionPayload = payloadRaw ? JSON.parse(payloadRaw) : {}
+    const problem = payloadProblem(formData.get('action_type') as string, action_payload)
+    if (problem) return { success: false, error: problem }
 
     const { error } = await supabase.from('automations').insert({
       name:          formData.get('name') as string,
@@ -52,6 +65,8 @@ export async function updateAutomation(id: string, formData: FormData) {
 
     const conditionsRaw = formData.get('conditions') as string
     const payloadRaw = formData.get('action_payload') as string
+    const problem = payloadProblem(formData.get('action_type') as string, payloadRaw ? JSON.parse(payloadRaw) : {})
+    if (problem) return { success: false, error: problem }
 
     const { error } = await supabase.from('automations').update({
       name:          formData.get('name') as string,

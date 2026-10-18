@@ -4,12 +4,14 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBroadcast, sendBroadcast } from '@/lib/whatsapp/actions'
 import type { WaTemplate } from '@/types/whatsapp'
+import { STAGE_ORDER, STAGE_CONFIG } from '@/types/leads'
 
 interface Props {
   templates: WaTemplate[]
 }
 
-const STAGES = ['new', 'contacted', 'interested', 'site_visit_scheduled', 'negotiation', 'nurture']
+// Lost/won leads are left out: a broadcast to them is mostly noise and opt-out risk.
+const STAGES = STAGE_ORDER.filter((s) => s !== 'closed_won' && s !== 'not_interested')
 
 export default function BroadcastForm({ templates }: Props) {
   const router = useRouter()
@@ -27,8 +29,14 @@ export default function BroadcastForm({ templates }: Props) {
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
-    const audienceFilters = { stage: selectedStages.length ? selectedStages : undefined }
+    const audienceFilters = {
+      stage: selectedStages.length ? selectedStages : undefined,
+      city: (formData.get('city') as string)?.trim() || undefined,
+    }
     formData.set('audience_filters', JSON.stringify(audienceFilters))
+    // datetime-local has no zone; send the instant the user meant, in their own zone.
+    const scheduled = formData.get('scheduled_at') as string
+    formData.set('scheduled_at', scheduled && !sendNow ? new Date(scheduled).toISOString() : '')
     setError(null)
 
     startTransition(async () => {
@@ -38,9 +46,13 @@ export default function BroadcastForm({ templates }: Props) {
         return
       }
       if (sendNow && result.id) {
-        await sendBroadcast(result.id)
+        const sent = await sendBroadcast(result.id)
+        if (!sent.success) {
+          setError(`Saved, but not sent: ${sent.error}`)
+          return
+        }
       }
-      router.push('/whatsapp/broadcasts')
+      router.push(result.id ? `/whatsapp/broadcasts/${result.id}` : '/whatsapp/broadcasts')
     })
   }
 
@@ -89,7 +101,7 @@ export default function BroadcastForm({ templates }: Props) {
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              {stage.replace(/_/g, ' ')}
+              {STAGE_CONFIG[stage]?.label ?? stage.replace(/_/g, ' ')}
             </button>
           ))}
         </div>
@@ -99,13 +111,23 @@ export default function BroadcastForm({ templates }: Props) {
       </div>
 
       <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Audience — City (optional)</label>
+        <input
+          name="city"
+          placeholder="Jaipur"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+        />
+        <p className="text-xs text-gray-400 mt-1">Leads who opted out (replied STOP) are skipped automatically.</p>
+      </div>
+
+      <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Schedule (optional)</label>
         <input
           name="scheduled_at"
           type="datetime-local"
           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
         />
-        <p className="text-xs text-gray-400 mt-1">Leave empty to save as draft</p>
+        <p className="text-xs text-gray-400 mt-1">Set a time and press Save to schedule it; leave empty to save a draft.</p>
       </div>
 
       {error && (
@@ -119,7 +141,7 @@ export default function BroadcastForm({ templates }: Props) {
           disabled={isPending}
           className="px-6 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 disabled:opacity-40"
         >
-          Save Draft
+          Save
         </button>
         <button
           type="submit"

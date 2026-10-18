@@ -20,8 +20,17 @@ export interface NormalizedLeadInput {
   utm_source?: string | null
   utm_medium?: string | null
   utm_campaign?: string | null
+  project_id?: string | null
+  /** The channel partner who brought the lead (broker portal). */
+  broker_id?: string | null
   /** When set, skip rule/round-robin resolution and assign to this member. */
   assignedToOverride?: string | null
+  /**
+   * What to do when an active lead with this phone already exists. 'log' (default)
+   * records a repeat-inquiry activity; 'ignore' does nothing — for chat sources where
+   * every message of an ongoing conversation would otherwise become an activity.
+   */
+  onDuplicate?: 'log' | 'ignore'
 }
 
 export interface IngestResult {
@@ -30,6 +39,9 @@ export interface IngestResult {
   duplicate?: boolean
   error?: string
 }
+
+/** The error ingestLead returns for a phone it cannot use — retrying will not fix it. */
+export const INVALID_PHONE = 'Invalid or missing phone number'
 
 /** Normalize an Indian mobile number to 10 digits, or null if unusable. */
 export function normalizePhone(raw?: string | null): string | null {
@@ -48,23 +60,25 @@ export function normalizePhone(raw?: string | null): string | null {
  */
 export async function ingestLead(input: NormalizedLeadInput): Promise<IngestResult> {
   const phone = normalizePhone(input.phone)
-  if (!phone) return { ok: false, error: 'Invalid or missing phone number' }
+  if (!phone) return { ok: false, error: INVALID_PHONE }
   if (!input.full_name?.trim()) input.full_name = 'Unknown Lead'
 
   const supabase = createServiceClient()
 
   // De-dup: if an active lead with this phone exists, log a re-inquiry instead
-  // of creating a duplicate record.
+  // of creating a duplicate record. Matched on the last 10 digits: older and hand-typed
+  // leads are stored formatted ("+91-98100 01025"), new ones as bare digits.
   const { data: existing } = await supabase
     .from('leads')
     .select('id, assigned_to')
-    .eq('phone', phone)
+    .ilike('phone', `%${phone}`)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
 
   if (existing) {
+    if (input.onDuplicate === 'ignore') return { ok: true, id: existing.id, duplicate: true }
     await supabase.from('lead_activities').insert({
       lead_id: existing.id,
       type: 'system',
@@ -97,6 +111,8 @@ export async function ingestLead(input: NormalizedLeadInput): Promise<IngestResu
     utm_medium: input.utm_medium || null,
     utm_campaign: input.utm_campaign || null,
     campaign_name: input.campaign_name || null,
+    project_id: input.project_id || null,
+    broker_id: input.broker_id || null,
     assigned_to: assignedTo,
     stage: 'new_lead',
     whatsapp_opt_in: true,

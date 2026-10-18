@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
+import { applyBroadcastReceipt, markBroadcastReplied } from '@/lib/whatsapp/broadcast'
+import { lastTenDigits } from '@/lib/whatsapp/phone'
 import { verifyWebhookSignature, markMessageRead } from '@/lib/whatsapp/provider'
 import { runAutoReplyRules } from '@/lib/whatsapp/auto-reply'
 import { processBotMessage } from '@/lib/whatsapp/chatbot'
+import { ingestLead } from '@/lib/leads/ingest'
 import type {
   MetaWebhookPayload,
   MetaInboundMessage,
@@ -31,9 +34,10 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const rawBody = await req.text()
 
-  // Verify signature
+  // Fails closed: without WHATSAPP_APP_SECRET anyone could post fake inbound messages
+  // (and trigger the bot / lead creation). Unused when AgencyX owns the number.
   const signature = req.headers.get('x-hub-signature-256') ?? ''
-  if (APP_SECRET && !verifyWebhookSignature(signature, rawBody, APP_SECRET)) {
+  if (!APP_SECRET || !verifyWebhookSignature(signature, rawBody, APP_SECRET)) {
     return new NextResponse('Invalid signature', { status: 401 })
   }
 
@@ -76,7 +80,7 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleStatusUpdate(status: MetaMessageStatus) {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   const updates: Record<string, unknown> = {
     delivery_status: status.status,
   }
@@ -91,21 +95,16 @@ async function handleStatusUpdate(status: MetaMessageStatus) {
     .update(updates)
     .eq('wa_message_id', status.id)
 
-  // Update broadcast recipient if applicable
-  if (status.status === 'delivered' || status.status === 'read') {
-    await supabase
-      .from('broadcast_recipients')
-      .update({
-        status: status.status,
-        ...(status.status === 'delivered' ? { delivered_at: updates.delivered_at } : {}),
-        ...(status.status === 'read' ? { read_at: updates.read_at } : {}),
-      })
-      .eq('wa_message_id', status.id)
-  }
+  await applyBroadcastReceipt(
+    status.id,
+    status.status,
+    new Date(parseInt(status.timestamp) * 1000).toISOString(),
+    status.errors?.[0]?.title,
+  )
 }
 
 async function handleInboundMessage(msg: MetaInboundMessage, contact: MetaContact | undefined) {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   const phone = msg.from
   const contactName = contact?.profile?.name ?? null
   const timestamp = new Date(parseInt(msg.timestamp) * 1000).toISOString()
@@ -145,13 +144,15 @@ async function handleInboundMessage(msg: MetaInboundMessage, contact: MetaContac
     }).eq('id', conversationId)
   } else {
     isNewContact = true
-    // Try to find matching lead
+    // Leads store 10-digit numbers (or formatted ones); WhatsApp sends 91XXXXXXXXXX.
     const { data: lead } = await supabase
       .from('leads')
-      .select('id')
-      .eq('phone', phone)
-      .eq('is_deleted', false)
-      .single()
+      .select('id, assigned_to, branch_id')
+      .ilike('phone', `%${lastTenDigits(phone)}`)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
 
     const { data: newConv, error: convError } = await supabase
       .from('whatsapp_conversations')
@@ -160,6 +161,8 @@ async function handleInboundMessage(msg: MetaInboundMessage, contact: MetaContac
         contact_phone: phone,
         contact_name: contactName,
         lead_id: lead?.id ?? null,
+        assigned_to: lead?.assigned_to ?? null,
+        branch_id: lead?.branch_id ?? null,
         status: 'new',
         unread_count: 1,
         last_message_at: timestamp,
@@ -190,6 +193,17 @@ async function handleInboundMessage(msg: MetaInboundMessage, contact: MetaContac
 
   // Mark as read on Meta
   await markMessageRead(msg.id)
+  await markBroadcastReplied(phone)
+
+  // STOP / START, as WhatsApp's opt-out convention; checked before every marketing send.
+  const said = bodyText.trim().toLowerCase()
+  if (['stop', 'unsubscribe', 'stop promotions', 'stop all', 'opt out', 'optout'].includes(said)) {
+    await supabase.from('whatsapp_conversations').update({ opted_out: true, opted_out_at: timestamp }).eq('id', conversationId)
+    return
+  }
+  if (['start', 'subscribe', 'unstop', 'resume promotions'].includes(said)) {
+    await supabase.from('whatsapp_conversations').update({ opted_out: false, opted_out_at: null }).eq('id', conversationId)
+  }
 
   // If opted out, skip auto-replies
   if (existingConv?.opted_out) return
@@ -279,18 +293,16 @@ async function handleInboundMessage(msg: MetaInboundMessage, contact: MetaContac
 
     // If we captured a preferred date (visit request), create a lead if none exists
     if (result.handoffReason === 'visit_requested' && !existingConv?.lead_id) {
-      const { data: newLead } = await supabase.from('leads').insert({
+      // Through the shared ingest: dedupe, assignment rules, scoring, automations.
+      const ingested = await ingestLead({
+        source: 'whatsapp',
         full_name: contactName ?? phone,
         phone,
-        source: 'whatsapp',
-        stage: 'new',
-        preferred_city: result.context.city ?? null,
-        budget_min: null,
-        budget_max: null,
-        notes: `WhatsApp chatbot lead. Budget: ${result.context.budget_range ?? 'unknown'}. Preferred date: ${result.context.preferred_date ?? 'unknown'}`,
-        score: 50,
-        temperature: 'warm',
-      }).select('id').single()
+        city: result.context.city ?? null,
+        requirement: `WhatsApp chatbot lead. Budget: ${result.context.budget_range ?? 'unknown'}. Preferred date: ${result.context.preferred_date ?? 'unknown'}`,
+        utm_source: 'whatsapp',
+      })
+      const newLead = ingested.ok && ingested.id ? { id: ingested.id } : null
 
       if (newLead) {
         await supabase.from('whatsapp_conversations').update({

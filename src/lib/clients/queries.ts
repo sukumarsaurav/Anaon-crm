@@ -162,15 +162,15 @@ export async function getClientTimeline(clientId: string): Promise<TimelineEvent
   ] = await Promise.all([
     leadId ? supabase
       .from('lead_activities')
-      .select('id, type, note, created_at, created_by_profile:profiles!lead_activities_created_by_fkey(full_name)')
+      .select('id, type, notes, created_at, created_by_profile:profiles!lead_activities_performed_by_fkey(full_name)')
       .eq('lead_id', leadId)
       .order('created_at', { ascending: false })
       .limit(30) : Promise.resolve({ data: [] }),
     leadId ? supabase
       .from('site_visits')
-      .select('id, visit_date, status, visit_type, advisor_notes, created_at')
+      .select('id, visit_date, scheduled_at, status, outcome, advisor_notes, created_at')
       .eq('lead_id', leadId)
-      .order('visit_date', { ascending: false })
+      .order('scheduled_at', { ascending: false, nullsFirst: false })
       .limit(10) : Promise.resolve({ data: [] }),
     supabase
       .from('payments')
@@ -204,7 +204,7 @@ export async function getClientTimeline(clientId: string): Promise<TimelineEvent
       type:        'activity',
       date:        a.created_at,
       title:       a.type.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
-      description: a.note,
+      description: a.notes,
     })
   }
 
@@ -212,8 +212,8 @@ export async function getClientTimeline(clientId: string): Promise<TimelineEvent
     events.push({
       id:          `visit-${v.id}`,
       type:        'visit',
-      date:        v.visit_date,
-      title:       `Site Visit — ${v.visit_type ?? 'General'}`,
+      date:        v.visit_date ?? v.scheduled_at ?? v.created_at,
+      title:       `Site Visit${v.outcome ? ` — ${String(v.outcome).replace(/_/g, ' ')}` : ''}`,
       description: v.advisor_notes,
     })
   }

@@ -157,21 +157,13 @@ export function verifyWebhookSignature(
   body: string,
   appSecret: string
 ): boolean {
-  if (!appSecret) return true // skip in dev if not configured
+  if (!appSecret || !signature) return false
   const crypto = require('crypto')
   const expected = 'sha256=' + crypto.createHmac('sha256', appSecret).update(body).digest('hex')
+  // timingSafeEqual throws on a length mismatch — that is just a wrong signature.
+  if (signature.length !== expected.length) return false
   return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
 }
 
-export function renderTemplate(
-  body: string,
-  variableNames: string[],
-  values: Record<string, string>
-): string {
-  let rendered = body
-  variableNames.forEach((name, i) => {
-    const placeholder = `{{${i + 1}}}`
-    rendered = rendered.replaceAll(placeholder, values[name] ?? `[${name}]`)
-  })
-  return rendered
-}
+// Kept importable from here for existing callers.
+export { renderTemplate } from './template-render'

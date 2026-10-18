@@ -55,7 +55,7 @@ export async function getDailyKPI(userId: string, date: string): Promise<DailyKP
   const [activitiesRes, visitsRes, bookingsRes, waRes] = await Promise.all([
     supabase
       .from('lead_activities')
-      .select('activity_type, outcome, duration_minutes')
+      .select('type, outcome')
       .eq('performed_by', userId)
       .gte('created_at', dayStart)
       .lte('created_at', dayEnd),
@@ -89,13 +89,13 @@ export async function getDailyKPI(userId: string, date: string): Promise<DailyKP
   const bookings = bookingsRes.data ?? []
   const waMsgs = waRes.data ?? []
 
-  const calls_made = activities.filter((a) => a.activity_type === 'call').length
+  const calls_made = activities.filter((a) => a.type === 'call').length
   const connected_calls = activities.filter(
-    (a) => a.activity_type === 'call' && a.outcome !== 'no_answer' && a.outcome !== 'voicemail'
+    (a) => a.type === 'call' && String(a.outcome ?? '').startsWith('connected')
   ).length
-  const followups_completed = activities.filter((a) => a.activity_type === 'follow_up').length
+  const followups_completed = activities.filter((a) => a.type === 'follow_up').length
   const followups_scheduled = 0 // computed from pending follow-ups separately
-  const proposals_sent = activities.filter((a) => a.activity_type === 'document_shared').length
+  const proposals_sent = activities.filter((a) => a.type === 'document_shared').length
   const revenue = bookings.reduce((sum, b) => sum + (b.budget_max ?? 0), 0)
 
   return {
@@ -123,7 +123,7 @@ export async function getMonthlyKPI(userId: string, month: number, year: number)
   const [activitiesRes, visitsRes, bookingsRes, waRes] = await Promise.all([
     supabase
       .from('lead_activities')
-      .select('activity_type, outcome')
+      .select('type, outcome')
       .eq('performed_by', userId)
       .gte('created_at', from)
       .lte('created_at', to),
@@ -156,9 +156,9 @@ export async function getMonthlyKPI(userId: string, month: number, year: number)
   const visits = visitsRes.data ?? []
   const bookings = bookingsRes.data ?? []
 
-  const calls_made = activities.filter((a) => a.activity_type === 'call').length
+  const calls_made = activities.filter((a) => a.type === 'call').length
   const connected_calls = activities.filter(
-    (a) => a.activity_type === 'call' && a.outcome !== 'no_answer' && a.outcome !== 'voicemail'
+    (a) => a.type === 'call' && String(a.outcome ?? '').startsWith('connected')
   ).length
 
   return {
@@ -166,7 +166,7 @@ export async function getMonthlyKPI(userId: string, month: number, year: number)
     year,
     calls_made,
     connected_calls,
-    followups_completed: activities.filter((a) => a.activity_type === 'follow_up').length,
+    followups_completed: activities.filter((a) => a.type === 'follow_up').length,
     site_visits_scheduled: visits.filter((v) => v.status === 'scheduled').length,
     site_visits_completed: visits.filter((v) => v.status === 'completed').length,
     bookings_done: bookings.length,

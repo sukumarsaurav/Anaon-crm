@@ -36,3 +36,11 @@ jobs:
         env:
           CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+      - name: WhatsApp broadcasts (scheduled + continuing)
+        run: |
+          curl -fsS -X POST "$CRON_BASE_URL/api/cron/broadcasts" \
+            -H "Authorization: Bearer $CRON_SECRET" || echo "broadcasts failed (non-fatal)"
+        env:
+          CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}

@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { X } from 'lucide-react'
 import { sendTemplateToConversation } from '@/lib/whatsapp/actions'
-import { renderTemplate } from '@/lib/whatsapp/provider'
+import { renderTemplate } from '@/lib/whatsapp/template-render'
 import type { WaTemplate } from '@/types/whatsapp'
 
 interface Props {

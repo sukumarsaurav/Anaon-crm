@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { X, UserCheck, Download, GitBranch, MessageSquare } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import { bulkAssignLeads, bulkChangeStage, bulkSendWhatsApp } from '@/lib/leads/actions'
@@ -19,6 +19,21 @@ export default function BulkActionsBar({ selectedIds, advisors, onClear }: BulkA
   const [showWhatsApp, setShowWhatsApp] = useState(false)
   const [waText, setWaText] = useState('')
   const [waResult, setWaResult] = useState<string | null>(null)
+  const [waTemplateId, setWaTemplateId] = useState('')
+  const [waTemplates, setWaTemplates] = useState<{ id: string; display_name: string }[]>([])
+
+  // Approved templates, loaded when the panel opens: a template is the only message
+  // WhatsApp delivers to a lead who hasn't written in the last 24 hours.
+  useEffect(() => {
+    if (!showWhatsApp) return
+    createClient()
+      .from('whatsapp_templates')
+      .select('id, display_name')
+      .eq('status', 'approved')
+      .eq('is_active', true)
+      .order('display_name')
+      .then(({ data }) => setWaTemplates(data ?? []))
+  }, [showWhatsApp])
   const [loading, setLoading] = useState(false)
   const [exporting, setExporting] = useState(false)
 
@@ -39,14 +54,14 @@ export default function BulkActionsBar({ selectedIds, advisors, onClear }: BulkA
   }
 
   const handleBulkWhatsApp = async () => {
-    if (!waText.trim()) return
+    if (!waTemplateId && !waText.trim()) return
     setLoading(true)
-    const res = await bulkSendWhatsApp(selectedIds, waText)
+    const res = await bulkSendWhatsApp(selectedIds, waText, waTemplateId || null)
     setLoading(false)
     if (res.success) {
-      setWaResult(`Sent ${res.sent ?? 0}${res.failed ? `, ${res.failed} failed` : ''}`)
+      setWaResult(`Sent ${res.sent ?? 0}${res.failed ? `, ${res.failed} failed${res.errors?.[0] ? ` — ${res.errors[0]}` : ''}` : ''}`)
       setWaText('')
-      setTimeout(() => { setShowWhatsApp(false); setWaResult(null); onClear() }, 1500)
+      if (!res.failed) setTimeout(() => { setShowWhatsApp(false); setWaResult(null); onClear() }, 1500)
     } else {
       setWaResult(res.error ?? 'Failed')
     }
@@ -172,16 +187,28 @@ export default function BulkActionsBar({ selectedIds, advisors, onClear }: BulkA
               <p className="text-xs font-semibold text-slate-500 mb-1.5">
                 Message {selectedIds.length} lead{selectedIds.length !== 1 ? 's' : ''} · use <code className="bg-slate-100 px-1 rounded">{'{{name}}'}</code>
               </p>
-              <textarea
-                value={waText}
-                onChange={(e) => setWaText(e.target.value)}
-                rows={3}
-                placeholder="Hi {{name}}, ..."
-                className="w-full text-sm border border-slate-200 rounded-lg px-2.5 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-400 resize-none"
-              />
+              <select
+                value={waTemplateId}
+                onChange={(e) => setWaTemplateId(e.target.value)}
+                className="w-full text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 mb-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-400"
+              >
+                <option value="">Free text (only reaches leads who messaged in 24h)</option>
+                {waTemplates.map((t) => (
+                  <option key={t.id} value={t.id}>Template: {t.display_name}</option>
+                ))}
+              </select>
+              {!waTemplateId && (
+                <textarea
+                  value={waText}
+                  onChange={(e) => setWaText(e.target.value)}
+                  rows={3}
+                  placeholder="Hi {{name}}, ..."
+                  className="w-full text-sm border border-slate-200 rounded-lg px-2.5 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-400 resize-none"
+                />
+              )}
               <div className="flex items-center justify-between mt-2">
                 <span className="text-xs text-slate-500">{waResult}</span>
-                <Button variant="primary" size="xs" onClick={handleBulkWhatsApp} loading={loading} disabled={!waText.trim()}>
+                <Button variant="primary" size="xs" onClick={handleBulkWhatsApp} loading={loading} disabled={!waTemplateId && !waText.trim()}>
                   Send
                 </Button>
               </div>

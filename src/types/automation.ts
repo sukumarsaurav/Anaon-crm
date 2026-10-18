@@ -34,6 +34,8 @@ export interface AutomationCondition {
 export interface AutomationActionPayload {
   // send_whatsapp
   template_name?: string
+  /** Fixed values for template variables the record can't fill, by variable name. */
+  template_variables?: Record<string, string>
   message_body?: string
   recipient?: 'lead' | 'client' | 'advisor' | 'manager'
   // send_notification

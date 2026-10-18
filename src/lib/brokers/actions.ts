@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { ingestLead, normalizePhone } from '@/lib/leads/ingest'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 
@@ -142,8 +143,10 @@ export async function linkBrokerAuthUser(brokerId: string, email: string) {
       .single()
 
     if (userRow) {
+      // Linking via brokers.auth_user_id is what grants portal access. (This also set
+      // profiles.role = 'broker', which isn't a user_role value — the update always
+      // failed — and if it had worked it would have demoted a staff account.)
       await auth.supabase.from('brokers').update({ auth_user_id: userRow.id, updated_at: new Date().toISOString() }).eq('id', brokerId)
-      await auth.supabase.from('profiles').update({ role: 'broker' }).eq('id', userRow.id)
     }
   }
 
@@ -201,57 +204,42 @@ export async function registerBrokerLead(formData: FormData) {
 
   const phone     = (formData.get('client_phone') as string).trim()
   const projectId = formData.get('project_id') as string || null
+  const notes     = (formData.get('notes') as string)?.trim() || null
+  const budgetMin = parseFloat(formData.get('budget_min') as string) || null
+  const budgetMax = parseFloat(formData.get('budget_max') as string) || null
+  if (!normalizePhone(phone)) return { success: false, error: 'Enter a valid 10-digit Indian mobile number' }
 
-  // Duplicate detection: check if this phone already exists in leads
-  const { data: existingLead } = await supabase
-    .from('leads')
-    .select('id')
-    .eq('phone', phone)
-    .maybeSingle()
+  // The shared ingest (service client) dedupes against ALL leads — a broker can't see
+  // them under RLS, so the old check here always said "new" — and applies assignment
+  // rules, scoring and automations like every other source.
+  const ingested = await ingestLead({
+    source: 'broker',
+    full_name: formData.get('client_name') as string,
+    phone,
+    project_id: projectId,
+    broker_id: broker.id,
+    budget_min: budgetMin,
+    budget_max: budgetMax,
+    requirement: [`Registered by channel partner ${broker.full_name}`, notes].filter(Boolean).join(' — '),
+    utm_source: 'broker',
+  })
+  if (!ingested.ok) return { success: false, error: ingested.error ?? 'Failed to register lead' }
+  const isDuplicate = Boolean(ingested.duplicate)
 
-  const isDuplicate = !!existingLead
-
-  // Insert registration
   const { data: reg, error } = await supabase.from('broker_lead_registrations').insert({
     broker_id:           broker.id,
     client_name:         formData.get('client_name') as string,
     client_phone:        phone,
     project_id:          projectId,
-    budget_min:          parseFloat(formData.get('budget_min') as string) || null,
-    budget_max:          parseFloat(formData.get('budget_max') as string) || null,
-    notes:               formData.get('notes') as string || null,
+    budget_min:          budgetMin,
+    budget_max:          budgetMax,
+    notes,
     status:              isDuplicate ? 'duplicate' : 'registered',
-    duplicate_of_lead_id: isDuplicate ? existingLead!.id : null,
-    created_at:          new Date().toISOString(),
-    updated_at:          new Date().toISOString(),
+    duplicate_of_lead_id: isDuplicate ? ingested.id : null,
+    crm_lead_id:         isDuplicate ? null : ingested.id,
   }).select('id').single()
 
   if (error || !reg) return { success: false, error: error?.message ?? 'Failed to register lead' }
-
-  // If not a duplicate, auto-create CRM lead
-  if (!isDuplicate) {
-    const { data: lead } = await supabase.from('leads').insert({
-      full_name:      formData.get('client_name') as string,
-      phone:          phone,
-      source:         'broker',
-      referred_by:    broker.full_name,
-      project_id:     projectId,
-      budget_min:     parseFloat(formData.get('budget_min') as string) || null,
-      budget_max:     parseFloat(formData.get('budget_max') as string) || null,
-      notes:          formData.get('notes') as string || null,
-      stage:          'new_lead',
-      score:          0,
-      temperature:    'cold',
-      created_at:     new Date().toISOString(),
-      updated_at:     new Date().toISOString(),
-    }).select('id').single()
-
-    if (lead) {
-      await supabase.from('broker_lead_registrations')
-        .update({ crm_lead_id: lead.id })
-        .eq('id', reg.id)
-    }
-  }
 
   revalidatePath('/broker-portal/leads')
   return { success: true, isDuplicate, id: reg.id }

@@ -183,7 +183,7 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
         </div>
         <div>
           <label className="block text-xs text-slate-600 mb-1">Action Type</label>
-          <select value={action} onChange={e => { setAction(e.target.value as ActionType); setPayload({}) }} className={selectCls}>
+          <select value={action} onChange={e => { const a = e.target.value as ActionType; setAction(a); setPayload(a === 'send_whatsapp' ? { recipient: 'lead' } : {}) }} className={selectCls}>
             {ACTION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </div>
@@ -192,7 +192,7 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
         {action === 'send_whatsapp' && (
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Template Name</label>
+              <label className="block text-xs text-slate-600 mb-1">WhatsApp Template (approved)</label>
               {whatsappTemplates.length > 0 ? (
                 <select value={payload.template_name ?? ''} onChange={e => setPayload(p => ({ ...p, template_name: e.target.value }))} className={selectCls}>
                   <option value="">Select template</option>
@@ -208,7 +208,6 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
               <select value={payload.recipient ?? 'lead'} onChange={e => setPayload(p => ({ ...p, recipient: e.target.value as any }))} className={selectCls}>
                 <option value="lead">Lead</option>
                 <option value="client">Client</option>
-                <option value="advisor">Advisor</option>
               </select>
             </div>
           </div>

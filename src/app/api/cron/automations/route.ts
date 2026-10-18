@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkBearer } from '@/lib/security/secrets'
 import { createServiceClient } from '@/lib/supabase/service'
-import { fireAutomations } from '@/lib/automation/engine'
+import { fireAutomations, runAutomation } from '@/lib/automation/engine'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     .from('leads')
     .select('id, full_name, phone, assigned_to, source, stage, utm_source, project_id')
     .eq('is_active', true)
-    .not('stage', 'in', '(booked,not_interested,lost)')
+    .not('stage', 'in', '(token_paid,closed_won,not_interested)')
     .lt('updated_at', fortyEightHoursAgo)
     .limit(50)
 
@@ -126,22 +126,21 @@ export async function POST(req: NextRequest) {
   let pendingCount = 0
   for (const exec of pending ?? []) {
     const automation = (exec as any).automation
-    if (!automation) continue
-    const ctx = exec.context_snapshot ?? {}
+    // Claim first: a second overlapping cron run must not execute it again.
+    const { data: claimed } = await supabase.from('automation_pending_executions')
+      .update({ status: 'running' })
+      .eq('id', exec.id)
+      .eq('status', 'pending')
+      .select('id')
+    if (!claimed?.length) continue
+    if (!automation || !automation.is_active) {
+      await supabase.from('automation_pending_executions').update({ status: 'cancelled', executed_at: new Date().toISOString() }).eq('id', exec.id)
+      continue
+    }
     try {
-      // Re-execute — using service client directly since this is cron
-      await supabase.from('automation_logs').insert({
-        automation_id:       exec.automation_id,
-        trigger_record_type: exec.trigger_record_type,
-        trigger_record_id:   exec.trigger_record_id,
-        status:              'success',
-        action_result:       { type: 'delayed_execution', scheduled_for: exec.scheduled_for },
-        lead_name:           (ctx as any).lead?.full_name ?? null,
-        lead_phone:          (ctx as any).lead?.phone ?? null,
-        executed_at:         new Date().toISOString(),
-      })
+      const res = await runAutomation(automation, exec.context_snapshot ?? {}, exec.trigger_record_type, exec.trigger_record_id, `autodelay_${exec.id}`)
       await supabase.from('automation_pending_executions')
-        .update({ status: 'executed', executed_at: new Date().toISOString() })
+        .update({ status: res.success ? 'executed' : 'failed', executed_at: new Date().toISOString() })
         .eq('id', exec.id)
       pendingCount++
     } catch {

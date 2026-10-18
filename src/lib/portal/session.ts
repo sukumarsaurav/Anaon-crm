@@ -1,6 +1,6 @@
 import { cache } from 'react'
 import { cookies } from 'next/headers'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import type { Client } from '@/types/clients'
 
 /**
@@ -17,8 +17,8 @@ export const getPortalSession = cache(async (): Promise<{ client: Client } | nul
   const token = cookieStore.get('client_portal_session')?.value
   if (!token) return null
 
-  const supabase = await createClient()
-  const { data } = await supabase.rpc('portal_check_session', { p_token: token })
+  // service_role: portal_check_session is not executable by anon (see portal/actions.ts).
+  const { data } = await createServiceClient().rpc('portal_check_session', { p_token: token })
   if (!data) return null
   return { client: data as Client }
 })

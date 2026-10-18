@@ -241,7 +241,7 @@ export async function getSourcePerformance(from?: string, to?: string) {
 
 export async function getLostLeadAnalysis(from?: string, to?: string) {
   const supabase = await createClient()
-  let q = supabase.from('leads').select('id, stage').eq('is_active', true).in('stage', ['not_interested', 'lost'])
+  let q = supabase.from('leads').select('id, stage').eq('is_active', true).eq('stage', 'not_interested')
   if (from) q = q.gte('updated_at', from)
   if (to) q = q.lte('updated_at', to)
   const { data: lostLeads } = await q

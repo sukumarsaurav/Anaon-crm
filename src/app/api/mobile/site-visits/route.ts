@@ -33,19 +33,19 @@ export async function POST(req: NextRequest) {
   const statusMap: Record<string, string> = {
     interested: 'site_visit_done',
     negotiation: 'negotiation',
-    not_interested: 'lost',
+    not_interested: 'not_interested',
     follow_up: 'site_visit_done',
   }
   const newStatus = statusMap[outcome]
   if (newStatus) {
-    await supabase.from('leads').update({ status: newStatus }).eq('id', lead_id)
+    await supabase.from('leads').update({ stage: newStatus, updated_at: new Date().toISOString() }).eq('id', lead_id)
   }
 
   await supabase.from('lead_activities').insert({
     lead_id,
     type: 'site_visit',
     notes: `Site visit completed. Outcome: ${outcome}. ${notes ?? ''}`.trim(),
-    created_by: user.id,
+    performed_by: user.id,
   })
 
   return NextResponse.json({ success: true, id: data.id })

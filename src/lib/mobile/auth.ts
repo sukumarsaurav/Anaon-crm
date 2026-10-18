@@ -6,6 +6,12 @@ const serviceSupabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 )
 
+/**
+ * Validates the app's Bearer token and returns a client that acts AS that user, so RLS
+ * (team hierarchy, own rows) applies exactly as in the web app. It used to return the
+ * service client, which let any signed-in telecaller read every lead in the company
+ * (`/api/mobile/leads?my_only=false`).
+ */
 export async function getMobileUser(req: NextRequest) {
   const auth = req.headers.get('authorization')
   if (!auth?.startsWith('Bearer ')) return null
@@ -21,5 +27,14 @@ export async function getMobileUser(req: NextRequest) {
     .single()
 
   if (!profile?.is_active) return null
-  return { user: data.user, profile, supabase: serviceSupabase }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    },
+  )
+  return { user: data.user, profile, supabase }
 }

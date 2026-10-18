@@ -15,6 +15,13 @@ export default async function NewAutomationPage() {
     .eq('is_active', true)
     .order('full_name')
 
+  // Approved ones only — anything else fails at send time.
+  const { data: templates } = await supabase
+    .from('whatsapp_templates')
+    .select('name')
+    .eq('status', 'approved')
+    .order('name')
+
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
@@ -27,7 +34,7 @@ export default async function NewAutomationPage() {
         </div>
       </div>
 
-      <AutomationBuilder advisors={advisors ?? []} />
+      <AutomationBuilder advisors={advisors ?? []} whatsappTemplates={templates ?? []} />
     </div>
   )
 }

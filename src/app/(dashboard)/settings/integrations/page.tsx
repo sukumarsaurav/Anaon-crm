@@ -19,7 +19,12 @@ export default async function IntegrationsSettingsPage() {
         title="Lead Capture Integrations"
         subtitle="Connect lead sources to auto-import inquiries into the pipeline"
       />
-      <IntegrationsPanel secret={secret} appUrl={appUrl} />
+      <IntegrationsPanel
+        secret={secret}
+        appUrl={appUrl}
+        agencyxConfigured={Boolean(process.env.AGENCYX_WEBHOOK_SECRET)}
+        agencyxSendConfigured={Boolean(process.env.AGENCYX_API_KEY)}
+      />
     </div>
   )
 }

@@ -13,15 +13,15 @@ export async function GET(req: NextRequest) {
       .select('id', { count: 'exact', head: true })
       .eq('assigned_to', user.id)
       .eq('is_active', true)
-      .lte('next_follow_up', `${todayStr}T23:59:59`)
-      .gte('next_follow_up', `${todayStr}T00:00:00`),
+      .lte('next_followup_at', `${todayStr}T23:59:59`)
+      .gte('next_followup_at', `${todayStr}T00:00:00`),
 
     supabase.from('leads')
       .select('id', { count: 'exact', head: true })
       .eq('assigned_to', user.id)
       .eq('is_active', true)
-      .lt('next_follow_up', `${todayStr}T00:00:00`)
-      .not('status', 'in', '(won,lost)'),
+      .lt('next_followup_at', `${todayStr}T00:00:00`)
+      .not('stage', 'in', '(closed_won,not_interested)'),
 
     supabase.from('leads')
       .select('id', { count: 'exact', head: true })
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
       .limit(1),
 
     supabase.from('leads')
-      .select('id, full_name, status, created_at')
+      .select('id, full_name, status:stage, created_at')
       .eq('assigned_to', user.id)
       .eq('is_active', true)
       .order('created_at', { ascending: false })

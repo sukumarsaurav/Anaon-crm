@@ -7,7 +7,9 @@ import { calculateLeadScore } from './scoring'
 import { getLeadActivities } from './queries'
 import { resolveAssignee } from './assignment'
 import { notifyUsers } from '@/lib/notifications/notify'
-import { sendTextMessage } from '@/lib/whatsapp/provider'
+import { sendWhatsAppText, sendWhatsAppTemplate, isWhatsAppOptedOut, recordOutboundWhatsApp } from '@/lib/whatsapp/send'
+import { fillTemplateVariables } from '@/lib/whatsapp/variables'
+import { renderTemplate } from '@/lib/whatsapp/template-render'
 import type { LeadStage, FollowUpOutcome, Lead } from '@/types/leads'
 import { suggestNextFollowup } from '@/lib/utils'
 import { fireAutomations } from '@/lib/automation/engine'
@@ -364,42 +366,94 @@ export async function bulkChangeStage(
   return { success: true, count: leadIds.length }
 }
 
+/**
+ * WhatsApp to selected leads. A template reaches anyone; free text only reaches leads who
+ * messaged in the last 24 hours (WhatsApp's rule) — the rest come back as failed with
+ * that reason rather than silently.
+ */
 export async function bulkSendWhatsApp(
   leadIds: string[],
-  message: string
-): Promise<{ success: boolean; error?: string; sent?: number; failed?: number }> {
+  message: string,
+  templateId?: string | null,
+): Promise<{ success: boolean; error?: string; sent?: number; failed?: number; errors?: string[] }> {
   const supabase = await createClient()
   const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Not authenticated' }
   if (!leadIds.length) return { success: false, error: 'No leads selected' }
-  if (!message.trim()) return { success: false, error: 'Message is empty' }
+  if (leadIds.length > 200) return { success: false, error: 'Send to at most 200 leads at once — use a Broadcast for more' }
+  if (!templateId && !message.trim()) return { success: false, error: 'Message is empty' }
 
+  type Tpl = { name: string; language: string; body: string; variable_names: string[] }
+  let template: Tpl | null = null
+  if (templateId) {
+    const { data } = await supabase
+      .from('whatsapp_templates')
+      .select('name, language, body, variable_names, status')
+      .eq('id', templateId)
+      .single()
+    if (!data || data.status !== 'approved') return { success: false, error: 'Template is not approved' }
+    template = data as Tpl
+  }
+
+  // RLS: only leads this user can see.
   const { data: leads } = await supabase
     .from('leads')
-    .select('id, full_name, phone')
+    .select('id, full_name, phone, project:projects(name)')
     .in('id', leadIds)
     .not('phone', 'is', null)
 
+  const profile = (await getProfile())?.profile
   let sent = 0
   let failed = 0
+  const errors: string[] = []
   for (const lead of leads ?? []) {
-    const text = message.replace(/\{\{\s*name\s*\}\}/g, lead.full_name ?? 'there')
-    const res = await sendTextMessage(lead.phone as string, text)
+    if (await isWhatsAppOptedOut(lead.phone as string)) {
+      failed++
+      errors.push(`${lead.full_name}: opted out`)
+      continue
+    }
+    let res
+    let body: string
+    if (template) {
+      const { values, missing } = fillTemplateVariables(template.variable_names, {
+        name: lead.full_name || 'there',
+        project: (lead.project as unknown as { name?: string } | null)?.name,
+        advisor_name: profile?.full_name,
+      })
+      if (missing.length) {
+        failed++
+        errors.push(`${lead.full_name}: no value for ${missing.join(', ')}`)
+        continue
+      }
+      const vars = Object.fromEntries(template.variable_names.map((n, i) => [n, values[i]]))
+      body = renderTemplate(template.body, template.variable_names, vars)
+      res = await sendWhatsAppTemplate({ to: lead.phone as string, name: template.name, language: template.language, variables: values })
+      if (res.success) {
+        await recordOutboundWhatsApp({ to: res.to!, body, type: 'template', waMessageId: res.messageId, templateName: template.name, templateParams: vars, sentBy: user.id, leadId: lead.id })
+      }
+    } else {
+      body = message.replace(/\{\{\s*name\s*\}\}/g, lead.full_name ?? 'there')
+      res = await sendWhatsAppText({ to: lead.phone as string, text: body })
+      if (res.success) {
+        await recordOutboundWhatsApp({ to: res.to!, body, type: 'text', waMessageId: res.messageId, sentBy: user.id, leadId: lead.id })
+      }
+    }
     if (res.success) {
       sent++
       await supabase.from('lead_activities').insert({
         lead_id: lead.id,
         type: 'whatsapp',
-        notes: `WhatsApp sent (bulk): ${text.slice(0, 120)}`,
+        notes: `WhatsApp sent (bulk): ${body.slice(0, 120)}`,
         performed_by: user.id,
       })
     } else {
       failed++
+      errors.push(`${lead.full_name}: ${res.error}`)
     }
   }
 
   revalidatePath('/leads')
-  return { success: true, sent, failed }
+  return { success: true, sent, failed, errors: errors.slice(0, 10) }
 }
 
 export async function deleteLead(leadId: string): Promise<{ success: boolean; error?: string }> {

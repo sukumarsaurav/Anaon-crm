@@ -5,14 +5,25 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { deliverOtp } from '@/lib/messaging/otp'
-import { createHash } from 'crypto'
+import { createServiceClient } from '@/lib/supabase/service'
+import { getPortalSession } from './session'
+import { createHash, randomInt } from 'crypto'
 
 function hashOtp(otp: string): string {
   return createHash('sha256').update(otp).digest('hex')
 }
 
+// crypto, not Math.random: an OTP is a credential.
 function generateOtp(): string {
-  return String(Math.floor(100000 + Math.random() * 900000))
+  return String(randomInt(100000, 1000000))
+}
+
+// The portal_* functions are SECURITY DEFINER and trust their arguments (the OTP hash,
+// the client id), so EXECUTE is revoked from anon/authenticated and only this server
+// code, as service_role, may call them. Calling them with the browser-visible key let
+// anyone store an OTP hash of their choosing for any client's phone and log in as them.
+function portalDb() {
+  return createServiceClient()
 }
 
 // ── OTP auth ────────────────────────────────────────────────────────
@@ -22,7 +33,7 @@ export async function sendPortalOtp(phone: string): Promise<{ success: boolean; 
   const otp     = generateOtp()
   const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
-  const supabase = await createClient()
+  const supabase = portalDb()
   const { data: result } = await supabase.rpc('portal_create_otp', {
     p_phone:      cleaned,
     p_otp_hash:   hashOtp(otp),
@@ -50,7 +61,7 @@ export async function sendPortalOtp(phone: string): Promise<{ success: boolean; 
 export async function verifyPortalOtp(phone: string, otp: string): Promise<{ success: boolean; error?: string }> {
   const cleaned = phone.replace(/\s+/g, '').replace(/^(\+91|91)/, '')
 
-  const supabase = await createClient()
+  const supabase = portalDb()
   const { data: result } = await supabase.rpc('portal_verify_otp', {
     p_phone:    cleaned,
     p_otp_hash: hashOtp(otp),
@@ -79,18 +90,23 @@ export async function logoutPortal(): Promise<void> {
   const cookieStore = await cookies()
   const token = cookieStore.get('client_portal_session')?.value
   if (token) {
-    const supabase = await createClient()
-    await supabase.rpc('portal_delete_session', { p_token: token })
+    await portalDb().rpc('portal_delete_session', { p_token: token })
     cookieStore.delete('client_portal_session')
   }
 }
 
 // ── Payment extension request (client) ────────────────────────────
 
-export async function requestPaymentExtension(clientId: string, formData: FormData) {
-  const supabase = await createClient()
-  const { error } = await supabase.rpc('portal_create_extension_request', {
-    p_client_id:      clientId,
+// `_clientId` is kept for existing callers but ignored: a server action is a public
+// endpoint, so the client is always the one signed in to the portal, never the argument.
+export async function requestPaymentExtension(_clientId: string, formData: FormData) {
+  const session = await getPortalSession()
+  if (!session) return { success: false, error: 'Please sign in again' }
+  const paymentId = formData.get('payment_id') as string
+  const { data: payment } = await portalDb().from('payments').select('id').eq('id', paymentId).eq('client_id', session.client.id).maybeSingle()
+  if (!payment) return { success: false, error: 'Payment not found' }
+  const { error } = await portalDb().rpc('portal_create_extension_request', {
+    p_client_id:      session.client.id,
     p_payment_id:     formData.get('payment_id') as string,
     p_booking_id:     formData.get('booking_id') as string,
     p_reason:         formData.get('reason') as string,
@@ -103,11 +119,16 @@ export async function requestPaymentExtension(clientId: string, formData: FormDa
 
 // ── Complaint from portal (client) ────────────────────────────────
 
-export async function raisePortalComplaint(clientId: string, formData: FormData) {
-  const supabase = await createClient()
+export async function raisePortalComplaint(_clientId: string, formData: FormData) {
+  const session = await getPortalSession()
+  if (!session) return { success: false, error: 'Please sign in again' }
   const bookingId = (formData.get('booking_id') as string) || null
-  const { error } = await supabase.rpc('portal_create_complaint', {
-    p_client_id:  clientId,
+  if (bookingId) {
+    const { data: booking } = await portalDb().from('bookings').select('id').eq('id', bookingId).eq('client_id', session.client.id).maybeSingle()
+    if (!booking) return { success: false, error: 'Booking not found' }
+  }
+  const { error } = await portalDb().rpc('portal_create_complaint', {
+    p_client_id:  session.client.id,
     p_booking_id: bookingId,
     p_category:   formData.get('category') as string,
     p_description: `${formData.get('title') as string}: ${formData.get('description') as string}`,
