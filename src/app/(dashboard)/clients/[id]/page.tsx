@@ -21,7 +21,9 @@ import CommunicationTimeline from '@/components/clients/CommunicationTimeline'
 import { Card } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
-import { Edit, Phone, Mail, MapPin, Briefcase, User } from 'lucide-react'
+import { Edit, Phone, Mail, MapPin, Briefcase, User, Plus, CreditCard, Users } from 'lucide-react'
+import { getLoanApplicationsByClient } from '@/lib/loans/queries'
+import { LOAN_STAGES } from '@/types/loans'
 import Avatar from '@/components/ui/Avatar'
 
 interface PageProps {
@@ -48,11 +50,12 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
   const profile = (await getProfile())?.profile
   const canManage = ['admin', 'manager'].includes(profile?.role ?? '')
 
-  const [bookings, documents, complaints, timeline] = await Promise.all([
+  const [bookings, documents, complaints, timeline, loans] = await Promise.all([
     getClientBookings(id),
     getClientDocuments(id),
     getClientComplaints(id),
     activeTab === 'timeline' ? getClientTimeline(id) : Promise.resolve([]),
+    activeTab === 'overview' ? getLoanApplicationsByClient(id) : Promise.resolve([]),
   ])
 
   // Staff a complaint can be assigned to (only loaded where it is used)
@@ -89,11 +92,21 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
           </span>
         }
         actions={
-          canManage ? (
-            <Button href={`/clients/${id}/edit`} size="sm">
-              <Edit size={16} /> Edit
+          <>
+            {client.lead_id && (
+              <Button href={`/leads/${client.lead_id}`} variant="secondary" size="sm">
+                <Users size={16} /> Lead
+              </Button>
+            )}
+            <Button href={`/bookings/new?client_id=${id}`} variant="secondary" size="sm">
+              <Plus size={16} /> New booking
             </Button>
-          ) : null
+            {canManage && (
+              <Button href={`/clients/${id}/edit`} size="sm">
+                <Edit size={16} /> Edit
+              </Button>
+            )}
+          </>
         }
       />
 
@@ -182,6 +195,27 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
                     <p className="text-xs text-slate-500">Phone</p>
                     <p className="font-medium text-slate-800">{client.co_applicant_phone ?? '—'}</p>
                   </div>
+                </div>
+              </Card>
+            )}
+
+            {/* Loans */}
+            {loans.length > 0 && (
+              <Card padding="md">
+                <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                  <CreditCard size={18} /> Home loans ({loans.length})
+                </h3>
+                <div className="divide-y divide-slate-100">
+                  {loans.map((l) => {
+                    const stage = LOAN_STAGES.find((s) => s.value === l.stage)
+                    const bank = (l as { bank?: { bank_name?: string } | null }).bank
+                    return (
+                      <Link key={l.id} href={`/loans/${l.id}`} className="flex items-center justify-between py-2.5 text-sm hover:bg-slate-50 -mx-2 px-2 rounded-lg">
+                        <span className="text-slate-800">{bank?.bank_name ?? 'Bank not selected'}{l.loan_amount_applied ? ` · ${formatCurrency(l.loan_amount_applied)}` : ''}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${stage?.bg ?? 'bg-slate-100'} ${stage?.color ?? 'text-slate-600'}`}>{stage?.label ?? l.stage}</span>
+                      </Link>
+                    )
+                  })}
                 </div>
               </Card>
             )}

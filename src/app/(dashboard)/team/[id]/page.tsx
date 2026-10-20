@@ -19,6 +19,8 @@ import { Card } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import EmptyState from '@/components/ui/EmptyState'
 import Avatar from '@/components/ui/Avatar'
+import MemberAssignmentForm from '@/components/team/MemberAssignmentForm'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata = { title: 'Team Member' }
 
@@ -55,6 +57,19 @@ export default async function MemberProfilePage({ params }: Props) {
 
   if (!member) notFound()
 
+  const isAdmin = currentProfile?.role === 'admin'
+  let branches: { id: string; name: string }[] = []
+  let teams: { id: string; name: string }[] = []
+  if (isAdmin && !isOwn) {
+    const supabase = await createClient()
+    const [b, t] = await Promise.all([
+      supabase.from('branches').select('id, name').order('name'),
+      supabase.from('teams').select('id, name').eq('is_active', true).order('name'),
+    ])
+    branches = b.data ?? []
+    teams = t.data ?? []
+  }
+
   const todayLog = attendanceLogs.find((l) => l.date === today) ?? null
   const initials = getInitials(member.full_name)
 
@@ -85,7 +100,7 @@ export default async function MemberProfilePage({ params }: Props) {
             </div>
           </div>
           <div className="flex gap-2 flex-shrink-0">
-            {currentProfile?.role === 'admin' && !isOwn && (
+            {canManage && !isOwn && (member.role !== 'admin' || currentProfile?.role === 'admin') && (
               <ActionButton
                 label={member.is_active ? 'Deactivate' : 'Reactivate'}
                 tone={member.is_active ? 'danger' : 'success'}
@@ -104,6 +119,20 @@ export default async function MemberProfilePage({ params }: Props) {
           </div>
         </div>
       </Card>
+
+      {isAdmin && !isOwn && (
+        <Card padding="md">
+          <h2 className="font-semibold text-slate-900 mb-3">Role, branch &amp; team</h2>
+          <MemberAssignmentForm
+            memberId={id}
+            role={member.role}
+            branchId={member.branch_id ?? null}
+            teamId={(member as { team_id?: string | null }).team_id ?? null}
+            branches={branches}
+            teams={teams}
+          />
+        </Card>
+      )}
 
       {/* Check-in + Today KPIs row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

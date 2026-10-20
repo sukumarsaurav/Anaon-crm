@@ -1,4 +1,5 @@
 import { world, resetWorld } from '../helpers/world'
+import { todayIST } from '@/lib/datetime'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 
@@ -87,7 +88,7 @@ describe('mobile API', async () => {
     const db = resetWorld({
       profiles: [{ id: 'u1', role: 'sales_advisor', is_active: true }, { id: 'brk', role: 'broker', is_active: true }, { id: 'off', role: 'sales_advisor', is_active: false }],
       leads: [{ id: 'L1', full_name: 'Mine', phone: '1', assigned_to: 'u1', is_active: true, stage: 'new_lead' }, { id: 'L2', full_name: 'Theirs', phone: '2', assigned_to: 'u2', is_active: true, stage: 'new_lead' }],
-      attendance: [],
+      attendance_logs: [],
     }, {}, null)
     db.auth.tokens = { good: { id: 'u1', email: 'a@x' }, brk: { id: 'brk', email: 'b@x' }, off: { id: 'off', email: 'o@x' } }
   })
@@ -104,17 +105,19 @@ describe('mobile API', async () => {
     const post = (b: any) => attendance.POST(req('/api/mobile/attendance', { headers: bearer('good'), body: b }))
     expect((await json(await post({ action: 'check_in', lat: 1, lng: 2 }))).body.success).toBe(true)
     expect((await json(await post({ action: 'check_in', lat: 1, lng: 2 }))).status).toBe(409)
-    expect(world.db.rows('attendance')).toHaveLength(1)
+    // The CRM's table (Team / HR / payroll read it), one row per IST day.
+    expect(world.db.rows('attendance_logs')).toHaveLength(1)
+    expect(world.db.rows('attendance_logs')[0]).toMatchObject({ user_id: 'u1', status: 'present', date: todayIST() })
     expect((await json(await post({ action: 'check_out', lat: 1, lng: 2 }))).body.success).toBe(true)
-    expect(world.db.rows('attendance')[0].check_out_time).toBeTruthy()
+    expect(world.db.rows('attendance_logs')[0].check_out_at).toBeTruthy()
     expect((await json(await post({ action: 'check_out' }))).status).toBe(404)
     expect((await json(await post({ action: 'dance' }))).status).toBe(400)
   })
   it('an open check-in from just after IST midnight still counts as today (UTC date would be yesterday)', async () => {
-    // 00:30 IST today == 19:00 UTC yesterday
+    // 00:30 IST today == 19:00 UTC yesterday; the row is keyed by the IST date.
     const istNow = new Date(Date.now() + 330 * 60000)
     const istMidnightUtc = Date.UTC(istNow.getUTCFullYear(), istNow.getUTCMonth(), istNow.getUTCDate()) - 330 * 60000
-    world.db.rows('attendance').push({ id: 'x', user_id: 'u1', check_in_time: new Date(istMidnightUtc + 30 * 60000).toISOString(), check_out_time: null })
+    world.db.rows('attendance_logs').push({ id: 'x', user_id: 'u1', date: todayIST(), status: 'present', check_in_at: new Date(istMidnightUtc + 30 * 60000).toISOString(), check_out_at: null })
     const r = await attendance.POST(req('/api/mobile/attendance', { headers: bearer('good'), body: { action: 'check_in' } }))
     expect(r.status).toBe(409)
   })

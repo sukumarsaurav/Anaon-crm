@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { LAST_SEEN_COOKIE } from '@/lib/security/proxyCache'
 import { createClient } from '@/lib/supabase/server'
 import {
   checkAccountLockout,
@@ -95,7 +96,12 @@ export async function POST(req: NextRequest) {
     // Straight to the real page: '/' is only a redirect to /dashboard, and
     // bouncing through it costs a full extra proxy pass on every login.
     // Brokers sign in here too but live in their own portal.
-    return NextResponse.json({ redirectTo: role === 'broker' ? '/broker-portal' : '/dashboard' })
+    const ok = NextResponse.json({ redirectTo: role === 'broker' ? '/broker-portal' : '/dashboard' })
+    // A fresh session starts its idle clock now (a stale cookie would log the user straight out).
+    ok.cookies.set(LAST_SEEN_COOKIE, String(Date.now()), {
+      httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 7 * 86_400,
+    })
+    return ok
   } catch (err) {
     console.error('[auth/login]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

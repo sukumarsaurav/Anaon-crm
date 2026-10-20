@@ -4,13 +4,14 @@ import { recordTitle } from '@/lib/metadata/recordTitle'
 import { notFound } from 'next/navigation'
 import {
   getProjectById, getProjectStats, getPlots,
-  getProjectDocuments, getPriceEscalations,
+  getProjectDocuments, getPriceEscalations, getPremiumMatrix,
 } from '@/lib/inventory/queries'
 import { getProfile } from '@/lib/supabase/getProfile'
 import ProjectStatusBadge from '@/components/inventory/ProjectStatusBadge'
 import PlotGrid from '@/components/inventory/PlotGrid'
 import ProjectDocumentList from '@/components/inventory/ProjectDocumentList'
 import PriceEscalationPanel from '@/components/inventory/PriceEscalationPanel'
+import PremiumMatrixEditor from '@/components/inventory/PremiumMatrixEditor'
 import { PROJECT_TYPE_LABELS } from '@/types/inventory'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { Edit, Plus, LayoutGrid, MapPin, ExternalLink } from 'lucide-react'
@@ -25,12 +26,13 @@ interface PageProps {
 export default async function ProjectDetailPage({ params }: PageProps) {
   const { id } = await params
 
-  const [project, stats, plots, documents, escalations] = await Promise.all([
+  const [project, stats, plots, documents, escalations, premiumMatrix] = await Promise.all([
     getProjectById(id),
     getProjectStats(id),
     getPlots(id),
     getProjectDocuments(id),
     getPriceEscalations(id),
+    getPremiumMatrix(id),
   ])
 
   if (!project) notFound()
@@ -173,6 +175,8 @@ export default async function ProjectDetailPage({ params }: PageProps) {
         <ProjectDocumentList projectId={id} documents={documents} canManage={canManage} />
         <PriceEscalationPanel projectId={id} escalations={escalations} canManage={canManage} />
       </div>
+
+      {canManage && <PremiumMatrixEditor projectId={id} matrix={premiumMatrix} />}
     </div>
   )
 }

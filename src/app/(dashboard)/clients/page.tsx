@@ -57,6 +57,9 @@ export default async function ClientsPage({ searchParams }: PageProps) {
         subtitle={`${total} total client${total !== 1 ? 's' : ''}`}
         actions={
           <>
+            <Button href="/clients/complaints" variant="secondary">
+              Complaints
+            </Button>
             <Button href="/clients/extension-requests" variant="secondary">
               Extension requests{pendingExtensions ? ` (${pendingExtensions})` : ''}
             </Button>

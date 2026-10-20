@@ -2,11 +2,14 @@
 
 import { useState, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { createLegalTemplate } from '@/lib/legal/actions'
+import { createLegalTemplate, updateLegalTemplate } from '@/lib/legal/actions'
 import { LEGAL_DOCUMENT_TYPES, LEGAL_DOCUMENT_TYPE_LABELS } from '@/types/legal'
-import { Plus, X } from 'lucide-react'
+import type { LegalDocumentTemplate } from '@/types/legal'
+import { Plus, X, Pencil } from 'lucide-react'
+import FileUrlInput from '@/components/ui/FileUrlInput'
 
-export default function LegalTemplateForm() {
+/** Create a template, or edit one (`template` given) — templates could be added but never corrected. */
+export default function LegalTemplateForm({ template }: { template?: LegalDocumentTemplate }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -18,7 +21,7 @@ export default function LegalTemplateForm() {
     setError(null)
     const fd = new FormData(e.currentTarget)
     startTransition(async () => {
-      const result = await createLegalTemplate(fd)
+      const result = template ? await updateLegalTemplate(template.id, fd) : await createLegalTemplate(fd)
       setLoading(false)
       if (result.success) { setOpen(false); router.refresh() }
       else setError(result.error ?? 'Failed')
@@ -26,7 +29,12 @@ export default function LegalTemplateForm() {
   }
 
   if (!open) {
-    return (
+    return template ? (
+      <button onClick={() => setOpen(true)} aria-label={`Edit ${template.name}`}
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">
+        <Pencil size={12} /> Edit
+      </button>
+    ) : (
       <button onClick={() => setOpen(true)}
         className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-xl hover:bg-primary-700">
         <Plus size={15} /> Add Template
@@ -37,19 +45,19 @@ export default function LegalTemplateForm() {
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-slate-900">New Legal Template</h3>
+        <h3 className="font-semibold text-slate-900">{template ? 'Edit Legal Template' : 'New Legal Template'}</h3>
         <button onClick={() => setOpen(false)}><X size={16} className="text-slate-400" /></button>
       </div>
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label htmlFor="legaltemplateform-name" className="block text-xs font-medium text-slate-600 mb-1">Template Name <span className="text-red-500">*</span></label>
-            <input id="legaltemplateform-name" name="name" required placeholder="e.g. Standard Booking Form v2"
+            <input id="legaltemplateform-name" name="name" required defaultValue={template?.name} placeholder="e.g. Standard Booking Form v2"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label htmlFor="legaltemplateform-type" className="block text-xs font-medium text-slate-600 mb-1">Type <span className="text-red-500">*</span></label>
-            <select id="legaltemplateform-type" name="type" required
+            <select id="legaltemplateform-type" name="type" required defaultValue={template?.type}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
               {LEGAL_DOCUMENT_TYPES.map(t => (
                 <option key={t} value={t}>{LEGAL_DOCUMENT_TYPE_LABELS[t]}</option>
@@ -59,18 +67,16 @@ export default function LegalTemplateForm() {
         </div>
         <div>
           <label htmlFor="legaltemplateform-description" className="block text-xs font-medium text-slate-600 mb-1">Description</label>
-          <textarea id="legaltemplateform-description" name="description" rows={2} placeholder="Brief description of this template..."
+          <textarea id="legaltemplateform-description" name="description" rows={2} defaultValue={template?.description ?? ''} placeholder="Brief description of this template..."
             className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label htmlFor="legaltemplateform-file-url" className="block text-xs font-medium text-slate-600 mb-1">File URL</label>
-            <input id="legaltemplateform-file-url" type="url" name="file_url" placeholder="https://..."
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            <FileUrlInput name="file_url" label="File" folder="legal" defaultValue={template?.file_url} />
           </div>
           <div>
             <label htmlFor="legaltemplateform-version" className="block text-xs font-medium text-slate-600 mb-1">Version</label>
-            <input id="legaltemplateform-version" name="version" defaultValue="1.0" placeholder="1.0"
+            <input id="legaltemplateform-version" name="version" defaultValue={template?.version ?? '1.0'} placeholder="1.0"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
         </div>

@@ -30,6 +30,8 @@ export async function getEmployees(): Promise<HREmployee[]> {
     .from('profiles')
     .select('*')
     .eq('is_active', true)
+    // Broker portal logins have profiles too; they are not employees.
+    .in('role', ['admin', 'manager', 'sales_advisor', 'telecaller'])
     .order('full_name')
   if (error) throw error
 

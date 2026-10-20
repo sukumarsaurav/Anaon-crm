@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { getProfile } from '@/lib/supabase/getProfile'
+import { writeAuditLog } from '@/lib/security/audit'
 import type { TeamRow, MemberRow, TeamsData, AddJuniorInput } from '@/types/team'
 
 /** Load teams + members scoped for the org-chain view. */
@@ -71,6 +72,13 @@ export async function addJunior(
   if (!input.full_name?.trim() || !input.email?.trim()) {
     return { success: false, error: 'Name and email are required' }
   }
+  // The role comes from the browser. It was written as-is with the service role, so any team leader
+  // could create an admin. Allowed: staff roles below admin, and never above the caller's own role.
+  const RANK: Record<string, number> = { telecaller: 1, sales_advisor: 2, manager: 3, admin: 4 }
+  const callerRank = RANK[data.viewer.role] ?? 0
+  if (!['manager', 'sales_advisor', 'telecaller'].includes(input.role) || RANK[input.role] > callerRank) {
+    return { success: false, error: 'You cannot create an account with that role' }
+  }
 
   const svc = createServiceClient()
   const supabase = await createClient()
@@ -89,6 +97,7 @@ export async function addJunior(
     password,
     email_confirm: true,
     user_metadata: { full_name: input.full_name.trim() },
+    app_metadata: { role: input.role },
   })
   if (createErr || !created?.user) {
     return { success: false, error: createErr?.message ?? 'Could not create user' }
@@ -130,6 +139,10 @@ export async function addJunior(
     .eq('id', newUserId)
   if (profErr) return { success: false, error: profErr.message }
 
+  await writeAuditLog({
+    userId: session.user.id, action: 'user_created', tableName: 'profiles', recordId: newUserId,
+    newValues: { full_name: input.full_name.trim(), email: input.email.trim(), role: input.role, team_id: teamForMembership },
+  })
   revalidatePath('/team/teams')
   return { success: true, tempPassword: password }
 }

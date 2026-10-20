@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest'
 
 import * as team from '@/lib/team/actions'
 import * as hr from '@/lib/hr/actions'
+import * as staff from '@/lib/team/staff'
 import * as marketing from '@/lib/marketing/actions'
 import * as automation from '@/lib/automation/actions'
 import * as inventory from '@/lib/inventory/actions'
@@ -33,6 +34,10 @@ const managerOnly: Call[] = [
   ['hr.makeOffer', () => hr.makeOffer('x', fd())],
   ['hr.updateEmployee', () => hr.updateEmployee('x', fd({ full_name: 'n' }))],
   ['hr.deactivateEmployee', () => hr.deactivateEmployee('x', 'r')],
+  ['hr.reactivateEmployee', () => hr.reactivateEmployee('x')],
+  ['construction.deleteMilestone', () => construction.deleteMilestone('x', 'p')],
+  // Managers may deactivate within their own team; staff below manager may not.
+  ['team.toggleMemberActive', () => team.toggleMemberActive('x', false)],
   ['hr.approveLeave', () => hr.approveLeave('x')],
   ['hr.rejectLeave', () => hr.rejectLeave('x', 'n')],
   ['hr.setLeaveBalance', () => hr.setLeaveBalance(fd())],
@@ -82,7 +87,7 @@ const managerOnly: Call[] = [
 const adminOnly: Call[] = [
   ['leads.deleteLead', () => deleteLead('x')],
   ['team.deleteAnnouncement', () => team.deleteAnnouncement('x')],
-  ['team.toggleMemberActive', () => team.toggleMemberActive('x', false)],
+  ['team.changeStaffAssignment', () => staff.changeStaffAssignment('x', { role: 'admin' })],
   ['hr.createPayrollRun', () => hr.createPayrollRun(fd())],
   ['hr.finalizePayrollRun', () => hr.finalizePayrollRun('x')],
   ['hr.updatePayrollSlip', () => hr.updatePayrollSlip('x', fd())],

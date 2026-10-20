@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { getSecuritySettings, getUserGate } from '@/lib/security/proxyCache'
+import { getSecuritySettings, getUserGate, LAST_SEEN_COOKIE } from '@/lib/security/proxyCache'
 
 const PUBLIC_PATHS = [
   '/login',
@@ -9,6 +9,7 @@ const PUBLIC_PATHS = [
   '/api/webhooks',
   '/api/cron',
   '/api/portal',
+  '/api/files', // checks staff or portal-client access itself
   '/share',
   '/broker-portal',
   '/client-portal',
@@ -76,9 +77,23 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // IP whitelist (dashboard routes only, skip API)
+  // IP whitelist and idle timeout (dashboard routes only, skip API)
   if (!pathname.startsWith('/api')) {
-    const { ipWhitelistEnabled } = await getSecuritySettings(supabase)
+    const { ipWhitelistEnabled, sessionTimeoutMinutes } = await getSecuritySettings(supabase)
+
+    // Session timeout (Admin → Security). It was saved but never enforced. Idle time is measured
+    // from the last page request or server action; the login route resets the cookie.
+    if (sessionTimeoutMinutes > 0) {
+      const lastSeen = Number(request.cookies.get(LAST_SEEN_COOKIE)?.value)
+      if (lastSeen && Date.now() - lastSeen > sessionTimeoutMinutes * 60_000) {
+        const out = NextResponse.redirect(new URL('/api/auth/signout?reason=timeout', request.url))
+        out.cookies.delete(LAST_SEEN_COOKIE)
+        return out
+      }
+      supabaseResponse.cookies.set(LAST_SEEN_COOKIE, String(Date.now()), {
+        httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 7 * 86_400,
+      })
+    }
 
     if (ipWhitelistEnabled) {
       const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()

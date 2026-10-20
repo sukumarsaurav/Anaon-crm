@@ -84,6 +84,7 @@ export default async function LegalDocumentsPage() {
                         ) : (
                           <span className="text-xs text-slate-400 px-3 py-1.5">No file</span>
                         )}
+                        <LegalTemplateForm template={tpl} />
                         <ActionButton
                           label={tpl.is_active ? 'Deactivate' : 'Activate'}
                           tone={tpl.is_active ? 'default' : 'success'}

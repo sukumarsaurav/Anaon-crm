@@ -1,8 +1,12 @@
 'use client'
 
 import { useState, useRef, useTransition } from 'react'
-import { FileText } from 'lucide-react'
+import { FileText, Paperclip, Loader2 } from 'lucide-react'
 import { sendMessage } from '@/lib/whatsapp/actions'
+import { sendInboxMedia } from '@/lib/whatsapp/media-actions'
+import { createUploadTarget } from '@/lib/files/actions'
+import { createClient } from '@/lib/supabase/client'
+import { FILES_BUCKET, MAX_UPLOAD_BYTES } from '@/lib/files/storage'
 import TemplateSelector from './TemplateSelector'
 import type { WaTemplate } from '@/types/whatsapp'
 
@@ -21,6 +25,28 @@ export default function ReplyBox({ conversationId, templates, isOptedOut, onOpti
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [sendingFile, setSendingFile] = useState(false)
+
+  // Brochures, layouts, price sheets: what's typed in the box goes as the caption.
+  async function handleFile(file: File | undefined) {
+    if (!file) return
+    setError(null)
+    if (file.size > MAX_UPLOAD_BYTES) { setError('Files must be under 25 MB'); return }
+    setSendingFile(true)
+    try {
+      const target = await createUploadTarget({ folder: 'whatsapp', scopeId: conversationId, filename: file.name, contentType: file.type, size: file.size })
+      if (!target.success) { setError(target.error); return }
+      const { error: upErr } = await createClient().storage.from(FILES_BUCKET).uploadToSignedUrl(target.path, target.token, file, { contentType: file.type })
+      if (upErr) { setError(upErr.message); return }
+      const res = await sendInboxMedia({ conversationId, path: target.path, filename: file.name, mimeType: file.type, caption: text.trim() || undefined })
+      if (!res.success) { setError(res.error ?? 'Could not send the file'); return }
+      setText('')
+    } finally {
+      setSendingFile(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
 
   function handleSend() {
     if (!text.trim() || isPending) return
@@ -70,6 +96,19 @@ export default function ReplyBox({ conversationId, templates, isOptedOut, onOpti
         >
           <FileText size={16} />
         </button>
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={sendingFile}
+          className="flex-shrink-0 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg disabled:opacity-50"
+          title="Send a file or photo"
+          aria-label="Send a file or photo"
+        >
+          {sendingFile ? <Loader2 size={16} className="animate-spin" /> : <Paperclip size={16} />}
+        </button>
+        <input ref={fileRef} type="file" className="hidden" aria-hidden="true" tabIndex={-1}
+          accept="image/jpeg,image/png,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          onChange={(e) => handleFile(e.target.files?.[0])} />
         <textarea aria-label="Type a message... (Enter to send, Shift+Enter for new line)"
           ref={textareaRef}
           value={text}

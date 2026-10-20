@@ -1,3 +1,4 @@
+import { recordWhatsAppConsent } from '@/lib/legal/consent'
 import { createServiceClient } from '@/lib/supabase/service'
 import { applyBroadcastReceipt, markBroadcastReplied } from './broadcast'
 
@@ -349,6 +350,8 @@ export async function mirrorOptOut(event: AgencyXOptOutEvent): Promise<boolean> 
     console.error('[agencyx] opt-out update failed', error)
     return false
   }
+  const { data: convs } = await supabase.from('whatsapp_conversations').select('lead_id').eq('wa_id', waId)
+  await recordWhatsAppConsent((convs ?? []).map((c) => c.lead_id), optedOut)
   return true
 }
 

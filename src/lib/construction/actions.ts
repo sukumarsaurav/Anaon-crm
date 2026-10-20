@@ -6,6 +6,50 @@ import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { DEFAULT_PLOTTED_MILESTONES } from '@/types/construction'
 import { fireAutomations } from '@/lib/automation/engine'
+import { createServiceClient } from '@/lib/supabase/service'
+import { notifyUsers } from '@/lib/notifications/notify'
+import { sendDemandEmail } from '@/lib/email/send'
+
+/**
+ * A completed payment-trigger milestone makes its share of the price due on every confirmed
+ * construction-linked booking in the project: one installment per booking (due in 15 days), demand
+ * letter emailed, advisor notified. System-generated, so it is written with the service role; the
+ * payment guard keeps advisors from adding installments themselves. Idempotent per milestone.
+ */
+async function raiseMilestoneDemands(milestoneId: string, projectId: string) {
+  const svc = createServiceClient()
+  const { data: m } = await svc
+    .from('construction_milestones').select('name, payment_percentage, is_payment_trigger').eq('id', milestoneId).single()
+  if (!m?.is_payment_trigger || !(Number(m.payment_percentage) > 0)) return
+
+  const { data: bookings } = await svc
+    .from('bookings')
+    .select('id, client_id, advisor_id, total_sale_value')
+    .eq('project_id', projectId).eq('status', 'confirmed').eq('payment_plan_type', 'construction_linked')
+  const description = `Milestone: ${m.name}`
+  const due = new Date(Date.now() + 15 * 86_400_000)
+  const dueDate = todayIST(due)
+
+  for (const b of bookings ?? []) {
+    const { data: existing } = await svc.from('payments').select('installment_number, description').eq('booking_id', b.id)
+    if ((existing ?? []).some((p) => p.description === description)) continue
+    const amount = Math.round(Number(b.total_sale_value ?? 0) * Number(m.payment_percentage) / 100)
+    if (amount <= 0) continue
+    const next = Math.max(0, ...(existing ?? []).map((p) => p.installment_number ?? 0)) + 1
+    const { data: pay, error } = await svc.from('payments').insert({
+      booking_id: b.id, client_id: b.client_id, installment_number: next, description,
+      amount_due: amount, due_date: dueDate, status: 'pending',
+    }).select('id').single()
+    if (error || !pay) { console.error('[construction] demand installment failed:', error?.message); continue }
+    await sendDemandEmail(pay.id)
+    if (b.advisor_id) {
+      await notifyUsers([b.advisor_id], {
+        title: 'Construction payment due', message: `${m.name} is complete — a demand for ${amount.toLocaleString('en-IN')} was raised.`,
+        type: 'payment_due', related_type: 'booking', related_id: b.id, action_url: `/bookings/${b.id}`,
+      })
+    }
+  }
+}
 
 async function getAuthUser() {
   const supabase = await createClient()
@@ -13,7 +57,7 @@ async function getAuthUser() {
   if (!user) return null
   const profile = (await getProfile())?.profile
   if (!['admin', 'manager', 'sales_advisor'].includes(profile?.role ?? '')) return null
-  return { supabase, user }
+  return { supabase, user, isManager: ['admin', 'manager'].includes(profile?.role ?? '') }
 }
 
 export async function createMilestone(projectId: string, formData: FormData) {
@@ -121,6 +165,7 @@ export async function updateMilestoneProgress(milestoneId: string, projectId: st
   if (error) return { success: false, error: error.message }
 
   if (status === 'completed' && milestone?.status !== 'completed') {
+    await raiseMilestoneDemands(milestoneId, projectId)
     // The automation messages clients, but the context carried none (and an empty project name),
     // so every milestone WhatsApp failed with "No phone number". Fan out to each booked client.
     const { data: proj } = await supabase.from('projects').select('name').eq('id', projectId).single()
@@ -173,6 +218,8 @@ export async function logMilestoneDelay(milestoneId: string, projectId: string, 
 export async function deleteMilestone(milestoneId: string, projectId: string) {
   const auth = await getAuthUser()
   if (!auth) return { success: false, error: 'Unauthorized' }
+  // Deleting a milestone removes construction history clients have been told about.
+  if (!auth.isManager) return { success: false, error: 'Only managers can delete a milestone' }
   const { supabase } = auth
 
   const { error } = await supabase

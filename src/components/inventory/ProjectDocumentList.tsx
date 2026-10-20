@@ -1,5 +1,7 @@
 'use client'
 
+import FileUrlInput from '@/components/ui/FileUrlInput'
+
 import { useState, useTransition } from 'react'
 import { addProjectDocument } from '@/lib/inventory/actions'
 import { DOCUMENT_CATEGORY_LABELS } from '@/types/inventory'
@@ -73,9 +75,7 @@ export default function ProjectDocumentList({ projectId, documents, canManage }:
               </select>
             </div>
             <div className="col-span-2">
-              <label htmlFor="projectdocumentlist-file-url" className="block text-xs font-medium text-slate-600 mb-1">File URL *</label>
-              <input id="projectdocumentlist-file-url" name="file_url" required type="url" placeholder="https://..."
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              <FileUrlInput name="file_url" label="File" required folder="projects" scopeId={projectId} />
             </div>
           </div>
           {error && <p className="text-xs text-red-600">{error}</p>}

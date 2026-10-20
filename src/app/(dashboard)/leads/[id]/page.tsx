@@ -23,6 +23,7 @@ import { formatDate, formatDateTime, formatPhone, formatBudgetRange, waLink } fr
 import RelativeTime from '@/components/ui/RelativeTime'
 import { cn } from '@/lib/utils'
 import { getProfile } from '@/lib/supabase/getProfile'
+import { createClient } from '@/lib/supabase/server'
 
 interface LeadDetailPageProps {
   params: Promise<{ id: string }>
@@ -43,7 +44,10 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
     return (await checkDuplicate(l.phone, l.email ?? undefined, l.id)).leads
   })
 
-  const [lead, activities, siteVisits, projects, session, advisors, duplicates] = await Promise.all([
+  // The client this lead became, if it has been converted.
+  const convertedP = createClient().then((sb) => sb.from('clients').select('id').eq('lead_id', id).maybeSingle()).then((r) => r.data)
+
+  const [lead, activities, siteVisits, projects, session, advisors, duplicates, convertedClient] = await Promise.all([
     leadP,
     getLeadActivities(id),
     getSiteVisits(id),
@@ -51,6 +55,7 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
     sessionP,
     advisorsP,
     duplicatesP,
+    convertedP,
   ])
 
   // Soft-deleted leads must not stay reachable by URL.
@@ -84,6 +89,15 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
             <Button href={`/leads/${id}/edit`} variant="secondary" size="sm">
               <Edit2 size={16} /> Edit
             </Button>
+            {convertedClient ? (
+              <Button href={`/clients/${convertedClient.id}`} variant="secondary" size="sm">
+                <UserCheck size={16} /> View client
+              </Button>
+            ) : (
+              <Button href={`/clients/new?lead_id=${id}`} size="sm">
+                <UserCheck size={16} /> Convert to client
+              </Button>
+            )}
           </>
         }
       />

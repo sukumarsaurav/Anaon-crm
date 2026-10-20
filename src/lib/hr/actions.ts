@@ -1,13 +1,13 @@
 'use server'
 
-import { todayIST } from '@/lib/datetime'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { decideLeave } from './leave'
+import { updateStaffProfile, setStaffActive } from '@/lib/team/staff'
 import type { CandidateStage } from '@/types/hr'
 
-async function getAuthUser(allowedRoles = ['admin', 'manager', 'hr']) {
+async function getAuthUser(allowedRoles = ['admin', 'manager']) {
   const session = await getProfile()
   const user = session?.user
   if (!user) throw new Error('Unauthorized')
@@ -124,64 +124,18 @@ export async function makeOffer(candidateId: string, formData: FormData) {
 
 // ── Employee Records ──────────────────────────────────────────────────────────
 
+// Both go through lib/team/staff.ts: profiles can only be updated by their owner under RLS, so
+// writing here with the signed-in client changed nothing and still returned success.
 export async function updateEmployee(employeeId: string, formData: FormData) {
-  try {
-    await getAuthUser()
-    const supabase = await createClient()
-
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        full_name:              formData.get('full_name') as string,
-        phone:                  formData.get('phone') as string,
-        email:                  (formData.get('email') as string) || null,
-        designation:            (formData.get('designation') as string) || null,
-        department:             (formData.get('department') as string) || null,
-        employment_type:        (formData.get('employment_type') as string) || null,
-        joining_date:           (formData.get('joining_date') as string) || null,
-        probation_end_date:     (formData.get('probation_end_date') as string) || null,
-        reporting_manager_id:   (formData.get('reporting_manager_id') as string) || null,
-        base_salary:            parseFloat(formData.get('base_salary') as string) || null,
-        employee_id:            (formData.get('employee_id') as string) || null,
-        aadhar_number:          (formData.get('aadhar_number') as string) || null,
-        pan_number:             (formData.get('pan_number') as string) || null,
-        bank_name:              (formData.get('bank_name') as string) || null,
-        bank_account:           (formData.get('bank_account') as string) || null,
-        bank_ifsc:              (formData.get('bank_ifsc') as string) || null,
-        emergency_contact:      (formData.get('emergency_contact') as string) || null,
-        address:                (formData.get('address') as string) || null,
-        updated_at:             new Date().toISOString(),
-      })
-      .eq('id', employeeId)
-    if (error) return { success: false, error: error.message }
-    revalidatePath('/hr/employees')
-    revalidatePath(`/hr/employees/${employeeId}`)
-    return { success: true }
-  } catch (e) {
-    return { success: false, error: (e as Error).message }
-  }
+  return updateStaffProfile(employeeId, formData)
 }
 
 export async function deactivateEmployee(employeeId: string, reason: string) {
-  try {
-    const actor = await getAuthUser()
-    if (actor.id === employeeId) return { success: false, error: 'You cannot deactivate your own account' }
-    const supabase = await createClient()
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        is_active:           false,
-        termination_date:    todayIST(),
-        termination_reason:  reason,
-        updated_at:          new Date().toISOString(),
-      })
-      .eq('id', employeeId)
-    if (error) return { success: false, error: error.message }
-    revalidatePath('/hr/employees')
-    return { success: true }
-  } catch (e) {
-    return { success: false, error: (e as Error).message }
-  }
+  return setStaffActive(employeeId, false, reason)
+}
+
+export async function reactivateEmployee(employeeId: string) {
+  return setStaffActive(employeeId, true)
 }
 
 // ── Leave Management ──────────────────────────────────────────────────────────
@@ -210,22 +164,23 @@ export async function rejectLeave(leaveId: string, note: string) {
   }
 }
 
+/** Entitlement for one leave type in a year. `used` is maintained by leave approval and kept. */
 export async function setLeaveBalance(formData: FormData) {
   try {
     await getAuthUser()
     const supabase = await createClient()
-    const year = new Date().getFullYear()
+    const userId = formData.get('user_id') as string
+    const leaveType = formData.get('leave_type') as string
+    const year = parseInt(formData.get('year') as string) || new Date().getFullYear()
+    const entitled = parseInt(formData.get('entitled') as string)
+    if (!userId || !leaveType) return { success: false, error: 'Choose an employee and a leave type' }
+    if (!Number.isInteger(entitled) || entitled < 0 || entitled > 366) return { success: false, error: 'Enter the number of days (0–366)' }
 
-    const { error } = await supabase
-      .from('hr_leave_balances')
-      .upsert({
-        user_id:    formData.get('user_id') as string,
-        year,
-        leave_type: formData.get('leave_type') as string,
-        entitled:   parseInt(formData.get('entitled') as string) || 0,
-        used:       parseInt(formData.get('used') as string) || 0,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,year,leave_type' })
+    const { data: existing } = await supabase
+      .from('hr_leave_balances').select('id').eq('user_id', userId).eq('year', year).eq('leave_type', leaveType).maybeSingle()
+    const { error } = existing
+      ? await supabase.from('hr_leave_balances').update({ entitled, updated_at: new Date().toISOString() }).eq('id', existing.id)
+      : await supabase.from('hr_leave_balances').insert({ user_id: userId, year, leave_type: leaveType, entitled, used: 0 })
     if (error) return { success: false, error: error.message }
     revalidatePath('/hr/leaves')
     return { success: true }
@@ -374,39 +329,50 @@ export async function finalizePayrollRun(runId: string) {
   }
 }
 
+/**
+ * Adjust one slip of a run that is not finalized: present days (loss of pay) and incentives.
+ * Recomputed from the salary structure each time — it used to start from the stored figures, so
+ * every re-edit deducted the loss of pay again.
+ */
 export async function updatePayrollSlip(slipId: string, formData: FormData) {
   try {
     await getAuthUser(['admin'])
     const supabase = await createClient()
 
-    const presentDays = parseInt(formData.get('present_days') as string) || 0
-    const workingDays = parseInt(formData.get('working_days') as string) || 26
-    const lopDays = workingDays - presentDays
-    const incentives = parseFloat(formData.get('incentives') as string) || 0
-
     const { data: slip } = await supabase
       .from('payroll_slips')
-      .select('gross, total_deductions')
+      .select('run_id, basic, hra, allowances, total_deductions, run:payroll_runs!payroll_slips_run_id_fkey(status)')
       .eq('id', slipId)
       .single()
-
     if (!slip) return { success: false, error: 'Slip not found' }
+    const runStatus = (Array.isArray(slip.run) ? slip.run[0] : slip.run as { status?: string } | null)?.status
+    if (runStatus === 'completed') return { success: false, error: 'This payroll run is finalized — slips can no longer be changed' }
 
-    const lopDeduction = lopDays > 0 ? Math.round((slip.gross / workingDays) * lopDays) : 0
-    const adjustedGross = Math.max(0, slip.gross - lopDeduction + incentives)
-    const netPay = Math.max(0, adjustedGross - slip.total_deductions)
+    const workingDays = parseInt(formData.get('working_days') as string) || 26
+    const presentDays = Math.min(workingDays, Math.max(0, parseInt(formData.get('present_days') as string) || 0))
+    const lopDays = workingDays - presentDays
+    const incentives = Math.max(0, parseFloat(formData.get('incentives') as string) || 0)
+
+    const structure = Number(slip.basic ?? 0) + Number(slip.hra ?? 0) + Number(slip.allowances ?? 0)
+    const lopDeduction = lopDays > 0 ? Math.round((structure / workingDays) * lopDays) : 0
+    const gross = Math.max(0, structure - lopDeduction + incentives)
+    const netPay = Math.max(0, gross - Number(slip.total_deductions ?? 0))
 
     const { error } = await supabase
       .from('payroll_slips')
-      .update({
-        present_days: presentDays,
-        working_days: workingDays,
-        lop_days: lopDays,
-        incentives,
-        net_pay: netPay,
-      })
+      .update({ present_days: presentDays, working_days: workingDays, lop_days: lopDays, incentives, gross, net_pay: netPay })
       .eq('id', slipId)
     if (error) return { success: false, error: error.message }
+
+    // Keep the run totals in step with its slips.
+    const { data: all } = await supabase.from('payroll_slips').select('gross, total_deductions, net_pay').eq('run_id', slip.run_id)
+    const totals = (all ?? []).reduce((t, r) => ({
+      gross: t.gross + Number(r.gross ?? 0), deductions: t.deductions + Number(r.total_deductions ?? 0), net: t.net + Number(r.net_pay ?? 0),
+    }), { gross: 0, deductions: 0, net: 0 })
+    await supabase.from('payroll_runs').update({
+      total_gross: totals.gross, total_deductions: totals.deductions, total_net: totals.net, updated_at: new Date().toISOString(),
+    }).eq('id', slip.run_id)
+
     revalidatePath('/hr/payroll')
     return { success: true }
   } catch (e) {

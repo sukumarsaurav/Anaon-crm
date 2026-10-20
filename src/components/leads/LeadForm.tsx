@@ -310,6 +310,23 @@ export default function LeadForm({ lead, projects, advisors, onSuccess }: LeadFo
         </Card>
       )}
 
+      {/* DPDP consent, recorded in Legal → Privacy */}
+      {!isEditing && (
+        <Card padding="md">
+          <h3 className="text-sm font-semibold text-slate-900 mb-3">Consent</h3>
+          <div className="space-y-2 text-sm text-slate-700">
+            <label className="flex items-start gap-2">
+              <input type="checkbox" name="consent_data_storage" value="true" className="mt-0.5" />
+              The lead agreed to us storing their details to follow up on this enquiry
+            </label>
+            <label className="flex items-start gap-2">
+              <input type="checkbox" name="consent_marketing_whatsapp" value="true" className="mt-0.5" />
+              The lead agreed to receive offers and updates on WhatsApp
+            </label>
+          </div>
+        </Card>
+      )}
+
       {/* Actions */}
       <div className="flex items-center justify-end gap-3">
         <Button type="button" variant="secondary" onClick={() => router.back()}>

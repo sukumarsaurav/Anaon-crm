@@ -120,15 +120,15 @@ export async function getBroadcastById(id: string): Promise<WaBroadcast | null> 
 
 export async function getConversationStats() {
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('whatsapp_conversations')
-    .select('status, unread_count')
-
-  const total = data?.length ?? 0
-  const unread = data?.filter((c) => c.unread_count > 0).length ?? 0
-  const newConvos = data?.filter((c) => c.status === 'new').length ?? 0
-  const open = data?.filter((c) => !['resolved', 'closed'].includes(c.status)).length ?? 0
-
+  // Counts, not rows: loading every conversation stopped at PostgREST's 1,000-row cap.
+  const count = (q: PromiseLike<{ count: number | null }>) => q.then((r) => r.count ?? 0)
+  const base = () => supabase.from('whatsapp_conversations').select('id', { count: 'exact', head: true })
+  const [total, unread, newConvos, open] = await Promise.all([
+    count(base()),
+    count(base().gt('unread_count', 0)),
+    count(base().eq('status', 'new')),
+    count(base().not('status', 'in', '(resolved,closed)')),
+  ])
   return { total, unread, new: newConvos, open }
 }
 

@@ -16,4 +16,4 @@ vi.mock('@/lib/automation/engine', () => ({
 vi.mock('@/lib/notifications/notify', () => ({
   notifyUsers: async (ids: string[], input: any) => { core.world.notifications.push({ ids, input }) },
 }))
-vi.mock('@/lib/email/send', () => ({ sendReceiptEmail: async () => {} }))
+vi.mock('@/lib/email/send', () => ({ sendReceiptEmail: async () => {}, sendAllotmentEmail: async () => ({ success: true }), sendDemandEmail: async () => {} }))

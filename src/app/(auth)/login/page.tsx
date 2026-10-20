@@ -12,9 +12,9 @@ export default function LoginPage() {
 
   // Set after mount (not in the initial state) so the server and client render the same HTML.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('reason') === 'deactivated') {
-      setError('This account has been deactivated. Contact an administrator.')
-    }
+    const reason = new URLSearchParams(window.location.search).get('reason')
+    if (reason === 'deactivated') setError('This account has been deactivated. Contact an administrator.')
+    if (reason === 'timeout') setError('You were signed out after a period of inactivity. Please sign in again.')
   }, [])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { LoanDocsEditor, LoanNotesEditor } from '@/components/loans/LoanDocsNotesEditor'
 import { getLoanApplicationById } from '@/lib/loans/queries'
 import { getBankTieups, getDSAs } from '@/lib/loans/queries'
 import { createClient } from '@/lib/supabase/server'
@@ -136,24 +137,10 @@ export default async function LoanDetailPage({ params }: Props) {
 
           {/* Document checklist */}
           <div className="bg-white border border-slate-200 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-slate-900">Document Checklist</h2>
-              <span className="text-xs text-slate-500">{docsDone}/{LOAN_DOC_CHECKLIST.length} submitted</span>
-            </div>
-            <div className="space-y-2">
-              {LOAN_DOC_CHECKLIST.map(doc => {
-                const done = loan[doc.key] as boolean
-                return (
-                  <div key={doc.key} className="flex items-center gap-3">
-                    {done
-                      ? <CheckCircle2 size={15} className="text-green-500 shrink-0" />
-                      : <XCircle size={15} className="text-slate-300 shrink-0" />}
-                    <span className={`text-sm ${done ? 'text-slate-700' : 'text-slate-400'}`}>{doc.label}</span>
-                  </div>
-                )
-              })}
-            </div>
-            <p className="text-xs text-slate-400 mt-3">Update docs from the edit page or through the stage advancer</p>
+            <LoanDocsEditor loanId={loan.id} docs={{
+              doc_income_proof: loan.doc_income_proof, doc_kyc: loan.doc_kyc, doc_property_docs: loan.doc_property_docs,
+              doc_noc: loan.doc_noc, doc_bank_statement: loan.doc_bank_statement, doc_itr: loan.doc_itr,
+            }} />
           </div>
         </div>
 
@@ -212,12 +199,7 @@ export default async function LoanDetailPage({ params }: Props) {
           )}
 
           {/* Notes */}
-          {loan.notes && (
-            <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
-              <p className="text-xs font-medium text-slate-500 mb-1">Notes</p>
-              <p className="text-sm text-slate-700">{loan.notes}</p>
-            </div>
-          )}
+          <LoanNotesEditor loanId={loan.id} notes={loan.notes} />
           <p className="text-xs text-slate-400">Created {formatDate(loan.created_at)} · Updated {formatDate(loan.updated_at)}</p>
         </div>
       </div>

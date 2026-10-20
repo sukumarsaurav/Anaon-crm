@@ -1,5 +1,7 @@
 'use client'
 
+import FileUrlInput from '@/components/ui/FileUrlInput'
+
 import { todayIST } from '@/lib/datetime'
 import { useState, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
@@ -13,6 +15,7 @@ interface Props {
 }
 
 export default function MilestoneProgressForm({ milestone, projectId, onClose }: Props) {
+  const [photoText, setPhotoText] = useState('')
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -82,25 +85,21 @@ export default function MilestoneProgressForm({ milestone, projectId, onClose }:
         </div>
       )}
 
-      {/* Photo URLs */}
-      <div>
-        <label htmlFor="milestoneprogressform-photo-bulk" className="block text-xs font-medium text-slate-600 mb-1">
-          Photo URLs <span className="text-slate-400">(one per line)</span>
+      {/* Photos: upload, or paste links one per line */}
+      <div className="space-y-2">
+        <FileUrlInput name="_photo_upload" label="Add photo" folder="construction" scopeId={projectId}
+          accept="image/jpeg,image/png,image/webp,image/heic" placeholder="Upload a photo"
+          onChange={(url) => { if (url.startsWith('/api/files/')) setPhotoText((t) => (t.trim() ? `${t.trim()}\n${url}` : url)) }} />
+        <label htmlFor="milestoneprogressform-photo-bulk" className="block text-xs font-medium text-slate-600">
+          Photo links <span className="text-slate-400">(one per line)</span>
         </label>
-        <textarea id="milestoneprogressform-photo-bulk" name="photo_bulk" rows={2}
-          placeholder="https://storage.example.com/photo1.jpg&#10;https://storage.example.com/photo2.jpg"
-          onChange={(e) => {
-            const urls = e.target.value.split('\n').map((u) => u.trim()).filter(Boolean)
-            e.target.form?.querySelectorAll('input[name="photos"]').forEach((el) => el.remove())
-            urls.forEach((url) => {
-              const input = document.createElement('input')
-              input.type  = 'hidden'
-              input.name  = 'photos'
-              input.value = url
-              e.target.form?.appendChild(input)
-            })
-          }}
+        <textarea id="milestoneprogressform-photo-bulk" rows={2} value={photoText}
+          onChange={(e) => setPhotoText(e.target.value)}
+          placeholder="https://…"
           className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 font-mono" />
+        {photoText.split('\n').map((u) => u.trim()).filter(Boolean).map((url) => (
+          <input key={url} type="hidden" name="photos" value={url} />
+        ))}
       </div>
 
       {/* Notes */}

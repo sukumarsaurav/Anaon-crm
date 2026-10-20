@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { fireAutomations } from '@/lib/automation/engine'
+import { writeAuditLog } from '@/lib/security/audit'
+import { sendAllotmentEmail } from '@/lib/email/send'
 
 async function getAuth() {
   const supabase = await createClient()
@@ -98,7 +100,7 @@ export async function approveBooking(bookingId: string, notes?: string) {
 
   const { data: booking } = await auth.supabase
     .from('bookings')
-    .select('plot_id, project_id, client_id, advisor_id, broker_id, broker_commission_pct, broker_commission_amount, total_sale_value, status')
+    .select('plot_id, project_id, client_id, advisor_id, broker_id, broker_commission_pct, broker_commission_amount, total_sale_value, booking_amount, booking_date, status')
     .eq('id', bookingId).single()
 
   if (!booking) return { success: false, error: 'Booking not found' }
@@ -148,7 +150,19 @@ export async function approveBooking(bookingId: string, notes?: string) {
     }
   }
 
-  // 4. Create broker commission record
+  // 4. The booking amount is the first installment. Without it a new booking had an empty payment
+  //    schedule until someone added every line by hand.
+  const { count: existingInstallments } = await auth.supabase
+    .from('payments').select('id', { count: 'exact', head: true }).eq('booking_id', bookingId)
+  if (!existingInstallments && Number(booking.booking_amount ?? 0) > 0) {
+    await auth.supabase.from('payments').insert({
+      booking_id: bookingId, client_id: booking.client_id, installment_number: 1,
+      description: 'Booking amount', amount_due: booking.booking_amount,
+      due_date: booking.booking_date ?? todayIST(), status: 'pending',
+    })
+  }
+
+  // 5. Create broker commission record
   if (booking.broker_id && booking.broker_commission_amount) {
     await auth.supabase.from('broker_commissions').insert({
       broker_id:         booking.broker_id,
@@ -162,6 +176,11 @@ export async function approveBooking(bookingId: string, notes?: string) {
 
   // Fire booking_created automation
   const { data: clientData } = await auth.supabase.from('clients').select('full_name, phone').eq('id', booking.client_id).single()
+  await writeAuditLog({
+    userId: auth.userId, action: 'booking_approved', tableName: 'bookings', recordId: bookingId,
+    oldValues: { status: 'pending_approval' }, newValues: { status: 'confirmed', notes: notes ?? null, total_sale_value: booking.total_sale_value },
+  })
+
   fireAutomations('booking_created', {
     booking: { id: bookingId, booking_date: todayIST(), project_id: booking.project_id },
     client: clientData ? { id: booking.client_id, full_name: clientData.full_name, phone: clientData.phone } : undefined,
@@ -207,6 +226,7 @@ export async function rejectBooking(bookingId: string, reason: string) {
   }).eq('id', bookingId)
 
   if (error) return { success: false, error: error.message }
+  await writeAuditLog({ userId: auth.userId, action: 'booking_rejected', tableName: 'bookings', recordId: bookingId, oldValues: { status: 'pending_approval' }, newValues: { status: 'cancelled', reason } })
   revalidatePath('/bookings')
   revalidatePath(`/bookings/${bookingId}`)
   revalidatePath(`/inventory/${booking.project_id}`)
@@ -255,6 +275,10 @@ export async function cancelBooking(bookingId: string, formData: FormData) {
   }).eq('id', bookingId)
 
   if (error) return { success: false, error: error.message }
+  await writeAuditLog({
+    userId: auth.userId, action: 'booking_cancelled', tableName: 'bookings', recordId: bookingId,
+    oldValues: { status: booking.status }, newValues: { status: 'cancelled', reason: formData.get('reason'), charges: formData.get('cancellation_charges') || null },
+  })
   revalidatePath('/bookings')
   revalidatePath(`/bookings/${bookingId}`)
   revalidatePath(`/inventory/${booking.project_id}`)
@@ -284,6 +308,7 @@ export async function addBookingInstallment(formData: FormData) {
   })
 
   if (error) return { success: false, error: error.message }
+  await writeAuditLog({ userId: auth.userId, action: 'payment_created', tableName: 'payments', newValues: { booking_id: bookingId, amount_due: formData.get('amount_due'), due_date: formData.get('due_date') } })
   revalidatePath(`/bookings/${bookingId}`)
   return { success: true }
 }
@@ -298,18 +323,27 @@ export async function deleteBookingInstallment(paymentId: string, bookingId: str
 
   const { error } = await auth.supabase.from('payments').delete().eq('id', paymentId)
   if (error) return { success: false, error: error.message }
+  await writeAuditLog({ userId: auth.userId, action: 'payment_deleted', tableName: 'payments', recordId: paymentId, oldValues: { booking_id: bookingId, status: payment?.status } })
   revalidatePath(`/bookings/${bookingId}`)
   return { success: true }
 }
 
 // ── Document management ───────────────────────────────────────
 
-export async function markAllotmentLetterSent(bookingId: string, url?: string) {
+/**
+ * "Send allotment letter": emails the PDF to the client and records the date. With `manual`, only
+ * records that it was handed over another way. It used to record "sent" without sending anything.
+ */
+export async function markAllotmentLetterSent(bookingId: string, opts: { manual?: boolean } = {}) {
   const auth = await getAuth()
   if (!auth.ok || !isManager(auth.role)) return { success: false, error: 'Forbidden' }
 
+  if (!opts.manual) {
+    const sent = await sendAllotmentEmail(bookingId)
+    if (!sent.success) return { success: false, error: `${sent.error} — use "Mark as handed over" if it was delivered another way` }
+  }
+
   const { error } = await auth.supabase.from('bookings').update({
-    allotment_letter_url:     url ?? null,
     allotment_letter_sent_at: new Date().toISOString(),
     updated_at:               new Date().toISOString(),
   }).eq('id', bookingId)

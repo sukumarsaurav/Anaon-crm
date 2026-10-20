@@ -10,9 +10,20 @@ import Select from '@/components/ui/Select'
 import Textarea from '@/components/ui/Textarea'
 import Button from '@/components/ui/Button'
 import Alert from '@/components/ui/Alert'
+import FileUrlInput from '@/components/ui/FileUrlInput'
+
+/** Values carried over when a lead is converted (Convert to client on the lead page). */
+export interface LeadPrefill {
+  lead_id: string
+  full_name: string
+  phone: string
+  alternate_phone?: string | null
+  email?: string | null
+}
 
 interface Props {
   client?: Client
+  prefill?: LeadPrefill
 }
 
 const OCCUPATION_OPTIONS = [
@@ -20,7 +31,7 @@ const OCCUPATION_OPTIONS = [
   ...Object.entries(OCCUPATION_LABELS).map(([v, label]) => ({ value: v, label })),
 ]
 
-export default function ClientForm({ client }: Props) {
+export default function ClientForm({ client, prefill }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -42,19 +53,27 @@ export default function ClientForm({ client }: Props) {
   }
 
   const c = client
+  const p = !client ? prefill : undefined
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {p && (
+        <>
+          <input type="hidden" name="lead_id" value={p.lead_id} />
+          <Alert variant="info">Converting lead <strong>{p.full_name}</strong>. Their details are filled in; the client stays linked to the lead.</Alert>
+        </>
+      )}
+
       {/* Personal Details */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
         <h2 className="font-semibold text-slate-900">Personal Details</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
-            <Input name="full_name" label="Full Name" required defaultValue={c?.full_name} />
+            <Input name="full_name" label="Full Name" required defaultValue={c?.full_name ?? p?.full_name} />
           </div>
-          <Input name="phone" label="Primary Phone" required defaultValue={c?.phone} placeholder="+91 9876543210" />
-          <Input name="alternate_phone" label="Alternate Phone" defaultValue={c?.alternate_phone ?? ''} />
-          <Input name="email" label="Email" type="email" defaultValue={c?.email ?? ''} />
+          <Input name="phone" label="Primary Phone" required defaultValue={c?.phone ?? p?.phone} placeholder="+91 9876543210" />
+          <Input name="alternate_phone" label="Alternate Phone" defaultValue={c?.alternate_phone ?? p?.alternate_phone ?? ''} />
+          <Input name="email" label="Email" type="email" defaultValue={c?.email ?? p?.email ?? ''} />
           <Input name="date_of_birth" label="Date of Birth" type="date" defaultValue={c?.date_of_birth ?? ''} />
           <Input name="pan" label="PAN Number" defaultValue={c?.pan_encrypted ?? ''} placeholder="ABCDE1234F" />
           <Input name="aadhar" label="Aadhar Number" defaultValue={c?.aadhar_encrypted ?? ''} placeholder="XXXX XXXX XXXX" />
@@ -64,7 +83,8 @@ export default function ClientForm({ client }: Props) {
           <div className="sm:col-span-2">
             <Textarea name="communication_address" label="Communication Address (if different)" rows={2} defaultValue={c?.communication_address ?? ''} />
           </div>
-          <Input name="photo_url" label="Photo URL" defaultValue={c?.photo_url ?? ''} placeholder="https://..." />
+          <FileUrlInput name="photo_url" label="Photo" folder="clients" scopeId={c?.id} defaultValue={c?.photo_url}
+            accept="image/jpeg,image/png,image/webp" />
         </div>
       </div>
 

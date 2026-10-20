@@ -19,7 +19,7 @@ type Entry<T> = { value: T; at: number }
 
 const isFresh = (at: number) => Date.now() - at < TTL_MS
 
-export type SecuritySettings = { ipWhitelistEnabled: boolean }
+export type SecuritySettings = { ipWhitelistEnabled: boolean; sessionTimeoutMinutes: number }
 export type UserGate = { role: string | null }
 
 let settingsEntry: Entry<SecuritySettings> | null = null
@@ -33,15 +33,18 @@ export async function getSecuritySettings(
 
   const { data, error } = await supabase
     .from('security_settings')
-    .select('ip_whitelist_enabled')
+    .select('ip_whitelist_enabled, session_timeout_minutes')
     .limit(1)
     .maybeSingle()
 
   // On error keep serving the last known value rather than failing open on a
   // transient blip; only fall back to "disabled" when nothing was ever cached.
-  if (error) return cached?.value ?? { ipWhitelistEnabled: false }
+  if (error) return cached?.value ?? { ipWhitelistEnabled: false, sessionTimeoutMinutes: 0 }
 
-  const value = { ipWhitelistEnabled: data?.ip_whitelist_enabled === true }
+  const value = {
+    ipWhitelistEnabled: data?.ip_whitelist_enabled === true,
+    sessionTimeoutMinutes: Number(data?.session_timeout_minutes ?? 0) || 0,
+  }
   settingsEntry = { value, at: Date.now() }
   return value
 }
@@ -87,3 +90,6 @@ export function invalidateGate(userId: string) {
 export function invalidateSecuritySettings() {
   settingsEntry = null
 }
+
+/** Idle-timeout cookie: the time of the user's last page request or server action. */
+export const LAST_SEEN_COOKIE = 'crm_last_seen'

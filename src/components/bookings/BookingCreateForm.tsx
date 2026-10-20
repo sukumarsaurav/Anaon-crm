@@ -19,9 +19,11 @@ interface Props {
   projects: Project[]
   advisors: Advisor[]
   brokers:  Broker[]
+  /** Pre-selected client (New booking from a client's page). */
+  defaultClientId?: string
 }
 
-export default function BookingCreateForm({ clients, projects, advisors, brokers }: Props) {
+export default function BookingCreateForm({ clients, projects, advisors, brokers, defaultClientId }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -81,7 +83,7 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
             <label htmlFor="bookingcreateform-client-id" className="block text-xs font-medium text-slate-600 mb-1">Client *</label>
-            <select id="bookingcreateform-client-id" name="client_id" required
+            <select id="bookingcreateform-client-id" name="client_id" required defaultValue={defaultClientId ?? ''}
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
               <option value="">— Select client —</option>
               {clients.map((c) => (

@@ -1,14 +1,18 @@
 'use client'
 
 import { useMemo, useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { UserPlus, Crown, ChevronRight, Network, Check, Copy } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
-import { addJunior } from '@/lib/team/teams'
+import { addJunior, reparentTeam } from '@/lib/team/teams'
 import type { TeamsData, TeamRow, MemberRow } from '@/types/team'
 import { getInitials, cn } from '@/lib/utils'
+
+/** Same rule as addJunior on the server: you can't create a role above your own. */
+const ROLE_RANK: Record<string, number> = { telecaller: 1, sales_advisor: 2, manager: 3, admin: 4 }
 
 const ROLE_LABEL: Record<string, string> = {
   admin: 'Admin', manager: 'Manager', sales_advisor: 'Sales Advisor', telecaller: 'Telecaller',
@@ -65,11 +69,16 @@ export default function TeamTree({ data }: { data: TeamsData }) {
                 </p>
               </div>
             </div>
-            {canManage && (
-              <Button size="sm" variant="secondary" onClick={() => setAddFor(team)}>
-                <UserPlus size={14} /> Add Junior
-              </Button>
-            )}
+            <div className="flex items-center gap-2 shrink-0">
+              {viewer.role === 'admin' && (
+                <MoveTeamSelect team={team} teams={teams} childrenOf={childrenOf} />
+              )}
+              {canManage && (
+                <Button size="sm" variant="secondary" onClick={() => setAddFor(team)}>
+                  <UserPlus size={14} /> Add Junior
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Members */}
@@ -99,7 +108,7 @@ export default function TeamTree({ data }: { data: TeamsData }) {
       )}
 
       {addFor && (
-        <AddJuniorModal team={addFor} onClose={() => setAddFor(null)} />
+        <AddJuniorModal team={addFor} viewerRole={viewer.role} onClose={() => setAddFor(null)} />
       )}
     </>
   )
@@ -118,7 +127,7 @@ function MemberChip({ m, leader }: { m: MemberRow; leader?: boolean }) {
   )
 }
 
-function AddJuniorModal({ team, onClose }: { team: TeamRow; onClose: () => void }) {
+function AddJuniorModal({ team, viewerRole, onClose }: { team: TeamRow; viewerRole: string; onClose: () => void }) {
   const [mode, setMode] = useState<'member' | 'team'>('member')
   const [error, setError] = useState<string | null>(null)
   const [created, setCreated] = useState<{ email: string; pw: string } | null>(null)
@@ -172,11 +181,11 @@ function AddJuniorModal({ team, onClose }: { team: TeamRow; onClose: () => void 
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Input label="Phone" name="phone" placeholder="Optional" />
-            <Select label="Role" name="role" defaultValue="sales_advisor" options={[
+            <Select label="Role" name="role" defaultValue={viewerRole === 'telecaller' ? 'telecaller' : 'sales_advisor'} options={[
               { value: 'sales_advisor', label: 'Sales Advisor' },
               { value: 'telecaller', label: 'Telecaller' },
               { value: 'manager', label: 'Manager' },
-            ]} />
+            ].filter((o) => ROLE_RANK[o.value] <= (ROLE_RANK[viewerRole] ?? 0))} />
           </div>
           <Input label="Designation" name="designation" placeholder="Optional" />
           <div className="border-t border-slate-100 pt-3">
@@ -195,5 +204,43 @@ function AddJuniorModal({ team, onClose }: { team: TeamRow; onClose: () => void 
         </form>
       )}
     </Modal>
+  )
+}
+
+/** Admin: move a team under another parent (or to the top). Descendants are excluded (no cycles). */
+function MoveTeamSelect({ team, teams, childrenOf }: { team: TeamRow; teams: TeamRow[]; childrenOf: Map<string, TeamRow[]> }) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+
+  const blocked = useMemo(() => {
+    const out = new Set<string>([team.id])
+    const stack = [team.id]
+    while (stack.length) for (const c of childrenOf.get(stack.pop()!) ?? []) if (!out.has(c.id)) { out.add(c.id); stack.push(c.id) }
+    return out
+  }, [team.id, childrenOf])
+
+  return (
+    <div className="flex items-center gap-1">
+      <select
+        aria-label={`Move ${team.name} under`}
+        className="h-8 rounded-lg border border-slate-300 bg-white px-2 text-xs text-slate-700"
+        value={team.parent_team_id ?? ''}
+        disabled={isPending}
+        onChange={(e) => {
+          const parent = e.target.value || null
+          setError(null)
+          startTransition(async () => {
+            const res = await reparentTeam(team.id, parent)
+            if (!res.success) setError(res.error ?? 'Could not move the team')
+            else router.refresh()
+          })
+        }}
+      >
+        <option value="">Top level</option>
+        {teams.filter((t) => !blocked.has(t.id)).map((t) => <option key={t.id} value={t.id}>Under {t.name}</option>)}
+      </select>
+      {error && <span role="alert" className="text-xs text-red-600">{error}</span>}
+    </div>
   )
 }

@@ -8,6 +8,10 @@ import PageHeader from '@/components/ui/PageHeader'
 import Button from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/supabase/getProfile'
+import { formatDateTime } from '@/lib/utils'
 
 export const metadata = { title: 'Inventory' }
 
@@ -26,6 +30,15 @@ export default async function InventoryPage({ searchParams }: PageProps) {
   // Stats for every project in one query, not one query per project.
   const statsMap = await getProjectStatsBulk(projects.map((p) => p.id))
 
+  // The plots this user is holding, so a hold isn't forgotten until it lapses.
+  const session = await getProfile()
+  const canManage = ['admin', 'manager'].includes(session?.profile?.role ?? '')
+  const { data: myHolds } = session?.user
+    ? await (await createClient()).from('plots')
+        .select('id, plot_number, project_id, held_until, project:projects(name)')
+        .eq('held_by', session.user.id).eq('status', 'soft_hold').order('held_until', { ascending: true })
+    : { data: [] }
+
   const statuses = Object.entries(PROJECT_STATUS_CONFIG)
   const types    = Object.entries(PROJECT_TYPE_LABELS)
 
@@ -35,11 +48,30 @@ export default async function InventoryPage({ searchParams }: PageProps) {
         title="Inventory"
         subtitle={`${projects.length} project${projects.length !== 1 ? 's' : ''}`}
         actions={
-          <Button href="/inventory/new">
+          canManage && <Button href="/inventory/new">
             <Plus size={16} /> New Project
           </Button>
         }
       />
+
+      {(myHolds ?? []).length > 0 && (
+        <Card padding="md">
+          <h2 className="text-sm font-semibold text-slate-900 mb-2">My holds ({myHolds!.length})</h2>
+          <ul className="divide-y divide-slate-100">
+            {myHolds!.map((h) => {
+              const project = (Array.isArray(h.project) ? h.project[0] : h.project) as { name?: string } | null
+              return (
+                <li key={h.id} className="flex items-center justify-between py-2 text-sm">
+                  <Link href={`/inventory/${h.project_id}`} className="text-primary-600 hover:underline">
+                    {project?.name ?? 'Project'} · Plot {h.plot_number}
+                  </Link>
+                  <span className="text-xs text-slate-500">{h.held_until ? `Expires ${formatDateTime(h.held_until)}` : 'Held for a booking'}</span>
+                </li>
+              )
+            })}
+          </ul>
+        </Card>
+      )}
 
       {/* Filters */}
       <Card padding="none" className="px-4 py-3">

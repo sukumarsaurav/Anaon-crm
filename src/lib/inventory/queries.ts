@@ -214,8 +214,10 @@ export async function getCostSheet(plotId: string): Promise<CostSheet | null> {
   const base_price   = plot.base_price
   const premiums: Array<{ label: string; amount: number }> = []
 
-  if (plot.corner_premium > 0) premiums.push({ label: 'Corner Premium', amount: plot.corner_premium })
-  if (plot.facing_premium > 0) premiums.push({ label: 'Facing Premium', amount: plot.facing_premium })
+  // Corner / facing premiums are percentages of the base price, as in the generated total_price;
+  // treating them as rupees put a cost sheet total out of line with the plot's price.
+  if (plot.corner_premium > 0) premiums.push({ label: `Corner Premium (${plot.corner_premium}%)`, amount: Math.round(base_price * plot.corner_premium / 100) })
+  if (plot.facing_premium > 0) premiums.push({ label: `Facing Premium (${plot.facing_premium}%)`, amount: Math.round(base_price * plot.facing_premium / 100) })
   if (plot.other_premium  > 0) premiums.push({ label: 'Other Premium',  amount: plot.other_premium })
 
   const total_premium     = premiums.reduce((s, p) => s + p.amount, 0)

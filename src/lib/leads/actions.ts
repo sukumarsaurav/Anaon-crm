@@ -15,6 +15,8 @@ import { renderTemplate } from '@/lib/whatsapp/template-render'
 import type { LeadStage, FollowUpOutcome, Lead } from '@/types/leads'
 import { suggestNextFollowup } from '@/lib/utils'
 import { fireAutomations } from '@/lib/automation/engine'
+import { writeAuditLog } from '@/lib/security/audit'
+import { recordConsent } from '@/lib/legal/consent'
 
 export async function createLead(formData: FormData): Promise<{ success: boolean; id?: string; error?: string }> {
   const supabase = await createClient()
@@ -110,13 +112,15 @@ export async function createLead(formData: FormData): Promise<{ success: boolean
   }, 'lead', data.id)
 
   // Audit log
-  await supabase.from('audit_logs').insert({
-    user_id: user.id,
-    action: 'create',
-    table_name: 'leads',
-    record_id: data.id,
-    new_values: payload,
-  })
+  await writeAuditLog({ userId: user.id, action: 'lead_created', tableName: 'leads', recordId: data.id, newValues: payload })
+
+  // Only what the advisor ticked: consent is never assumed.
+  if (formData.get('consent_data_storage') === 'true') {
+    await recordConsent({ entityType: 'lead', entityId: data.id, entityName: payload.full_name as string, consentType: 'data_storage', consented: true, source: 'crm' })
+  }
+  if (formData.get('consent_marketing_whatsapp') === 'true') {
+    await recordConsent({ entityType: 'lead', entityId: data.id, entityName: payload.full_name as string, consentType: 'marketing_whatsapp', consented: true, source: 'crm' })
+  }
 
   revalidatePath('/leads')
   return { success: true, id: data.id }
@@ -155,14 +159,7 @@ export async function updateLead(
 
   if (error) return { success: false, error: error.message }
 
-  await supabase.from('audit_logs').insert({
-    user_id: user.id,
-    action: 'update',
-    table_name: 'leads',
-    record_id: id,
-    old_values: oldLead,
-    new_values: safe,
-  })
+  await writeAuditLog({ userId: user.id, action: 'lead_updated', tableName: 'leads', recordId: id, oldValues: oldLead, newValues: safe })
 
   revalidatePath(`/leads/${id}`)
   revalidatePath('/leads')
@@ -385,7 +382,8 @@ const VALID_STAGES: LeadStage[] = [
 
 export async function bulkChangeStage(
   leadIds: string[],
-  stage: string
+  stage: string,
+  lossReason?: string | null,
 ): Promise<{ success: boolean; error?: string; count?: number }> {
   const supabase = await createClient()
   const user = (await getProfile())?.user
@@ -393,6 +391,11 @@ export async function bulkChangeStage(
   if (!leadIds.length) return { success: false, error: 'No leads selected' }
   if (!VALID_STAGES.includes(stage as LeadStage)) return { success: false, error: 'Unknown stage' }
   if (leadIds.length > 500) return { success: false, error: 'Select at most 500 leads at once' }
+  // A won lead comes with a booking; marking leads won in bulk inflated the win rate with no sale.
+  if (stage === 'closed_won') return { success: false, error: 'Closed Won is set when a booking is approved' }
+  // The single-lead path asks why; without a reason the Win/Loss report filled up with "Unspecified".
+  const reason = lossReason?.trim() || null
+  if (stage === 'not_interested' && !reason) return { success: false, error: 'Choose a loss reason' }
 
   const { data: before } = await supabase
     .from('leads').select('id, stage, full_name, phone, assigned_to, project_id, utm_source').in('id', leadIds)
@@ -400,8 +403,7 @@ export async function bulkChangeStage(
   if (!changing.length) return { success: true, count: 0 }
 
   const updates: Record<string, unknown> = { stage, updated_at: new Date().toISOString() }
-  // A loss reason belongs to "not interested" only (single-lead path does the same).
-  if (stage !== 'not_interested') updates.loss_reason = null
+  updates.loss_reason = stage === 'not_interested' ? reason : null
 
   const { error } = await supabase.from('leads').update(updates).in('id', changing.map((l) => l.id))
   if (error) return { success: false, error: error.message }
@@ -413,22 +415,27 @@ export async function bulkChangeStage(
       type: 'stage_change',
       stage_from: l.stage,
       stage_to: stage,
-      notes: `Stage changed from ${String(l.stage).replace(/_/g, ' ')} to ${stage.replace(/_/g, ' ')} (bulk action)`,
+      notes: `Stage changed from ${String(l.stage).replace(/_/g, ' ')} to ${stage.replace(/_/g, ' ')} (bulk action)${reason ? ` — ${reason}` : ''}`,
       performed_by: user.id,
     }))
   )
 
-  // Scores depend on stage, and automations hang off stage changes.
-  for (const l of changing) {
-    const activities = await getLeadActivities(l.id)
-    const { data: full } = await supabase.from('leads').select('*').eq('id', l.id).single()
-    if (full) {
-      const { score, temperature } = await scoreLead(supabase, full, activities)
-      await supabase.from('leads').update({ score, temperature }).eq('id', l.id)
-    }
-    fireAutomations('lead_stage_changed', {
-      lead: { id: l.id, full_name: l.full_name, phone: l.phone, stage, assigned_to: l.assigned_to, project_id: l.project_id, utm_source: l.utm_source },
-    }, 'lead', l.id)
+  // Scores depend on stage, and automations hang off stage changes. Ten at a time: one by one,
+  // 500 leads meant ~1,500 sequential round-trips and the action timed out.
+  for (let i = 0; i < changing.length; i += 10) {
+    await Promise.all(changing.slice(i, i + 10).map(async (l) => {
+      const [activities, { data: full }] = await Promise.all([
+        getLeadActivities(l.id),
+        supabase.from('leads').select('*').eq('id', l.id).single(),
+      ])
+      if (full) {
+        const { score, temperature } = await scoreLead(supabase, full, activities)
+        await supabase.from('leads').update({ score, temperature }).eq('id', l.id)
+      }
+      fireAutomations('lead_stage_changed', {
+        lead: { id: l.id, full_name: l.full_name, phone: l.phone, stage, assigned_to: l.assigned_to, project_id: l.project_id, utm_source: l.utm_source },
+      }, 'lead', l.id)
+    }))
   }
 
   revalidatePath('/leads')
@@ -538,12 +545,7 @@ export async function deleteLead(leadId: string): Promise<{ success: boolean; er
   const { error } = await supabase.from('leads').update({ is_active: false }).eq('id', leadId)
   if (error) return { success: false, error: error.message }
 
-  await supabase.from('audit_logs').insert({
-    user_id: user.id,
-    action: 'delete',
-    table_name: 'leads',
-    record_id: leadId,
-  })
+  await writeAuditLog({ userId: user.id, action: 'lead_deleted', tableName: 'leads', recordId: leadId })
 
   revalidatePath('/leads')
   return { success: true }
@@ -603,6 +605,10 @@ export async function mergeDuplicate(
     // would show it as an inactive duplicate.
     supabase.from('whatsapp_conversations').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
     supabase.from('broker_lead_registrations').update({ crm_lead_id: keepLeadId }).eq('crm_lead_id', mergeLeadId),
+    // Shared albums, plot holds and broadcast history belong to the person, not the duplicate row.
+    supabase.from('property_albums').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
+    supabase.from('plot_holds_log').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
+    supabase.from('whatsapp_broadcast_recipients').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
   ])
 
   // Backfill survivor fields that are empty, and keep the higher score.
@@ -630,7 +636,7 @@ export async function mergeDuplicate(
   await supabase.from('lead_activities').insert({
     lead_id: keepLeadId,
     type: 'system',
-    notes: `Merged duplicate lead "${dupe.full_name}" (${dupe.phone}) into this record — its activities and site visits were moved here.`,
+    notes: `Merged duplicate lead "${dupe.full_name}" (${dupe.phone}) into this record — its activities, site visits, albums and messages were moved here.`,
     performed_by: user.id,
   })
 

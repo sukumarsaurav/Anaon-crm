@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateSecuritySettings } from '@/lib/security/actions'
 import Input from '@/components/ui/Input'
@@ -13,10 +14,12 @@ interface Settings {
 
 export default function SecuritySettingsForm({ settings }: { settings: Settings | null }) {
   const router = useRouter()
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
 
   async function handleSubmit(formData: FormData) {
-    await updateSecuritySettings(formData)
-    router.refresh()
+    const res = await updateSecuritySettings(formData)
+    setMessage(res.success ? { ok: true, text: 'Saved' } : { ok: false, text: res.error ?? 'Could not save' })
+    if (res.success) router.refresh()
   }
 
   return (
@@ -43,13 +46,14 @@ export default function SecuritySettingsForm({ settings }: { settings: Settings 
         name="session_timeout_minutes"
         label="Session Timeout (minutes)"
         type="number"
-        min={15}
+        min={0}
         max={480}
         defaultValue={settings?.session_timeout_minutes ?? 60}
-        hint="Inactivity before auto-logout"
+        hint="Inactivity before auto-logout (0 = off)"
       />
-      <div className="sm:col-span-3">
+      <div className="sm:col-span-3 flex items-center gap-3">
         <Button type="submit">Save Policy</Button>
+        {message && <span role={message.ok ? 'status' : 'alert'} className={`text-sm ${message.ok ? 'text-emerald-600' : 'text-red-600'}`}>{message.text}</span>}
       </div>
     </form>
   )

@@ -9,6 +9,7 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import BookingStatusBadge from '@/components/bookings/BookingStatusBadge'
 import ApprovalPanel from '@/components/bookings/ApprovalPanel'
 import PaymentPlanBuilder from '@/components/bookings/PaymentPlanBuilder'
+import AgreementUploadForm from '@/components/bookings/AgreementUploadForm'
 import { PAYMENT_PLAN_LABELS, REFERRED_BY_LABELS, COMMISSION_STATUS_CONFIG } from '@/types/bookings'
 import { FileText, AlertTriangle, ExternalLink } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
@@ -48,19 +49,26 @@ export default async function BookingDetailPage({ params }: PageProps) {
   const profile = (await getProfile())?.profile
   const canManage = ['admin', 'manager'].includes(profile?.role ?? '')
 
-  async function markAllotmentSent() {
+  async function emailAllotment() {
     'use server'
     return markAllotmentLetterSent(id)
   }
+  async function markAllotmentHandedOver() {
+    'use server'
+    return markAllotmentLetterSent(id, { manual: true })
+  }
   async function recordAgreement(url?: string) {
     'use server'
-    if (!url || !/^https?:\/\//i.test(url)) return { success: false, error: 'Enter a full https:// link' }
+    // An uploaded file (/api/files/…) or a full https:// link.
+    if (!url || !(/^https?:\/\//i.test(url) || url.startsWith('/api/files/'))) return { success: false, error: 'Upload the file or enter a full https:// link' }
     return uploadAgreement(id, url, true)
   }
 
   const paidTotal    = payments.reduce((s, p) => s + (p.amount_paid ?? 0), 0)
-  const pendingTotal = payments.reduce((s, p) => p.status === 'pending' ? s + p.amount_due : s, 0)
-  const overdueCount = payments.filter((p) => p.status === 'pending' && p.due_date < todayIST()).length
+  // Outstanding = what is still owed on open installments (part payments included).
+  const isOpen = (p: { status: string }) => p.status === 'pending' || p.status === 'overdue'
+  const pendingTotal = payments.reduce((s, p) => isOpen(p) ? s + Math.max(0, p.amount_due - (p.amount_paid ?? 0)) : s, 0)
+  const overdueCount = payments.filter((p) => isOpen(p) && p.due_date < todayIST()).length
 
   return (
     <div className="p-6 space-y-6">
@@ -182,14 +190,17 @@ export default async function BookingDetailPage({ params }: PageProps) {
               ))}
               {canManage && (
                 <div className="flex flex-wrap gap-2 pt-3">
-                  {!booking.allotment_letter_sent_at && (
-                    <ActionButton label="Mark allotment letter sent" tone="success"
-                      confirm="Record that the allotment letter was sent to the client?"
-                      action={markAllotmentSent} />
+                  {booking.status === 'confirmed' && (
+                    <ActionButton label={booking.allotment_letter_sent_at ? 'Email allotment letter again' : 'Email allotment letter'} tone="success"
+                      confirm="Email the allotment letter (PDF) to the client?"
+                      action={emailAllotment} />
                   )}
-                  <ActionButton label={booking.agreement_signed ? 'Replace signed agreement link' : 'Add signed agreement'}
-                    promptLabel="Link to the signed agreement (https://…):"
-                    action={recordAgreement} />
+                  {booking.status === 'confirmed' && !booking.allotment_letter_sent_at && (
+                    <ActionButton label="Mark as handed over"
+                      confirm="Record that the allotment letter was given to the client in person or by another channel?"
+                      action={markAllotmentHandedOver} />
+                  )}
+                  <AgreementUploadForm bookingId={id} hasAgreement={!!booking.agreement_signed} save={recordAgreement} />
                 </div>
               )}
             </div>

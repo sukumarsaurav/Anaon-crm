@@ -23,19 +23,37 @@ export default function IPWhitelistManager({ entries, enabled }: Props) {
   const router = useRouter()
   const [showAdd, setShowAdd] = useState(false)
   const [toggling, setToggling] = useState<string | null>(null)
+  const [isOn, setIsOn] = useState(enabled)
+  const [error, setError] = useState<string | null>(null)
 
   function handleGlobalToggle(e: React.ChangeEvent<HTMLInputElement>) {
+    const next = e.target.checked
+    setError(null)
     startTransition(async () => {
-      await toggleIPWhitelistGlobal(e.target.checked)
+      const res = await toggleIPWhitelistGlobal(next)
+      if (!res.success) { setError(res.error ?? 'Could not change the setting'); return }
+      setIsOn(next)
       router.refresh()
     })
   }
 
   function handleEntryToggle(id: string, isActive: boolean) {
     setToggling(id)
+    setError(null)
     startTransition(async () => {
-      await toggleIPWhitelistEntry(id, isActive)
+      const res = await toggleIPWhitelistEntry(id, isActive)
       setToggling(null)
+      if (!res.success) { setError(res.error ?? 'Could not update the entry'); return }
+      router.refresh()
+    })
+  }
+
+  function handleAdd(formData: FormData) {
+    setError(null)
+    startTransition(async () => {
+      const res = await addIPToWhitelist(formData)
+      if (!res.success) { setError(res.error ?? 'Could not add the IP'); return }
+      setShowAdd(false)
       router.refresh()
     })
   }
@@ -49,12 +67,14 @@ export default function IPWhitelistManager({ entries, enabled }: Props) {
           <p className="text-xs text-slate-500 mt-0.5">When enabled, only whitelisted IPs can access the CRM dashboard</p>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
-          <input type="checkbox" defaultChecked={enabled} onChange={handleGlobalToggle} className="sr-only peer" />
+          <input type="checkbox" checked={isOn} onChange={handleGlobalToggle} aria-label="IP whitelist enforcement" className="sr-only peer" />
           <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600" />
         </label>
       </div>
 
-      {enabled && (
+      {error && <div role="alert" className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700">{error}</div>}
+
+      {isOn && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700">
           IP whitelist is active. Make sure your current IP is whitelisted before saving changes.
         </div>
@@ -94,12 +114,11 @@ export default function IPWhitelistManager({ entries, enabled }: Props) {
           <Plus size={14} /> Add IP Address
         </button>
       ) : (
-        <form action={addIPToWhitelist} onSubmit={() => setShowAdd(false)} className="flex gap-2">
+        <form action={handleAdd} className="flex gap-2">
           <input aria-label="192.168.1.1"
             name="ip_address"
             required
             placeholder="192.168.1.1"
-            pattern="^(\d{1,3}\.){3}\d{1,3}$"
             className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
           <input aria-label="Office / Home"

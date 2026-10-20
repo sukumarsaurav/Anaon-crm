@@ -15,10 +15,10 @@ interface PageProps {
 }
 
 const STAGE_LABELS: Record<string, string> = {
-  new: 'New', contacted: 'Contacted', interested: 'Interested',
+  new_lead: 'New', contacted: 'Contacted', interested: 'Interested',
   site_visit_scheduled: 'Visit Sched.', site_visit_done: 'Visit Done',
-  negotiation: 'Negotiation', booked: 'Booked',
-  not_interested: 'Not Interested', lost: 'Lost',
+  negotiation: 'Negotiation', token_paid: 'Token Paid', closed_won: 'Closed Won',
+  not_interested: 'Not Interested', future_followup: 'Future Follow-up',
 }
 
 export default async function LeadReportsPage({ searchParams }: PageProps) {
@@ -31,7 +31,8 @@ export default async function LeadReportsPage({ searchParams }: PageProps) {
     getLostLeadAnalysis(from, to),
   ])
 
-  const activeFunnel = funnel.filter(f => !['not_interested', 'lost'].includes(f.stage))
+  // The forward pipeline; lost and parked leads are listed separately, not as a funnel step.
+  const activeFunnel = funnel.filter(f => !['not_interested', 'future_followup'].includes(f.stage))
 
   return (
     <div className="p-6 space-y-6">

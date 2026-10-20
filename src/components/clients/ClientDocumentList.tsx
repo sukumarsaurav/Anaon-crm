@@ -1,5 +1,7 @@
 'use client'
 
+import FileUrlInput from '@/components/ui/FileUrlInput'
+
 import { useState, useTransition } from 'react'
 import { addClientDocument, verifyClientDocument } from '@/lib/clients/actions'
 import { DOC_TYPE_LABELS } from '@/types/clients'
@@ -72,9 +74,7 @@ export default function ClientDocumentList({ clientId, documents, canManage }: P
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div className="col-span-2">
-              <label htmlFor="clientdocumentlist-file-url" className="block text-xs font-medium text-slate-600 mb-1">File URL</label>
-              <input id="clientdocumentlist-file-url" name="file_url" type="url" placeholder="https://..."
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              <FileUrlInput name="file_url" label="File" folder="clients" scopeId={clientId} />
             </div>
             <div>
               <label htmlFor="clientdocumentlist-expiry-date" className="block text-xs font-medium text-slate-600 mb-1">Expiry Date</label>

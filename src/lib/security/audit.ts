@@ -1,15 +1,8 @@
-'use server'
-
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+// Plain server module, not a server action file. With 'use server' every export was callable from
+// any browser, so anyone signed in could write audit entries in another user's name.
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
-
-function serviceSupabase() {
-  return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  )
-}
+import { createServiceClient } from '@/lib/supabase/service'
 
 export type AuditAction =
   | 'login' | 'logout' | 'login_failed' | 'login_locked'
@@ -19,9 +12,12 @@ export type AuditAction =
   | 'document_viewed' | 'document_uploaded'
   | 'user_created' | 'user_updated' | 'user_deactivated' | 'role_changed'
   | 'export_leads' | 'export_report'
-  | '2fa_enabled' | '2fa_disabled' | '2fa_failed'
   | 'session_revoked' | 'ip_whitelist_updated'
   | 'sensitive_field_viewed'
+  | 'booking_approved' | 'booking_rejected'
+  | 'payment_recorded' | 'payment_waived' | 'payment_deleted'
+  | 'plot_updated' | 'commission_approved' | 'commission_paid'
+  | 'kyc_updated' | 'client_updated' | 'account_unlocked'
 
 export async function writeAuditLog({
   userId,
@@ -41,13 +37,16 @@ export async function writeAuditLog({
   metadata?: Record<string, unknown>
 }) {
   try {
-    const headersList = await headers()
-    const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim()
-      ?? headersList.get('x-real-ip')
-      ?? null
-    const ua = headersList.get('user-agent') ?? null
+    // Outside a request (crons, tests) there are no headers; the entry is still written.
+    let ip: string | null = null
+    let ua: string | null = null
+    try {
+      const headersList = await headers()
+      ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? headersList.get('x-real-ip') ?? null
+      ua = headersList.get('user-agent') ?? null
+    } catch { /* no request context */ }
 
-    await serviceSupabase().from('audit_logs').insert({
+    await createServiceClient().from('audit_logs').insert({
       user_id: userId,
       action,
       table_name: tableName ?? null,

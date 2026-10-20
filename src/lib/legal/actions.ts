@@ -2,6 +2,7 @@
 
 import { todayIST } from '@/lib/datetime'
 import { revalidatePath } from 'next/cache'
+import { recordConsent } from './consent'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { eraseSubject } from '@/lib/legal/erasure'
@@ -194,17 +195,13 @@ export async function logConsent(
   entityType: 'lead' | 'client',
   entityId: string,
   entityName: string,
-  consentType: string,
+  consentType: 'marketing_whatsapp' | 'marketing_email' | 'data_storage' | 'site_visit_photos',
   consented: boolean,
   source: string = 'crm',
 ) {
-  const supabase = await createClient()
-  await supabase.from('consent_logs').insert({
-    entity_type: entityType,
-    entity_id:   entityId,
-    entity_name: entityName,
-    consent_type: consentType,
-    consented,
-    source,
-  })
+  const auth = await getAuth()
+  if (!auth.ok || !['admin', 'manager', 'sales_advisor', 'telecaller'].includes(auth.role)) return { success: false, error: 'Unauthorized' }
+  await recordConsent({ entityType, entityId, entityName, consentType, consented, source })
+  revalidatePath('/legal/privacy')
+  return { success: true }
 }

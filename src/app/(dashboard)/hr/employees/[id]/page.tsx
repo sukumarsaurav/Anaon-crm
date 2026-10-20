@@ -6,7 +6,8 @@ import { ArrowLeft } from 'lucide-react'
 import { getEmployeeById, getEmployees } from '@/lib/hr/queries'
 import EmployeeForm from '@/components/hr/EmployeeForm'
 import ActionButton from '@/components/ui/ActionButton'
-import { deactivateEmployee } from '@/lib/hr/actions'
+import { deactivateEmployee, reactivateEmployee } from '@/lib/hr/actions'
+import { decryptPii } from '@/lib/security/pii'
 
 export const metadata = { title: 'Employee' }
 
@@ -25,6 +26,18 @@ export default async function EmployeeDetailPage({ params }: PageProps) {
   async function deactivate(reason?: string) {
     'use server'
     return deactivateEmployee(id, reason ?? '')
+  }
+  async function reactivate() {
+    'use server'
+    return reactivateEmployee(id)
+  }
+
+  // Stored encrypted; the HR form edits the plain values.
+  const editable = {
+    ...employee,
+    aadhar_number: decryptPii(employee.aadhar_number),
+    pan_number: decryptPii(employee.pan_number),
+    bank_account: decryptPii(employee.bank_account),
   }
 
   const managers = allEmployees.map(e => ({ id: e.id, full_name: e.full_name }))
@@ -49,10 +62,15 @@ export default async function EmployeeDetailPage({ params }: PageProps) {
               action={deactivate} />
           </div>
         ) : (
-          <span className="ml-auto text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-500">Inactive</span>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-500">Inactive</span>
+            <ActionButton label="Reactivate" tone="success"
+              confirm="Restore this employee's CRM login?"
+              action={reactivate} />
+          </div>
         )}
       </div>
-      <EmployeeForm employee={employee} managers={managers} />
+      <EmployeeForm employee={editable} managers={managers} />
     </div>
   )
 }

@@ -107,7 +107,7 @@ Paste each into the corresponding portal (99acres, MagicBricks, JustDial, IndiaM
 
 ## Auth note
 
-The two apps are independent deployments. CRM auth (Supabase + 2FA + IP allowlist via `crm/src/proxy.ts`) is fully self-contained on `dashboard.anonindia.com`; the website does not share its session. No cross-subdomain cookie config is required.
+The two apps are independent deployments. CRM auth (Supabase email/password with login lockout, idle timeout and IP allowlist via `crm/src/proxy.ts`; no two-factor authentication) is fully self-contained on `dashboard.anonindia.com`; the website does not share its session. No cross-subdomain cookie config is required.
 
 ## Phase R0/R1 integrations (payments, OTP, email, PDF, push)
 

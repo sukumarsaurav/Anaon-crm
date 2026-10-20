@@ -4,6 +4,8 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
+import { isIP } from 'node:net'
 import { writeAuditLog } from './audit'
 import { invalidateSecuritySettings } from './proxyCache'
 
@@ -63,45 +65,108 @@ export async function revokeSession(sessionId: string, targetUserId?: string) {
 
 // ── IP Whitelist ──────────────────────────────────────────────────────────────
 
-export async function addIPToWhitelist(formData: FormData) {
+async function addIPToWhitelistImpl(formData: FormData) {
   const { user, profile, svc } = await getAuth()
   if (!['admin', 'manager'].includes(profile?.role ?? '')) throw new Error('Unauthorized')
 
-  const ip = formData.get('ip_address') as string
-  const label = formData.get('label') as string
+  const ip = (formData.get('ip_address') as string ?? '').trim()
+  const label = (formData.get('label') as string ?? '').trim() || null
+  // The column is inet; a typo used to fail silently and the form looked saved.
+  if (!isIP(ip)) throw new Error(`"${ip}" is not a valid IPv4 or IPv6 address`)
 
-  await svc.from('ip_whitelist').insert({ ip_address: ip, label, created_by: user.id })
+  const { error } = await svc.from('ip_whitelist').insert({ ip_address: ip, label, created_by: user.id })
+  if (error) throw new Error(error.code === '23505' ? 'That IP is already on the list' : error.message)
   await writeAuditLog({ userId: user.id, action: 'ip_whitelist_updated', metadata: { ip, label, op: 'add' } })
   revalidatePath('/admin/security')
 }
 
-export async function toggleIPWhitelistEntry(id: string, isActive: boolean) {
+async function toggleIPWhitelistEntryImpl(id: string, isActive: boolean) {
   const { user, profile, svc } = await getAuth()
   if (!['admin'].includes(profile?.role ?? '')) throw new Error('Unauthorized')
-  await svc.from('ip_whitelist').update({ is_active: isActive }).eq('id', id)
+  const { error } = await svc.from('ip_whitelist').update({ is_active: isActive }).eq('id', id)
+  if (error) throw new Error(error.message)
   await writeAuditLog({ userId: user.id, action: 'ip_whitelist_updated', metadata: { id, is_active: isActive } })
   revalidatePath('/admin/security')
 }
 
-export async function toggleIPWhitelistGlobal(enabled: boolean) {
+/** The caller's IP as the proxy sees it (same headers as proxy.ts). */
+async function currentIp(): Promise<string | null> {
+  const h = await headers()
+  return h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? h.get('x-real-ip') ?? null
+}
+
+async function toggleIPWhitelistGlobalImpl(enabled: boolean) {
   const { user, profile, svc } = await getAuth()
   if (profile?.role !== 'admin') throw new Error('Unauthorized')
-  await svc.from('security_settings').update({ ip_whitelist_enabled: enabled, updated_by: user.id, updated_at: new Date().toISOString() })
+
+  // Turning the allowlist on from an address that is not on it locked everyone out, this admin
+  // included, with no way back in through the CRM.
+  if (enabled) {
+    const ip = await currentIp()
+    const { data: allowed } = ip
+      ? await svc.from('ip_whitelist').select('id').eq('ip_address', ip).eq('is_active', true).maybeSingle()
+      : { data: null }
+    if (!allowed) throw new Error(`Your current IP (${ip ?? 'unknown'}) is not on the active list. Add it first, or you will be locked out.`)
+  }
+
+  const { error } = await svc.from('security_settings')
+    .update({ ip_whitelist_enabled: enabled, updated_by: user.id, updated_at: new Date().toISOString() })
+    .not('id', 'is', null)
+  if (error) throw new Error(error.message)
   invalidateSecuritySettings()
   await writeAuditLog({ userId: user.id, action: 'ip_whitelist_updated', metadata: { global_enabled: enabled } })
   revalidatePath('/admin/security')
 }
 
-export async function updateSecuritySettings(formData: FormData) {
+/** Clear a login lockout (failed-password counter) so the person can sign in again now. */
+async function unlockAccountImpl(targetUserId: string) {
+  const { user, profile, svc } = await getAuth()
+  if (!['admin', 'manager'].includes(profile?.role ?? '')) throw new Error('Unauthorized')
+  const { error } = await svc.from('profiles')
+    .update({ failed_login_count: 0, lockout_until: null, last_failed_login_at: null, updated_at: new Date().toISOString() })
+    .eq('id', targetUserId)
+  if (error) throw new Error(error.message)
+  await writeAuditLog({ userId: user.id, action: 'account_unlocked', tableName: 'profiles', recordId: targetUserId })
+  revalidatePath('/admin/security')
+}
+
+async function updateSecuritySettingsImpl(formData: FormData) {
   const { user, profile, svc } = await getAuth()
   if (profile?.role !== 'admin') throw new Error('Unauthorized')
 
-  await svc.from('security_settings').update({
-    max_failed_attempts: Number(formData.get('max_failed_attempts')),
-    lockout_minutes: Number(formData.get('lockout_minutes')),
-    session_timeout_minutes: Number(formData.get('session_timeout_minutes')),
+  const n = (k: string) => Number(formData.get(k))
+  const settings = {
+    max_failed_attempts: n('max_failed_attempts'),
+    lockout_minutes: n('lockout_minutes'),
+    session_timeout_minutes: n('session_timeout_minutes'),
+  }
+  if (!Number.isInteger(settings.max_failed_attempts) || settings.max_failed_attempts < 1) throw new Error('Failed attempts must be at least 1')
+  if (!Number.isInteger(settings.lockout_minutes) || settings.lockout_minutes < 1) throw new Error('Lockout must be at least 1 minute')
+  // 0 turns the idle timeout off; anything shorter than 5 minutes signs people out mid-task.
+  if (!Number.isInteger(settings.session_timeout_minutes) || (settings.session_timeout_minutes !== 0 && settings.session_timeout_minutes < 5)) {
+    throw new Error('Session timeout must be 0 (off) or at least 5 minutes')
+  }
+
+  const { error } = await svc.from('security_settings').update({
+    ...settings,
     updated_by: user.id,
     updated_at: new Date().toISOString(),
-  })
+  }).not('id', 'is', null)
+  if (error) throw new Error(error.message)
+  invalidateSecuritySettings()
+  await writeAuditLog({ userId: user.id, action: 'ip_whitelist_updated', metadata: { security_settings: settings } })
   revalidatePath('/admin/security')
 }
+
+// ── Exported actions ───────────────────────────────────────────────────────────
+// They return the error instead of throwing: Next.js replaces a thrown message with a generic one in
+// production, so "your IP is not on the list" never reached the admin.
+type Result = { success: boolean; error?: string }
+async function asResult(run: () => Promise<void>): Promise<Result> {
+  try { await run(); return { success: true } } catch (e) { return { success: false, error: (e as Error).message } }
+}
+export async function addIPToWhitelist(formData: FormData): Promise<Result> { return asResult(() => addIPToWhitelistImpl(formData)) }
+export async function toggleIPWhitelistEntry(id: string, isActive: boolean): Promise<Result> { return asResult(() => toggleIPWhitelistEntryImpl(id, isActive)) }
+export async function toggleIPWhitelistGlobal(enabled: boolean): Promise<Result> { return asResult(() => toggleIPWhitelistGlobalImpl(enabled)) }
+export async function unlockAccount(targetUserId: string): Promise<Result> { return asResult(() => unlockAccountImpl(targetUserId)) }
+export async function updateSecuritySettings(formData: FormData): Promise<Result> { return asResult(() => updateSecuritySettingsImpl(formData)) }

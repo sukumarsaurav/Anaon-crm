@@ -14,6 +14,8 @@ import Alert from '@/components/ui/Alert'
 interface Props {
   projectId: string
   plot?: Plot
+  /** Project premium matrix (percent by premium type): pre-fills a new plot's premiums from its type. */
+  premiumDefaults?: Partial<Record<string, number>>
 }
 
 const PLOT_TYPE_OPTIONS = [
@@ -34,7 +36,7 @@ const STATUS_OPTIONS = ['available', 'soft_hold', 'booked', 'registered', 'sold'
   value: s, label: s.replace('_', ' '),
 }))
 
-export default function PlotForm({ projectId, plot }: Props) {
+export default function PlotForm({ projectId, plot, premiumDefaults = {} }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -46,7 +48,19 @@ export default function PlotForm({ projectId, plot }: Props) {
     dev:    plot?.development_charges ?? 0,
   })
 
-  const total = basePrice + premiums.corner + premiums.facing + premiums.other + premiums.dev
+  // Same formula as the database's generated total_price: corner and facing premiums are PERCENT of
+  // the base price, other premium and development charges are rupees. The form used to label all of
+  // them ₹ and add them, so "₹50,000 corner premium" was stored as 50,000 % of the base price.
+  const total = basePrice * (1 + premiums.corner / 100 + premiums.facing / 100) + premiums.other + premiums.dev
+
+  function onTypeChange(type: string) {
+    if (plot) return // never overwrite an existing plot's premiums
+    setPremiums((p) => ({
+      ...p,
+      corner: type === 'corner' ? premiumDefaults.corner ?? p.corner : 0,
+      facing: type === 'park_facing' || type === 'road_facing' ? premiumDefaults[type] ?? p.facing : 0,
+    }))
+  }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -69,7 +83,7 @@ export default function PlotForm({ projectId, plot }: Props) {
     <form onSubmit={handleSubmit} className="space-y-5 max-w-2xl">
       <div className="grid grid-cols-2 gap-4">
         <Input name="plot_number" label="Plot Number" required defaultValue={plot?.plot_number} placeholder="A-101" />
-        <Select name="type" label="Type" defaultValue={plot?.type ?? 'regular'} options={PLOT_TYPE_OPTIONS} />
+        <Select name="type" label="Type" defaultValue={plot?.type ?? 'regular'} options={PLOT_TYPE_OPTIONS} onChange={(e) => onTypeChange(e.target.value)} />
         <Input name="size_sqyd" label="Size (sq yards)" type="number" step={0.01} defaultValue={plot?.size_sqyd ?? ''} />
         <Input name="size_sqft" label="Size (sq ft)" type="number" step={0.01} defaultValue={plot?.size_sqft ?? ''} />
         <Select name="facing" label="Facing" defaultValue={plot?.facing ?? ''} options={FACING_OPTIONS} />
@@ -85,8 +99,8 @@ export default function PlotForm({ projectId, plot }: Props) {
         <div className="grid grid-cols-2 gap-3">
           {[
             { name: 'base_price',          label: 'Base Price (₹)',     required: true,  val: basePrice,       setter: setBasePrice },
-            { name: 'corner_premium',      label: 'Corner Premium (₹)', required: false, val: premiums.corner, setter: (v: number) => setPremiums(p => ({ ...p, corner: v })) },
-            { name: 'facing_premium',      label: 'Facing Premium (₹)', required: false, val: premiums.facing, setter: (v: number) => setPremiums(p => ({ ...p, facing: v })) },
+            { name: 'corner_premium',      label: 'Corner Premium (% of base)', required: false, val: premiums.corner, setter: (v: number) => setPremiums(p => ({ ...p, corner: v })) },
+            { name: 'facing_premium',      label: 'Facing Premium (% of base)', required: false, val: premiums.facing, setter: (v: number) => setPremiums(p => ({ ...p, facing: v })) },
             { name: 'other_premium',       label: 'Other Premium (₹)',  required: false, val: premiums.other,  setter: (v: number) => setPremiums(p => ({ ...p, other: v })) },
             { name: 'development_charges', label: 'Dev. Charges (₹)',   required: false, val: premiums.dev,    setter: (v: number) => setPremiums(p => ({ ...p, dev: v })) },
           ].map(({ name, label, required, val, setter }) => (

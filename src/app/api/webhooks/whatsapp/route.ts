@@ -1,3 +1,4 @@
+import { recordWhatsAppConsent } from '@/lib/legal/consent'
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { applyBroadcastReceipt, markBroadcastReplied } from '@/lib/whatsapp/broadcast'
@@ -197,12 +198,16 @@ async function handleInboundMessage(msg: MetaInboundMessage, contact: MetaContac
 
   // STOP / START, as WhatsApp's opt-out convention; checked before every marketing send.
   const said = bodyText.trim().toLowerCase()
+  const convLeadId = async () => existingConv?.lead_id
+    ?? (await supabase.from('whatsapp_conversations').select('lead_id').eq('id', conversationId).maybeSingle()).data?.lead_id
   if (['stop', 'unsubscribe', 'stop promotions', 'stop all', 'opt out', 'optout'].includes(said)) {
     await supabase.from('whatsapp_conversations').update({ opted_out: true, opted_out_at: timestamp }).eq('id', conversationId)
+    await recordWhatsAppConsent([await convLeadId()], true)
     return
   }
   if (['start', 'subscribe', 'unstop', 'resume promotions'].includes(said)) {
     await supabase.from('whatsapp_conversations').update({ opted_out: false, opted_out_at: null }).eq('id', conversationId)
+    await recordWhatsAppConsent([await convLeadId()], false)
   }
 
   // If opted out, skip auto-replies

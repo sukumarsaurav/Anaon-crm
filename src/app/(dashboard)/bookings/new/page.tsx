@@ -7,7 +7,8 @@ import PageHeader from '@/components/ui/PageHeader'
 
 export const metadata = { title: 'New Booking' }
 
-export default async function NewBookingPage() {
+export default async function NewBookingPage({ searchParams }: { searchParams: Promise<{ client_id?: string }> }) {
+  const { client_id } = await searchParams
   const supabase = await createClient()
 
   const [
@@ -27,7 +28,7 @@ export default async function NewBookingPage() {
       <PageHeader
         backHref="/bookings"
         title="New Booking"
-        subtitle="Convert a lead / client to a confirmed booking"
+        subtitle="Book a plot for a client (convert a lead to a client first)"
       />
 
       <BookingCreateForm
@@ -35,6 +36,7 @@ export default async function NewBookingPage() {
         projects={projects ?? []}
         advisors={advisors ?? []}
         brokers={brokers}
+        defaultClientId={client_id}
       />
     </div>
   )

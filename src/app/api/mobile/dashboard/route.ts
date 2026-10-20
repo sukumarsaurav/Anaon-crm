@@ -35,10 +35,12 @@ export async function GET(req: NextRequest) {
       .eq('is_active', true)
       .gte('created_at', `${todayStr.slice(0, 7)}-01T00:00:00`),
 
-    supabase.from('attendance')
+    // Same table as the CRM (attendance_logs, one row per IST day).
+    supabase.from('attendance_logs')
       .select('id')
       .eq('user_id', user.id)
-      .gte('check_in_time', `${todayStr}T00:00:00`)
+      .eq('date', todayStr)
+      .not('check_in_at', 'is', null)
       .limit(1),
 
     supabase.from('leads')

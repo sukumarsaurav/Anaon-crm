@@ -1,5 +1,7 @@
 import { istDayStart, todayIST } from '@/lib/datetime'
 import { createClient } from '@/lib/supabase/server'
+import { fetchAll, inChunks } from '@/lib/supabase/fetchAll'
+import { STAGE_ORDER } from '@/types/leads'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 function monthBounds(offset = 0) {
@@ -55,18 +57,15 @@ export async function getDailyLeadTrend(days = 30) {
   const supabase = await createClient()
   // Days are IST calendar days; bucketing by the UTC date put a lead created at 1 am IST on the previous day.
   const from = istDayStart(new Date(), -(days - 1)).toISOString()
-  const { data } = await supabase
-    .from('leads')
-    .select('created_at')
-    .gte('created_at', from)
-    .eq('is_active', true)
+  const data = await fetchAll<{ created_at: string }>((a, b) => supabase
+    .from('leads').select('created_at').gte('created_at', from).eq('is_active', true).order('id').range(a, b))
 
   const counts: Record<string, number> = {}
   for (let i = days - 1; i >= 0; i--) {
     const d = todayIST(new Date(Date.now() - i * 86400000))
     counts[d] = 0
   }
-  for (const r of data ?? []) {
+  for (const r of data) {
     const d = todayIST(new Date(r.created_at))
     if (d in counts) counts[d]++
   }
@@ -75,9 +74,10 @@ export async function getDailyLeadTrend(days = 30) {
 
 export async function getLeadsBySource() {
   const supabase = await createClient()
-  const { data } = await supabase.from('leads').select('source, utm_source').eq('is_active', true)
+  const data = await fetchAll<{ source: string | null; utm_source: string | null }>((a, b) =>
+    supabase.from('leads').select('source, utm_source').eq('is_active', true).order('id').range(a, b))
   const counts: Record<string, number> = {}
-  for (const r of data ?? []) {
+  for (const r of data) {
     const key = r.utm_source || r.source || 'unknown'
     counts[key] = (counts[key] ?? 0) + 1
   }
@@ -89,13 +89,14 @@ export async function getLeadsBySource() {
 
 export async function getBookingsByProject() {
   const supabase = await createClient()
-  const [bookingsRes, projectsRes] = await Promise.all([
-    supabase.from('bookings').select('project_id, total_sale_value').eq('status', 'confirmed'),
+  const [bookings, projectsRes] = await Promise.all([
+    fetchAll<{ project_id: string | null; total_sale_value: number | null }>((a, b) =>
+      supabase.from('bookings').select('project_id, total_sale_value').eq('status', 'confirmed').order('id').range(a, b)),
     supabase.from('projects').select('id, name'),
   ])
   const projects = Object.fromEntries((projectsRes.data ?? []).map(p => [p.id, p.name]))
   const agg: Record<string, { count: number; revenue: number }> = {}
-  for (const b of bookingsRes.data ?? []) {
+  for (const b of bookings) {
     if (!b.project_id) continue
     agg[b.project_id] ??= { count: 0, revenue: 0 }
     agg[b.project_id].count++
@@ -108,11 +109,8 @@ export async function getBookingsByProject() {
 
 export async function getMonthlyRevenueTrend(months = 12) {
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('bookings')
-    .select('booking_date, total_sale_value')
-    .eq('status', 'confirmed')
-    .not('booking_date', 'is', null)
+  const data = await fetchAll<{ booking_date: string; total_sale_value: number | null }>((a, b) => supabase
+    .from('bookings').select('booking_date, total_sale_value').eq('status', 'confirmed').not('booking_date', 'is', null).order('id').range(a, b))
 
   const result: Record<string, number> = {}
   for (let i = months - 1; i >= 0; i--) {
@@ -120,7 +118,7 @@ export async function getMonthlyRevenueTrend(months = 12) {
     d.setMonth(d.getMonth() - i)
     result[`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`] = 0
   }
-  for (const b of data ?? []) {
+  for (const b of data) {
     const key = b.booking_date.slice(0, 7)
     if (key in result) result[key] += Number(b.total_sale_value ?? 0)
   }
@@ -131,11 +129,13 @@ export async function getMonthlyRevenueTrend(months = 12) {
 
 export async function getLeadFunnel() {
   const supabase = await createClient()
-  const { data } = await supabase.from('leads').select('stage').eq('is_active', true)
-  const stages = ['new', 'contacted', 'interested', 'site_visit_scheduled', 'site_visit_done', 'negotiation', 'booked', 'not_interested', 'lost']
+  const data = await fetchAll<{ stage: string }>((a, b) => supabase.from('leads').select('stage').eq('is_active', true).order('id').range(a, b))
+  // The real lead_stage values. The old list ('new', 'booked', 'lost') matched nothing, so New, Booked
+  // and Lost were always 0 and Token Paid, Closed Won and Future Follow-up never appeared.
+  const stages: string[] = [...STAGE_ORDER, 'not_interested', 'future_followup'].filter((v, i, a) => a.indexOf(v) === i)
   const counts = Object.fromEntries(stages.map(s => [s, 0]))
-  for (const r of data ?? []) counts[r.stage] = (counts[r.stage] ?? 0) + 1
-  const total = data?.length ?? 0
+  for (const r of data) counts[r.stage] = (counts[r.stage] ?? 0) + 1
+  const total = data.length
   return stages.map((stage, i) => {
     const count = counts[stage] ?? 0
     const prev = i === 0 ? count : (counts[stages[i - 1]] ?? 0)
@@ -145,24 +145,17 @@ export async function getLeadFunnel() {
 
 export async function getSLACompliance(from?: string, to?: string) {
   const supabase = await createClient()
-  let q = supabase.from('leads').select('id, created_at').eq('is_active', true)
-  if (from) q = q.gte('created_at', from)
-  if (to) q = q.lte('created_at', to)
-  const { data: leadsData } = await q
+  const leadsData = await fetchAll<{ id: string; created_at: string }>((a, b) => {
+    let q = supabase.from('leads').select('id, created_at').eq('is_active', true)
+    if (from) q = q.gte('created_at', from)
+    if (to) q = q.lte('created_at', to)
+    return q.order('id').range(a, b)
+  })
 
-  const leadIds = (leadsData ?? []).map(l => l.id)
-  
-  const activitiesData = []
-  if (leadIds.length > 0) {
-    // Supabase allows up to ~2000 items in an 'in' filter, chunking if necessary. 
-    // Assuming <2000 leads matched the date filter for now.
-    const { data } = await supabase
-      .from('lead_activities')
-      .select('lead_id, created_at')
-      .eq('type', 'call')
-      .in('lead_id', leadIds)
-    if (data) activitiesData.push(...data)
-  }
+  // Chunked: one .in() with every lead id overflowed the request URL past a few hundred leads.
+  const activitiesData = await inChunks(leadsData.map(l => l.id), (chunk) =>
+    fetchAll<{ lead_id: string; created_at: string }>((a, b) => supabase
+      .from('lead_activities').select('lead_id, created_at').eq('type', 'call').in('lead_id', chunk).order('id').range(a, b)))
 
   const firstContactMap = groupBy(activitiesData ?? [], a => a.lead_id)
   let compliant = 0, nonCompliant = 0
@@ -181,16 +174,16 @@ export async function getSLACompliance(from?: string, to?: string) {
 
 export async function getLeadAgeing() {
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('leads')
-    .select('id, stage, updated_at')
-    .eq('is_active', true)
-    .not('stage', 'in', '(booked,not_interested,lost)')
+  // Open leads only. The filter used 'booked' and 'lost', which are not lead stages: Postgres rejected
+  // the whole query and the report always showed zeros. Age = time in the current stage.
+  const data = await fetchAll<{ id: string; stage_changed_at: string | null; updated_at: string | null }>((a, b) => supabase
+    .from('leads').select('id, stage_changed_at, updated_at').eq('is_active', true)
+    .not('stage', 'in', '(closed_won,not_interested)').order('id').range(a, b))
 
   const now = Date.now()
   const buckets = { '0-7': 0, '8-15': 0, '16-30': 0, '31-60': 0, '60+': 0 }
-  for (const l of data ?? []) {
-    const days = Math.floor((now - new Date((l as any).updated_at ?? now).getTime()) / 86400000)
+  for (const l of data) {
+    const days = Math.floor((now - new Date(l.stage_changed_at ?? l.updated_at ?? now).getTime()) / 86400000)
     if (days <= 7) buckets['0-7']++
     else if (days <= 15) buckets['8-15']++
     else if (days <= 30) buckets['16-30']++
@@ -202,33 +195,40 @@ export async function getLeadAgeing() {
 
 export async function getSourcePerformance(from?: string, to?: string) {
   const supabase = await createClient()
-  let lq = supabase.from('leads').select('id, utm_source, source').eq('is_active', true)
-  if (from) lq = lq.gte('created_at', from)
-  if (to) lq = lq.lte('created_at', to)
-  const { data: leadsData } = await lq
-
-  const { data: visitsData } = await supabase
-    .from('site_visits')
-    .select('id, leads!inner(utm_source, source)')
-
-  const { data: bookingsData } = await supabase
-    .from('bookings')
-    .select('id, total_sale_value, clients!inner(leads!inner(utm_source, source))')
-    .eq('status', 'confirmed')
+  // One period for all three: leads created, visits scheduled and bookings made in the range.
+  // Visits and bookings used to be all-time, so conversion rates mixed periods.
+  const leadsData = await fetchAll<{ id: string; utm_source: string | null; source: string | null }>((a, b) => {
+    let q = supabase.from('leads').select('id, utm_source, source').eq('is_active', true)
+    if (from) q = q.gte('created_at', from)
+    if (to) q = q.lte('created_at', to)
+    return q.order('id').range(a, b)
+  })
+  const visitsData = await fetchAll<Record<string, unknown>>((a, b) => {
+    let q = supabase.from('site_visits').select('id, leads!inner(utm_source, source)')
+    if (from) q = q.gte('scheduled_at', from)
+    if (to) q = q.lte('scheduled_at', to)
+    return q.order('id').range(a, b)
+  })
+  const bookingsData = await fetchAll<{ id: string; total_sale_value: number | null } & Record<string, unknown>>((a, b) => {
+    let q = supabase.from('bookings').select('id, total_sale_value, clients!inner(leads!inner(utm_source, source))').eq('status', 'confirmed')
+    if (from) q = q.gte('booking_date', from.slice(0, 10))
+    if (to) q = q.lte('booking_date', to.slice(0, 10))
+    return q.order('id').range(a, b)
+  })
 
   const src = (l: any) => l.utm_source || l.source || 'unknown'
   const agg: Record<string, { leads: number; visits: number; bookings: number; revenue: number }> = {}
 
-  for (const l of leadsData ?? []) {
+  for (const l of leadsData) {
     const s = l.utm_source || l.source || 'unknown'
     agg[s] ??= { leads: 0, visits: 0, bookings: 0, revenue: 0 }
     agg[s].leads++
   }
-  for (const v of visitsData ?? []) {
+  for (const v of visitsData) {
     const s = src((v as any).leads)
     if (agg[s]) agg[s].visits++
   }
-  for (const b of bookingsData ?? []) {
+  for (const b of bookingsData) {
     const s = src((b as any).clients?.leads)
     if (agg[s]) { agg[s].bookings++; agg[s].revenue += Number(b.total_sale_value ?? 0) }
   }
@@ -243,18 +243,20 @@ export async function getSourcePerformance(from?: string, to?: string) {
 
 export async function getLostLeadAnalysis(from?: string, to?: string) {
   const supabase = await createClient()
-  let q = supabase.from('leads').select('id, stage').eq('is_active', true).eq('stage', 'not_interested')
-  if (from) q = q.gte('updated_at', from)
-  if (to) q = q.lte('updated_at', to)
-  const { data: lostLeads } = await q
+  const lostLeads = await fetchAll<{ id: string }>((a, b) => {
+    let q = supabase.from('leads').select('id').eq('is_active', true).eq('stage', 'not_interested')
+    if (from) q = q.gte('stage_changed_at', from)
+    if (to) q = q.lte('stage_changed_at', to)
+    return q.order('id').range(a, b)
+  })
+  // A sample is enough here: the 200 most recently lost leads.
+  const { data: activities } = lostLeads.length
+    ? await supabase.from('lead_activities').select('lead_id, notes')
+        .in('lead_id', lostLeads.slice(0, 200).map(l => l.id)).not('notes', 'is', null)
+        .order('created_at', { ascending: false }).limit(20)
+    : { data: [] as { notes: string }[] }
 
-  const { data: activities } = await supabase
-    .from('lead_activities')
-    .select('lead_id, notes')
-    .in('lead_id', (lostLeads ?? []).map(l => l.id))
-    .not('notes', 'is', null)
-
-  return { total: (lostLeads ?? []).length, sampleNotes: (activities ?? []).slice(0, 20).map(a => a.notes) }
+  return { total: lostLeads.length, sampleNotes: (activities ?? []).map(a => a.notes) }
 }
 
 // ── Pipeline Analytics (Phase 7) ────────────────────────────────────────────────
@@ -262,19 +264,18 @@ export async function getLostLeadAnalysis(from?: string, to?: string) {
 /** Wins vs losses + breakdown of loss reasons within a date range (by updated_at). */
 export async function getWinLossReport(from?: string, to?: string) {
   const supabase = await createClient()
-  let q = supabase
-    .from('leads')
-    .select('stage, loss_reason')
-    .eq('is_active', true)
-    .in('stage', ['closed_won', 'not_interested'])
-  if (from) q = q.gte('updated_at', from)
-  if (to) q = q.lte('updated_at', to)
-  const { data } = await q
+  // Dated by when the lead reached the stage, not by its last edit.
+  const data = await fetchAll<{ stage: string; loss_reason: string | null }>((a, b) => {
+    let q = supabase.from('leads').select('stage, loss_reason').eq('is_active', true).in('stage', ['closed_won', 'not_interested'])
+    if (from) q = q.gte('stage_changed_at', from)
+    if (to) q = q.lte('stage_changed_at', to)
+    return q.order('id').range(a, b)
+  })
 
   let wins = 0
   let losses = 0
   const reasons: Record<string, number> = {}
-  for (const l of data ?? []) {
+  for (const l of data) {
     if (l.stage === 'closed_won') {
       wins++
     } else {
@@ -301,27 +302,23 @@ export async function getWinLossReport(from?: string, to?: string) {
  */
 export async function getResponseTimeByRep(from?: string, to?: string) {
   const supabase = await createClient()
-  let lq = supabase
-    .from('leads')
-    .select('id, assigned_to, created_at')
-    .eq('is_active', true)
-    .not('assigned_to', 'is', null)
-  if (from) lq = lq.gte('created_at', from)
-  if (to) lq = lq.lte('created_at', to)
-  const { data: leads } = await lq
-  if (!leads?.length) return []
+  const leads = await fetchAll<{ id: string; assigned_to: string | null; created_at: string }>((a, b) => {
+    let q = supabase.from('leads').select('id, assigned_to, created_at').eq('is_active', true).not('assigned_to', 'is', null)
+    if (from) q = q.gte('created_at', from)
+    if (to) q = q.lte('created_at', to)
+    return q.order('id').range(a, b)
+  })
+  if (!leads.length) return []
 
-  const leadIds = leads.map((l) => l.id)
-  const { data: acts } = await supabase
-    .from('lead_activities')
-    .select('lead_id, created_at, type')
-    .in('lead_id', leadIds)
-    .in('type', ['call', 'whatsapp', 'sms', 'email'])
-    .order('created_at', { ascending: true })
+  const acts = (await inChunks(leads.map((l) => l.id), (chunk) =>
+    fetchAll<{ lead_id: string; created_at: string; type: string }>((a, b) => supabase
+      .from('lead_activities').select('lead_id, created_at, type').in('lead_id', chunk)
+      .in('type', ['call', 'whatsapp', 'sms', 'email']).order('id').range(a, b))))
+    .sort((x, y) => x.created_at.localeCompare(y.created_at))
 
   // First contact timestamp per lead.
   const firstContact: Record<string, string> = {}
-  for (const a of acts ?? []) {
+  for (const a of acts) {
     if (a.lead_id && !firstContact[a.lead_id]) firstContact[a.lead_id] = a.created_at
   }
 
@@ -433,17 +430,17 @@ export async function getOutstandingReport() {
 
 export async function getBrokerCommissions(from?: string, to?: string) {
   const supabase = await createClient()
-  let q = supabase
-    .from('broker_commissions')
-    // brokers has full_name (not name), and the amount column is commission_amount (not amount):
-    // the bad column made the whole query fail, so this report was always empty ("Commission due ₹0").
-    .select('*, broker:brokers(full_name, phone), booking:bookings(booking_number, total_sale_value, project:projects(name))')
-    .order('created_at', { ascending: false })
-  if (from) q = q.gte('created_at', from)
-  if (to) q = q.lte('created_at', to)
-  const { data, error } = await q
-  if (error) console.error('[reports] broker commissions query failed:', error.message)
-  const rows = (data ?? []).map((c: any) => ({ ...c, amount: Number(c.commission_amount ?? 0), broker: c.broker ? { ...c.broker, name: c.broker.full_name } : null }))
+  const data = await fetchAll<Record<string, unknown>>((a, b) => {
+    let q = supabase
+      .from('broker_commissions')
+      // brokers has full_name (not name), and the amount column is commission_amount (not amount):
+      // the bad column made the whole query fail, so this report was always empty ("Commission due ₹0").
+      .select('*, broker:brokers(full_name, phone), booking:bookings(booking_number, total_sale_value, project:projects(name))')
+    if (from) q = q.gte('created_at', from)
+    if (to) q = q.lte('created_at', to)
+    return q.order('created_at', { ascending: false }).order('id').range(a, b)
+  })
+  const rows = data.map((c: any) => ({ ...c, amount: Number(c.commission_amount ?? 0), broker: c.broker ? { ...c.broker, name: c.broker.full_name } : null }))
   // Still owed to brokers = approved or awaiting approval; voided ones are neither.
   const due = rows.filter((c: any) => c.status === 'pending' || c.status === 'approved').reduce((s: number, c: any) => s + c.amount, 0)
   const paid = rows.filter((c: any) => c.status === 'paid').reduce((s: number, c: any) => s + c.amount, 0)
@@ -454,11 +451,10 @@ export async function getBrokerCommissions(from?: string, to?: string) {
 
 export async function getInventoryAvailability() {
   const supabase = await createClient()
-  const [projectsRes, plotsRes] = await Promise.all([
+  const [projectsRes, plots] = await Promise.all([
     supabase.from('projects').select('id, name, city'),
-    supabase.from('plots').select('id, project_id, status'),
+    fetchAll<{ id: string; project_id: string; status: string }>((a, b) => supabase.from('plots').select('id, project_id, status').order('id').range(a, b)),
   ])
-  const plots = plotsRes.data ?? []
   return (projectsRes.data ?? []).map(p => {
     const mine = plots.filter(pl => pl.project_id === p.id)
     return {
@@ -466,7 +462,8 @@ export async function getInventoryAvailability() {
       city: p.city,
       total: mine.length,
       available: mine.filter(pl => pl.status === 'available').length,
-      held: mine.filter(pl => pl.status === 'held').length,
+      // The plot status is 'soft_hold'; 'held' matched nothing, so Held was always 0.
+      held: mine.filter(pl => pl.status === 'soft_hold').length,
       booked: mine.filter(pl => pl.status === 'booked').length,
       sold: mine.filter(pl => pl.status === 'sold').length,
     }
@@ -475,14 +472,12 @@ export async function getInventoryAvailability() {
 
 export async function getPlotAgeing() {
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('plots')
-    .select('id, plot_number, status, updated_at, project:projects(name)')
-    .eq('status', 'available')
-    .order('updated_at', { ascending: true })
+  const data = await fetchAll<Record<string, unknown> & { updated_at?: string }>((a, b) => supabase
+    .from('plots').select('id, plot_number, status, updated_at, project:projects(name)')
+    .eq('status', 'available').order('updated_at', { ascending: true }).order('id').range(a, b))
 
   const now = Date.now()
-  return (data ?? []).map(p => {
+  return data.map(p => {
     const days = Math.floor((now - new Date((p as any).updated_at ?? now).getTime()) / 86400000)
     return { ...p, daysAvailable: days }
   })

@@ -5,7 +5,6 @@ import type { DuplicateCheck } from '@/types/leads'
 import StageBadge from './StageBadge'
 import RelativeTime from '@/components/ui/RelativeTime'
 import Button from '@/components/ui/Button'
-import Link from 'next/link'
 
 interface DuplicateAlertProps {
   duplicate: DuplicateCheck
@@ -45,9 +44,7 @@ export default function DuplicateAlert({ duplicate, onContinue, onCancel }: Dupl
                 </div>
                 <div className="flex items-center gap-2">
                   <StageBadge stage={lead.stage} size="sm" />
-                  <Link href={`/leads/${lead.id}`} target="_blank">
-                    <Button variant="ghost" size="xs">View</Button>
-                  </Link>
+                  <Button href={`/leads/${lead.id}`} external variant="ghost" size="xs">View</Button>
                 </div>
               </div>
             ))}

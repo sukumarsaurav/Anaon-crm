@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { Copy, GitMerge, AlertTriangle } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
@@ -68,9 +67,7 @@ export default function LeadDuplicatesPanel({ currentLeadId, duplicates }: Props
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <Link href={`/leads/${d.id}`} target="_blank">
-                <Button variant="ghost" size="xs">View</Button>
-              </Link>
+              <Button href={`/leads/${d.id}`} external variant="ghost" size="xs">View</Button>
               <Button
                 variant="secondary"
                 size="xs"

@@ -4,6 +4,7 @@ import { revalidatePath, updateTag } from 'next/cache'
 import { PROJECTS_TAG } from '@/lib/cache/referenceData'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
+import { writeAuditLog } from '@/lib/security/audit'
 
 async function getAuthUser() {
   const supabase = await createClient()
@@ -95,15 +96,8 @@ export async function updateProject(id: string, formData: FormData) {
 }
 
 // ── Plots ─────────────────────────────────────────────────────
-
-function computeTotalPrice(f: FormData): number {
-  const base    = parseFloat(f.get('base_price') as string) || 0
-  const corner  = parseFloat(f.get('corner_premium') as string) || 0
-  const facing  = parseFloat(f.get('facing_premium') as string) || 0
-  const other   = parseFloat(f.get('other_premium') as string) || 0
-  const dev     = parseFloat(f.get('development_charges') as string) || 0
-  return base + corner + facing + other + dev
-}
+// total_price is a generated column (base × premiums + other + development). Writing it made every
+// plot insert and edit fail with "cannot insert a non-DEFAULT value into column total_price".
 
 export async function createPlot(formData: FormData) {
   const auth = await getAuthUser()
@@ -124,7 +118,6 @@ export async function createPlot(formData: FormData) {
     facing_premium:      parseFloat(formData.get('facing_premium') as string) || 0,
     other_premium:       parseFloat(formData.get('other_premium') as string) || 0,
     development_charges: parseFloat(formData.get('development_charges') as string) || 0,
-    total_price:         computeTotalPrice(formData),
     status:              'available',
     notes:               formData.get('notes') as string || null,
   })
@@ -160,7 +153,6 @@ export async function createBulkPlots(formData: FormData) {
     type:                'regular' as const,
     base_price,
     development_charges: dev_charges,
-    total_price:         base_price + dev_charges,
     status:              'available' as const,
   }))
 
@@ -174,7 +166,8 @@ export async function updatePlot(id: string, formData: FormData) {
   const auth = await getAuthUser()
   if (!auth.ok || !['admin', 'manager'].includes(auth.role)) return { success: false, error: 'Forbidden' }
 
-  const { data: plot } = await auth.supabase.from('plots').select('project_id').eq('id', id).single()
+  const { data: plot } = await auth.supabase
+    .from('plots').select('project_id, status, base_price, corner_premium, facing_premium, other_premium, development_charges').eq('id', id).single()
 
   const { error } = await auth.supabase.from('plots').update({
     plot_number:         formData.get('plot_number') as string,
@@ -190,13 +183,20 @@ export async function updatePlot(id: string, formData: FormData) {
     facing_premium:      parseFloat(formData.get('facing_premium') as string) || 0,
     other_premium:       parseFloat(formData.get('other_premium') as string) || 0,
     development_charges: parseFloat(formData.get('development_charges') as string) || 0,
-    total_price:         computeTotalPrice(formData),
     notes:               formData.get('notes') as string || null,
     status:              formData.get('status') as string,
     updated_at:          new Date().toISOString(),
   }).eq('id', id)
 
   if (error) return { success: false, error: error.message }
+  await writeAuditLog({
+    userId: auth.userId, action: 'plot_updated', tableName: 'plots', recordId: id,
+    oldValues: plot ? { status: plot.status, base_price: plot.base_price, corner_premium: plot.corner_premium, facing_premium: plot.facing_premium, other_premium: plot.other_premium, development_charges: plot.development_charges } : undefined,
+    newValues: {
+      status: formData.get('status'), base_price: formData.get('base_price'), corner_premium: formData.get('corner_premium'),
+      facing_premium: formData.get('facing_premium'), other_premium: formData.get('other_premium'), development_charges: formData.get('development_charges'),
+    },
+  })
   if (plot?.project_id) revalidatePath(`/inventory/${plot.project_id}`)
   return { success: true }
 }
@@ -356,14 +356,15 @@ export async function savePremiumMatrix(projectId: string, premiums: Array<{ typ
   const auth = await getAuthUser()
   if (!auth.ok || !['admin', 'manager'].includes(auth.role)) return { success: false, error: 'Forbidden' }
 
-  for (const p of premiums) {
-    await auth.supabase.from('premium_matrix').upsert({
-      project_id:   projectId,
-      premium_type: p.type,
-      percent:      p.percent,
-      label:        p.label || null,
-    }, { onConflict: 'project_id,premium_type' })
+  const VALID = ['corner', 'park_facing', 'road_facing', 'east_facing', 'other']
+  if (premiums.some((p) => !VALID.includes(p.type) || !(p.percent >= 0 && p.percent <= 100))) {
+    return { success: false, error: 'Premiums must be between 0 and 100 %' }
   }
+  const { error } = await auth.supabase.from('premium_matrix').upsert(
+    premiums.map((p) => ({ project_id: projectId, premium_type: p.type, percent: p.percent, label: p.label || null })),
+    { onConflict: 'project_id,premium_type' },
+  )
+  if (error) return { success: false, error: error.message }
 
   revalidatePath(`/inventory/${projectId}`)
   return { success: true }

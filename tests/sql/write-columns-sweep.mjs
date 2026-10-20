@@ -12,6 +12,11 @@ const env = Object.fromEntries(readFileSync('.env.local', 'utf8').split('\n').fi
 const spec = await (await fetch(`${env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/`, { headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` } })).json()
 const cols = Object.fromEntries(Object.entries(spec.definitions ?? {}).map(([t, d]) => [t, new Set(Object.keys(d.properties ?? {}))]))
 
+// Generated columns are listed by PostgREST like any other, but writing one fails
+// ("cannot insert a non-DEFAULT value"). Keep in sync with
+// `select table_name, column_name from information_schema.columns where is_generated = 'ALWAYS'`.
+const GENERATED = { plots: new Set(['total_price']) }
+
 const walk = (d, out = []) => { for (const f of readdirSync(d)) { const p = path.join(d, f); if (f === 'graphify-out' || f === 'node_modules') continue; statSync(p).isDirectory() ? walk(p, out) : /\.(ts|tsx)$/.test(f) && out.push(p) } return out }
 
 /** Top-level keys of the object literal that starts at text[i] === '{'. */
@@ -45,8 +50,8 @@ for (const file of walk('src')) {
     const braceAt = m.index + m[0].length - 1
     const keys = topKeys(text, braceAt)
     checked++
-    const unknown = keys.filter((k) => !cols[table].has(k))
-    if (unknown.length) { bad++; console.log(`✗ ${table}.${m[2]}  unknown column(s): ${unknown.join(', ')}\n    in ${path.relative('src', file)}:${text.slice(0, m.index).split('\n').length}`) }
+    const unknown = keys.filter((k) => !cols[table].has(k) || GENERATED[table]?.has(k))
+    if (unknown.length) { bad++; console.log(`✗ ${table}.${m[2]}  unknown or generated column(s): ${unknown.join(', ')}\n    in ${path.relative('src', file)}:${text.slice(0, m.index).split('\n').length}`) }
   }
 }
 console.log(`\n${checked - bad}/${checked} write payloads use only real columns`)

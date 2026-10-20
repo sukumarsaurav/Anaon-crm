@@ -1,8 +1,9 @@
 export const dynamic = 'force-dynamic'
 
-import { todayIST } from '@/lib/datetime'
+import { todayIST, formatInIST } from '@/lib/datetime'
 import Link from 'next/link'
-import { getAttendanceLogs } from '@/lib/hr/queries'
+import { getAttendanceLogs, getEmployees } from '@/lib/hr/queries'
+import MarkAttendanceForm from '@/components/hr/MarkAttendanceForm'
 import { formatDate } from '@/lib/utils'
 import { ArrowLeft, Clock, MapPin } from 'lucide-react'
 
@@ -20,16 +21,19 @@ function duration(checkIn: string | null, checkOut: string | null) {
   return `${Math.floor(mins / 60)}h ${mins % 60}m`
 }
 
+/** After 09:30 IST. getHours() read the server clock (UTC), so 09:45 IST was 04:15 and never "late". */
+function isLateIST(ts: string | null): boolean {
+  if (!ts) return false
+  const [h, m] = formatInIST(new Date(ts), { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).split(':').map(Number)
+  return h > 9 || (h === 9 && m > 30)
+}
+
 export default async function AttendancePage() {
   const today = todayIST()
-  const logs = await getAttendanceLogs(today)
+  const [logs, employees] = await Promise.all([getAttendanceLogs(today), getEmployees()])
 
   const present = logs.filter(l => l.status === 'present').length
-  const late = logs.filter(l => {
-    if (!l.check_in_at) return false
-    const t = new Date(l.check_in_at)
-    return t.getHours() > 9 || (t.getHours() === 9 && t.getMinutes() > 30)
-  }).length
+  const late = logs.filter(l => isLateIST(l.check_in_at)).length
 
   return (
     <div className="p-6 space-y-6">
@@ -44,6 +48,8 @@ export default async function AttendancePage() {
           </p>
         </div>
       </div>
+
+      <MarkAttendanceForm employees={employees.map(e => ({ id: e.id, full_name: e.full_name }))} defaultDate={today} />
 
       <div className="flex gap-3">
         {[
@@ -69,8 +75,7 @@ export default async function AttendancePage() {
           </div>
           <div className="divide-y divide-slate-100">
             {logs.map(log => {
-              const checkInTime = new Date(log.check_in_at ?? '')
-              const isLate = log.check_in_at && (checkInTime.getHours() > 9 || (checkInTime.getHours() === 9 && checkInTime.getMinutes() > 30))
+              const isLate = isLateIST(log.check_in_at)
               const dur = duration(log.check_in_at, log.check_out_at)
 
               return (

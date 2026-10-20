@@ -8,6 +8,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { fireAutomations } from '@/lib/automation/engine'
 import { notifyUsers } from '@/lib/notifications/notify'
 import { getProfile } from '@/lib/supabase/getProfile'
+import { writeAuditLog } from '@/lib/security/audit'
 
 async function getAuth() {
   const supabase = await createClient()
@@ -227,6 +228,7 @@ export async function approveCommissionBatch(commissionIds: string[]) {
     }
   }
 
+  await writeAuditLog({ userId: auth.userId, action: 'commission_approved', tableName: 'broker_commissions', newValues: { ids: commissionIds } })
   revalidatePath('/brokers/commissions')
   return { success: true }
 }
@@ -242,6 +244,7 @@ export async function markCommissionPaidBatch(commissionIds: string[], utrNumber
     .eq('status', 'approved')
 
   if (error) return { success: false, error: error.message }
+  await writeAuditLog({ userId: auth.userId, action: 'commission_paid', tableName: 'broker_commissions', newValues: { ids: commissionIds, utr: utrNumber } })
   revalidatePath('/brokers/commissions')
   return { success: true }
 }

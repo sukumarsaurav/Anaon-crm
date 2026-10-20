@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { useToast } from '@/components/ui/Toast'
+import { useProfile } from '@/components/layout/ProfileProvider'
 
 interface Props {
   milestones: ConstructionMilestone[]
@@ -42,10 +43,13 @@ export default function MilestoneTimeline({ milestones, projectId }: Props) {
 
   const askConfirm = useConfirm()
   const toast = useToast()
+  const { role } = useProfile()
+  const canDelete = role === 'admin' || role === 'manager'
   async function handleDelete(m: ConstructionMilestone) {
     if (!(await askConfirm({ title: 'Delete milestone', message: `Delete milestone "${m.name}"?` }))) return
     startTransition(async () => {
-      await deleteMilestone(m.id, projectId)
+      const res = await deleteMilestone(m.id, projectId)
+      if (!res.success) { toast.error(res.error ?? 'Could not delete the milestone'); return }
       toast.success('Milestone deleted')
       router.refresh()
     })
@@ -197,11 +201,13 @@ export default function MilestoneTimeline({ milestones, projectId }: Props) {
                               <Pencil size={11} /> Update & Resolve
                             </button>
                           )}
-                          <button
-                            onClick={() => handleDelete(m)}
-                            className="flex items-center gap-1 px-3 py-1.5 text-slate-400 text-xs rounded-lg hover:bg-slate-100 hover:text-red-600">
-                            <Trash2 size={11} /> Delete
-                          </button>
+                          {canDelete && (
+                            <button
+                              onClick={() => handleDelete(m)}
+                              className="flex items-center gap-1 px-3 py-1.5 text-slate-400 text-xs rounded-lg hover:bg-slate-100 hover:text-red-600">
+                              <Trash2 size={11} /> Delete
+                            </button>
+                          )}
                         </div>
                       )}
 
@@ -212,11 +218,14 @@ export default function MilestoneTimeline({ milestones, projectId }: Props) {
                             Completed{m.actual_completion_date ? ` on ${formatDate(m.actual_completion_date)}` : ''}
                             {m.completer ? ` by ${m.completer.full_name}` : ''}
                           </span>
-                          <button
-                            onClick={() => handleDelete(m)}
-                            className="ml-auto flex items-center gap-1 px-3 py-1 text-slate-400 text-xs rounded-lg hover:bg-slate-100 hover:text-red-600">
-                            <Trash2 size={11} />
-                          </button>
+                          {canDelete && (
+                            <button
+                              onClick={() => handleDelete(m)}
+                              aria-label="Delete milestone"
+                              className="ml-auto flex items-center gap-1 px-3 py-1 text-slate-400 text-xs rounded-lg hover:bg-slate-100 hover:text-red-600">
+                              <Trash2 size={11} />
+                            </button>
+                          )}
                         </div>
                       )}
 

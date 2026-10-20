@@ -25,11 +25,22 @@ const ACTION_COLORS: Record<string, string> = {
   document_viewed:        'bg-amber-100 text-amber-700',
   user_created:           'bg-purple-100 text-purple-700',
   role_changed:           'bg-amber-100 text-amber-700',
-  '2fa_enabled':          'bg-emerald-100 text-emerald-700',
-  '2fa_disabled':         'bg-amber-100 text-amber-700',
-  '2fa_failed':           'bg-red-100 text-red-700',
   session_revoked:        'bg-slate-100 text-slate-700',
   sensitive_field_viewed: 'bg-amber-100 text-amber-800',
+  booking_approved:       'bg-emerald-100 text-emerald-700',
+  booking_rejected:       'bg-red-100 text-red-700',
+  booking_cancelled:      'bg-red-100 text-red-700',
+  payment_recorded:       'bg-emerald-100 text-emerald-700',
+  payment_waived:         'bg-amber-100 text-amber-700',
+  payment_deleted:        'bg-red-100 text-red-700',
+  plot_updated:           'bg-cyan-100 text-cyan-700',
+  commission_approved:    'bg-primary-100 text-primary-700',
+  commission_paid:        'bg-emerald-100 text-emerald-700',
+  kyc_updated:            'bg-amber-100 text-amber-700',
+  client_updated:         'bg-blue-50 text-blue-600',
+  user_updated:           'bg-purple-50 text-purple-600',
+  user_deactivated:       'bg-red-100 text-red-700',
+  account_unlocked:       'bg-emerald-100 text-emerald-700',
 }
 
 interface SearchParams {
@@ -75,9 +86,12 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
   const ACTIONS = [
     'login', 'logout', 'login_failed', 'login_locked',
     'lead_created', 'lead_updated', 'lead_deleted', 'lead_stage_changed',
-    'booking_created', 'payment_created', 'document_viewed',
-    'user_created', 'role_changed', '2fa_enabled', '2fa_disabled',
-    '2fa_failed', 'session_revoked', 'export_leads', 'sensitive_field_viewed',
+    'booking_approved', 'booking_rejected', 'booking_cancelled',
+    'payment_created', 'payment_recorded', 'payment_waived', 'payment_deleted',
+    'plot_updated', 'commission_approved', 'commission_paid',
+    'kyc_updated', 'client_updated', 'document_viewed',
+    'user_created', 'user_updated', 'user_deactivated', 'role_changed', 'account_unlocked',
+    'session_revoked', 'ip_whitelist_updated', 'export_leads', 'sensitive_field_viewed',
   ]
 
   const exportUrl = `/api/audit-logs/export?${new URLSearchParams({

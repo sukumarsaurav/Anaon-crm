@@ -47,10 +47,10 @@ export default async function MobileAdminPage() {
     .order('full_name')
 
   const { data: todayAttendance } = await supabase
-    .from('attendance')
-    .select('user_id, check_in_time, check_out_time, check_in_lat, check_in_lng')
-    .gte('check_in_time', `${todayStr}T00:00:00`)
-    .lte('check_in_time', `${todayStr}T23:59:59`)
+    .from('attendance_logs')
+    .select('user_id, check_in_time:check_in_at, check_out_time:check_out_at, check_in_lat, check_in_lng')
+    .eq('date', todayStr)
+    .not('check_in_at', 'is', null)
 
   const { data: siteVisitsToday } = await supabase
     .from('site_visits')

@@ -6,6 +6,7 @@ import { getProfile } from '@/lib/supabase/getProfile'
 import { fireAutomations } from '@/lib/automation/engine'
 import { sendReceiptEmail } from '@/lib/email/send'
 import { encryptPii } from '@/lib/security/pii'
+import { writeAuditLog } from '@/lib/security/audit'
 
 async function getAuth() {
   const supabase = await createClient()
@@ -22,6 +23,17 @@ function isManager(role: string) { return ['admin', 'manager'].includes(role) }
 export async function createClientProfile(formData: FormData) {
   const auth = await getAuth()
   if (!auth.ok) return { success: false, error: 'Unauthorized' }
+
+  // Converting a lead: one client per lead, and only a lead this user can see.
+  const leadId = (formData.get('lead_id') as string) || null
+  if (leadId) {
+    const [{ data: lead }, { data: existing }] = await Promise.all([
+      auth.supabase.from('leads').select('id, full_name').eq('id', leadId).maybeSingle(),
+      auth.supabase.from('clients').select('id').eq('lead_id', leadId).maybeSingle(),
+    ])
+    if (!lead) return { success: false, error: 'Lead not found' }
+    if (existing) return { success: false, error: 'This lead has already been converted to a client' }
+  }
 
   let pan: string | null, aadhar: string | null
   try {
@@ -56,11 +68,19 @@ export async function createClientProfile(formData: FormData) {
     nominee_dob:          formData.get('nominee_dob') as string || null,
     nominee_phone:        formData.get('nominee_phone') as string || null,
     // Lead link
-    lead_id:    formData.get('lead_id') as string || null,
+    lead_id:    leadId,
     created_by: auth.userId,
   }).select('id').single()
 
   if (error || !data) return { success: false, error: error?.message ?? 'Failed' }
+
+  if (leadId) {
+    await auth.supabase.from('lead_activities').insert({
+      lead_id: leadId, type: 'system', notes: 'Converted to client', performed_by: auth.userId,
+    })
+    revalidatePath(`/leads/${leadId}`)
+  }
+  await writeAuditLog({ userId: auth.userId, action: 'client_updated', tableName: 'clients', recordId: data.id, newValues: { created: true, lead_id: leadId } })
   revalidatePath('/clients')
   return { success: true, id: data.id }
 }
@@ -103,6 +123,11 @@ export async function updateClientProfile(id: string, formData: FormData) {
   }).eq('id', id)
 
   if (error) return { success: false, error: error.message }
+  // ID numbers themselves are not logged, only that the form carried them.
+  await writeAuditLog({
+    userId: auth.userId, action: 'client_updated', tableName: 'clients', recordId: id,
+    newValues: { full_name: formData.get('full_name'), phone: formData.get('phone'), email: formData.get('email') || null, pan_set: !!pan, aadhar_set: !!aadhar },
+  })
   revalidatePath('/clients')
   revalidatePath(`/clients/${id}`)
   return { success: true }
@@ -130,11 +155,13 @@ export async function updateKycStatus(clientId: string, status: string) {
   const auth = await getAuth()
   if (!auth.ok || !isManager(auth.role)) return { success: false, error: 'Forbidden' }
 
+  if (!['pending', 'verified', 'rejected'].includes(status)) return { success: false, error: 'Unknown KYC status' }
   const { error } = await auth.supabase.from('clients')
     .update({ kyc_status: status, updated_at: new Date().toISOString() })
     .eq('id', clientId)
 
   if (error) return { success: false, error: error.message }
+  await writeAuditLog({ userId: auth.userId, action: 'kyc_updated', tableName: 'clients', recordId: clientId, newValues: { kyc_status: status } })
   revalidatePath(`/clients/${clientId}`)
   return { success: true }
 }
@@ -176,6 +203,11 @@ export async function recordPayment(paymentId: string, formData: FormData) {
   }).eq('id', paymentId)
 
   if (error) return { success: false, error: error.message }
+  await writeAuditLog({
+    userId: auth.userId, action: 'payment_recorded', tableName: 'payments', recordId: paymentId,
+    oldValues: { amount_paid: payment.amount_paid, status: payment.status },
+    newValues: { received: amountPaid, amount_paid: totalPaid, mode: formData.get('mode') || null, paid_date: formData.get('paid_date') },
+  })
 
   if (amountPaid > 0 && payment?.client_id) {
     const { data: clientData } = await auth.supabase.from('clients').select('full_name, phone').eq('id', payment.client_id).single()
@@ -214,6 +246,7 @@ export async function addPaymentInstallment(formData: FormData) {
   })
 
   if (error) return { success: false, error: error.message }
+  await writeAuditLog({ userId: auth.userId, action: 'payment_created', tableName: 'payments', newValues: { booking_id: bookingId, amount_due: formData.get('amount_due'), due_date: formData.get('due_date') } })
   revalidatePath(`/clients/${clientId}`)
   return { success: true }
 }
@@ -236,6 +269,7 @@ export async function waivePayment(paymentId: string) {
     .eq('id', paymentId)
 
   if (error) return { success: false, error: error.message }
+  await writeAuditLog({ userId: auth.userId, action: 'payment_waived', tableName: 'payments', recordId: paymentId, oldValues: { status: payment.status } })
   if (payment?.client_id) revalidatePath(`/clients/${payment.client_id}`)
   return { success: true }
 }
@@ -340,6 +374,7 @@ export async function updateComplaintStatus(
   const { error } = await auth.supabase.from('complaints').update(update).eq('id', complaintId)
   if (error) return { success: false, error: error.message }
   if (complaint?.client_id) revalidatePath(`/clients/${complaint.client_id}`)
+  revalidatePath('/clients/complaints')
   return { success: true }
 }
 
@@ -358,5 +393,6 @@ export async function assignComplaint(complaintId: string, advisorId: string) {
 
   if (error) return { success: false, error: error.message }
   if (complaint?.client_id) revalidatePath(`/clients/${complaint.client_id}`)
+  revalidatePath('/clients/complaints')
   return { success: true }
 }

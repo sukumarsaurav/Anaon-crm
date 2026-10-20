@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { updateStaffProfile, changeStaffAssignment, setStaffActive } from './staff'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { istToIso, todayIST } from '@/lib/datetime'
@@ -210,52 +211,18 @@ export async function deleteAnnouncement(id: string) {
   return { success: true }
 }
 
-// ── Team Member (admin create/update) ──────────────────────────────────────────
+// ── Team Member ───────────────────────────────────────────────────────────────
+// Writes to someone else's profile go through lib/team/staff.ts (service role, caller checked).
 
 export async function updateMemberProfile(userId: string, formData: FormData) {
-  const auth = await requireRole(['admin', 'manager'])
-  if (!auth.ok) return { success: false, error: auth.error }
-
-  const updates: Record<string, unknown> = {
-    full_name:         formData.get('full_name') as string,
-    phone:             formData.get('phone') as string || null,
-    designation:       formData.get('designation') as string || null,
-    employee_id:       formData.get('employee_id') as string || null,
-    joining_date:      formData.get('joining_date') as string || null,
-    date_of_birth:     formData.get('date_of_birth') as string || null,
-    base_salary:       parseFloat(formData.get('base_salary') as string) || null,
-    emergency_contact: formData.get('emergency_contact') as string || null,
-    address:           formData.get('address') as string || null,
-    updated_at:        new Date().toISOString(),
-  }
-
-  // Admin can change role and branch
-  if (auth.userId !== userId) {
-    const role = formData.get('role') as string
-    const branchId = formData.get('branch_id') as string
-    if (role) updates.role = role
-    if (branchId) updates.branch_id = branchId
-  }
-
-  const { error } = await auth.supabase.from('profiles').update(updates).eq('id', userId)
-  if (error) return { success: false, error: error.message }
-  revalidatePath(`/team/${userId}`)
-  revalidatePath('/team')
-  return { success: true }
+  const res = await updateStaffProfile(userId, formData)
+  if (!res.success) return res
+  const role = formData.get('role') as string | null
+  const branchId = formData.get('branch_id') as string | null
+  if (role || branchId) return changeStaffAssignment(userId, { role: role || undefined, branch_id: branchId || undefined })
+  return res
 }
 
 export async function toggleMemberActive(userId: string, isActive: boolean) {
-  const auth = await requireRole(['admin'])
-  if (!auth.ok) return { success: false, error: auth.error }
-  // Deactivating yourself — possibly the only admin — locks everyone out of administration.
-  if (!isActive && auth.userId === userId) return { success: false, error: 'You cannot deactivate your own account' }
-
-  const { error } = await auth.supabase
-    .from('profiles')
-    .update({ is_active: isActive, updated_at: new Date().toISOString() })
-    .eq('id', userId)
-
-  if (error) return { success: false, error: error.message }
-  revalidatePath('/team')
-  return { success: true }
+  return setStaffActive(userId, isActive)
 }

@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { notFound } from 'next/navigation'
 import { Shield, AlertTriangle, Globe, Users2, Lock } from 'lucide-react'
+import ActionButton from '@/components/ui/ActionButton'
+import { unlockAccount } from '@/lib/security/actions'
 import IPWhitelistManager from '@/components/security/IPWhitelistManager'
 import TeamSessionsManager from '@/components/security/TeamSessionsManager'
 import SecuritySettingsForm from '@/components/security/SecuritySettingsForm'
@@ -110,9 +112,14 @@ export default async function AdminSecurityPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      {isLocked
-                        ? <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Locked</span>
-                        : <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">Active</span>
+                      {isLocked ? (
+                        <span className="inline-flex items-center gap-2">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Locked</span>
+                          <ActionButton label="Unlock" tone="success" className="!h-7 !px-2 !text-xs"
+                            confirm={`Unlock ${p.full_name}'s account now?`}
+                            action={unlockAccount.bind(null, p.id)} />
+                        </span>
+                      ) : <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">Active</span>
                       }
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-500">

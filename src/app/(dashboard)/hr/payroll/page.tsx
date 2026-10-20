@@ -6,6 +6,8 @@ import { MONTH_NAMES } from '@/types/hr'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import PayrollRunActions, { FinalizeRunButton } from '@/components/hr/PayrollRunActions'
 import { ArrowLeft, IndianRupee, Users, CheckCircle2 } from 'lucide-react'
+import SlipAdjustButton from '@/components/hr/SlipAdjustButton'
+import { getProfile } from '@/lib/supabase/getProfile'
 
 export const metadata = { title: 'Payroll' }
 
@@ -15,6 +17,7 @@ export default async function PayrollPage() {
   const latestSlips = latestRun ? await getPayrollSlips(latestRun.id) : []
 
   const existingMonths = runs.map(r => ({ year: r.year, month: r.month }))
+  const canAdjust = (await getProfile())?.profile?.role === 'admin' && latestRun?.status !== 'completed'
 
   return (
     <div className="p-6 space-y-6">
@@ -89,6 +92,7 @@ export default async function PayrollPage() {
                       <th scope="col" className="px-4 py-2.5 text-right">Prof Tax</th>
                       <th scope="col" className="px-4 py-2.5 text-right">Incentives</th>
                       <th scope="col" className="px-4 py-2.5 text-right">Net Pay</th>
+                      {canAdjust && <th scope="col" className="px-4 py-2.5"><span className="sr-only">Adjust</span></th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -115,6 +119,12 @@ export default async function PayrollPage() {
                         <td className="px-4 py-3 text-right font-semibold text-slate-900">
                           {formatCurrency(slip.net_pay, { mode: 'exact' })}
                         </td>
+                        {canAdjust && (
+                          <td className="px-2 py-3 text-right">
+                            <SlipAdjustButton slipId={slip.id} name={slip.employee?.full_name ?? 'Employee'}
+                              presentDays={slip.present_days} workingDays={slip.working_days} incentives={slip.incentives} />
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -128,6 +138,7 @@ export default async function PayrollPage() {
                       <td className="px-4 py-3 text-right text-slate-900">
                         {formatCurrency(latestSlips.reduce((s, sl) => s + sl.net_pay, 0), { mode: 'exact' })}
                       </td>
+                      {canAdjust && <td />}
                     </tr>
                   </tfoot>
                 </table>

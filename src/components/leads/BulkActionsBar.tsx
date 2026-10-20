@@ -7,6 +7,8 @@ import Button from '@/components/ui/Button'
 import { bulkAssignLeads, bulkChangeStage, bulkSendWhatsApp } from '@/lib/leads/actions'
 import { STAGE_CONFIG, STAGE_ORDER } from '@/types/leads'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/components/ui/Toast'
+import { LOSS_REASONS } from './LossReasonModal'
 
 interface BulkActionsBarProps {
   selectedIds: string[]
@@ -17,6 +19,8 @@ interface BulkActionsBarProps {
 export default function BulkActionsBar({ selectedIds, advisors, onClear }: BulkActionsBarProps) {
   const [showAdvisorSelect, setShowAdvisorSelect] = useState(false)
   const [showStageSelect, setShowStageSelect] = useState(false)
+  const [pickLossReason, setPickLossReason] = useState(false)
+  const toast = useToast()
   const [showWhatsApp, setShowWhatsApp] = useState(false)
   const [waText, setWaText] = useState('')
   const [waResult, setWaResult] = useState<string | null>(null)
@@ -38,19 +42,26 @@ export default function BulkActionsBar({ selectedIds, advisors, onClear }: BulkA
   const [loading, setLoading] = useState(false)
   const [exporting, setExporting] = useState(false)
 
+  // Results are reported: failures used to close the menu silently as if they had worked.
   const handleBulkAssign = async (advisorId: string) => {
     setLoading(true)
-    await bulkAssignLeads(selectedIds, advisorId)
+    const res = await bulkAssignLeads(selectedIds, advisorId)
     setLoading(false)
     setShowAdvisorSelect(false)
+    if (!res.success) { toast.error(res.error ?? 'Could not reassign'); return }
+    toast.success(res.count ? `${res.count} lead${res.count > 1 ? 's' : ''} reassigned` : 'Already assigned to that advisor')
     onClear()
   }
 
-  const handleBulkStage = async (stage: string) => {
+  const handleBulkStage = async (stage: string, lossReason?: string) => {
+    if (stage === 'not_interested' && !lossReason) { setPickLossReason(true); return }
     setLoading(true)
-    await bulkChangeStage(selectedIds, stage)
+    const res = await bulkChangeStage(selectedIds, stage, lossReason)
     setLoading(false)
     setShowStageSelect(false)
+    setPickLossReason(false)
+    if (!res.success) { toast.error(res.error ?? 'Could not change the stage'); return }
+    toast.success(res.count ? `${res.count} lead${res.count > 1 ? 's' : ''} moved` : 'Nothing to change')
     onClear()
   }
 
@@ -149,7 +160,7 @@ export default function BulkActionsBar({ selectedIds, advisors, onClear }: BulkA
             variant="ghost"
             size="sm"
             className="text-slate-300 hover:text-white hover:bg-slate-800"
-            onClick={() => setShowStageSelect((v) => !v)}
+            onClick={() => { setShowStageSelect((v) => !v); setPickLossReason(false) }}
             loading={loading}
           >
             <GitBranch size={15} />
@@ -158,16 +169,31 @@ export default function BulkActionsBar({ selectedIds, advisors, onClear }: BulkA
 
           {showStageSelect && (
             <div className="absolute bottom-full mb-2 left-0 bg-white rounded-xl shadow-xl border border-slate-200 min-w-[200px] overflow-hidden z-50 max-h-72 overflow-y-auto">
-              <p className="text-xs font-semibold text-slate-500 px-3 py-2 border-b border-slate-100">Move to stage:</p>
-              {STAGE_ORDER.map((stage) => (
-                <button
-                  key={stage}
-                  onClick={() => handleBulkStage(stage)}
-                  className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition-colors"
-                >
-                  {STAGE_CONFIG[stage]?.label ?? stage}
-                </button>
-              ))}
+              {pickLossReason ? (
+                <>
+                  <p className="text-xs font-semibold text-slate-500 px-3 py-2 border-b border-slate-100">Why not interested?</p>
+                  {LOSS_REASONS.map((r) => (
+                    <button key={r} onClick={() => handleBulkStage('not_interested', r)}
+                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition-colors">
+                      {r}
+                    </button>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <p className="text-xs font-semibold text-slate-500 px-3 py-2 border-b border-slate-100">Move to stage:</p>
+                  {/* Closed Won comes from approving a booking, not from a bulk edit. */}
+                  {STAGE_ORDER.filter((st) => st !== 'closed_won').map((stage) => (
+                    <button
+                      key={stage}
+                      onClick={() => handleBulkStage(stage)}
+                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-primary-50 hover:text-primary-700 transition-colors"
+                    >
+                      {STAGE_CONFIG[stage]?.label ?? stage}
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
           )}
         </div>

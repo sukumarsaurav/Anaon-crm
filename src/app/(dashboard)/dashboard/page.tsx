@@ -23,6 +23,8 @@ import type { BookingFull } from '@/types/bookings'
 
 export const metadata = { title: 'Dashboard' }
 
+const MANAGER_ONLY = new Set(['/marketing', '/hr', '/legal', '/automation'])
+
 const MODULES = [
   { href: '/leads',        label: 'Leads',        icon: Users,        color: 'text-primary-600', bg: 'bg-primary-50'  },
   { href: '/clients',      label: 'Clients',      icon: UserCheck,    color: 'text-blue-600',   bg: 'bg-blue-50'    },
@@ -143,7 +145,7 @@ export default async function DashboardHome() {
               icon={<AlertTriangle size={20} className="text-amber-600" />}
               iconBg="bg-amber-50"
               accent={bookingStats.pending_approval > 0 ? 'border-amber-500' : 'border-slate-200'}
-              href="/bookings"
+              href="/bookings?status=pending_approval"
             />
             <StatCard
               label="Active Loan Apps"
@@ -193,7 +195,8 @@ export default async function DashboardHome() {
       <div>
         <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Modules</h2>
         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-          {MODULES.map(({ href, label, icon: Icon, color, bg }) => (
+          {/* Same rule as the sidebar: advisors and telecallers don't get the manager-only modules. */}
+          {MODULES.filter(({ href }) => isManager || !MANAGER_ONLY.has(href)).map(({ href, label, icon: Icon, color, bg }) => (
             <Link key={href} href={href}
               className="flex flex-col items-center gap-2 p-4 bg-white border border-slate-200 rounded-xl hover:border-primary-200 hover:shadow-sm transition-all text-center">
               <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center`}>

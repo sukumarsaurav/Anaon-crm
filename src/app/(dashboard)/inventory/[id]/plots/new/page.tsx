@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { getProjectById } from '@/lib/inventory/queries'
+import { getProjectById, getPremiumMatrix } from '@/lib/inventory/queries'
 import PlotForm from '@/components/inventory/PlotForm'
 import BulkPlotForm from '@/components/inventory/BulkPlotForm'
 import PageHeader from '@/components/ui/PageHeader'
@@ -18,7 +18,8 @@ export default async function NewPlotPage({ params, searchParams }: PageProps) {
   const { id } = await params
   const { mode } = await searchParams
 
-  const project = await getProjectById(id)
+  const [project, matrix] = await Promise.all([getProjectById(id), getPremiumMatrix(id)])
+  const premiumDefaults = Object.fromEntries(matrix.map((m) => [m.premium_type, Number(m.percent)]))
   if (!project) notFound()
 
   const isBulk = mode === 'bulk'
@@ -50,7 +51,7 @@ export default async function NewPlotPage({ params, searchParams }: PageProps) {
       {isBulk ? (
         <BulkPlotForm projectId={id} />
       ) : (
-        <PlotForm projectId={id} />
+        <PlotForm projectId={id} premiumDefaults={premiumDefaults} />
       )}
     </div>
   )

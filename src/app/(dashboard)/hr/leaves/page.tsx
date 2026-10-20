@@ -1,7 +1,8 @@
 export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
-import { getLeaveRequests } from '@/lib/hr/queries'
+import { getLeaveRequests, getLeaveBalances, getEmployees } from '@/lib/hr/queries'
+import LeaveBalancesPanel from '@/components/hr/LeaveBalancesPanel'
 import { LEAVE_TYPES } from '@/types/hr'
 import { formatDate } from '@/lib/utils'
 import LeaveReviewActions from '@/components/hr/LeaveReviewActions'
@@ -10,10 +11,13 @@ import { ArrowLeft, Calendar } from 'lucide-react'
 export const metadata = { title: 'Leave Requests' }
 
 export default async function LeavesPage() {
-  const [pending, all] = await Promise.all([
+  const [pending, all, balances, employees] = await Promise.all([
     getLeaveRequests('pending'),
     getLeaveRequests(),
+    getLeaveBalances(),
+    getEmployees(),
   ])
+  const year = new Date().getFullYear()
 
   const recent = all.filter(l => l.status !== 'pending').slice(0, 30)
 
@@ -105,6 +109,8 @@ export default async function LeavesPage() {
           No leave requests yet.
         </div>
       )}
+      <LeaveBalancesPanel year={year} balances={balances}
+        employees={employees.map(e => ({ id: e.id, full_name: e.full_name }))} />
     </div>
   )
 }

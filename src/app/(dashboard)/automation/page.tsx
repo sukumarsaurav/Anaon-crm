@@ -1,7 +1,8 @@
 export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
-import { getAutomations, getAutomationLogs, getAutomationStats } from '@/lib/automation/queries'
+import { getAutomations, getAutomationLogs, getAutomationStats, getPendingExecutions } from '@/lib/automation/queries'
+import { formatDateTime } from '@/lib/utils'
 import { TRIGGER_OPTIONS, ACTION_OPTIONS } from '@/types/automation'
 import { formatDate } from '@/lib/utils'
 import AutomationToggle from '@/components/automation/AutomationToggle'
@@ -10,10 +11,11 @@ import { Plus, Zap, CheckCircle2, XCircle, Clock, LayoutTemplate } from 'lucide-
 export const metadata = { title: 'Automations' }
 
 export default async function AutomationPage() {
-  const [automations, logs, stats] = await Promise.all([
+  const [automations, logs, stats, pending] = await Promise.all([
     getAutomations(),
     getAutomationLogs(30),
     getAutomationStats(),
+    getPendingExecutions(),
   ])
 
   const getTriggerLabel = (v: string) => TRIGGER_OPTIONS.find(t => t.value === v)?.label ?? v
@@ -107,6 +109,21 @@ export default async function AutomationPage() {
           </div>
         )}
       </div>
+
+      {/* Delayed runs waiting for the cron */}
+      {pending.length > 0 && (
+        <div>
+          <h2 className="font-semibold text-slate-900 mb-3">Queued (delayed) runs</h2>
+          <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
+            {pending.map((p: { id: string; scheduled_for: string; trigger_record_type: string | null; automation?: { name?: string } | null }) => (
+              <div key={p.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                <span className="flex items-center gap-2 text-slate-800"><Clock size={14} className="text-slate-400" />{p.automation?.name ?? 'Automation'}</span>
+                <span className="text-xs text-slate-500">{p.trigger_record_type ?? 'record'} · runs {formatDateTime(p.scheduled_for)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Recent Log */}
       {logs.length > 0 && (

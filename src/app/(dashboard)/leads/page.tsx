@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { Plus, LayoutList, Kanban, AlertTriangle, Upload } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
-import { getLeads, getLeadsPage, getLeadStats, getActiveAdvisors } from '@/lib/leads/queries'
+import { getLeads, getLeadsPage, getLeadStats, getActiveAdvisors, getProjects } from '@/lib/leads/queries'
 import type { Lead, LeadFilters, LeadStage, LeadSource, LeadTemperature } from '@/types/leads'
 import LeadsStats from '@/components/leads/LeadsStats'
 import LeadFiltersBar from '@/components/leads/LeadFilters'
@@ -48,15 +48,28 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   if (!profileData || !profileData.user) return null
   const { user, profile } = profileData
 
-  const [leadsResult, stats, advisors] = await Promise.all([
+  const [leadsResult, stats, advisors, projects] = await Promise.all([
     isKanban ? getLeads(filters) : getLeadsPage(filters, page, PAGE_SIZE),
     getLeadStats(user.id, profile?.role ?? 'sales_advisor', profile?.branch_id ?? undefined),
     getActiveAdvisors(profile?.branch_id ?? undefined),
+    getProjects(),
   ])
 
   const leads: Lead[] = isKanban ? (leadsResult as Lead[]) : (leadsResult as { leads: Lead[] }).leads
   const totalLeads = isKanban ? leads.length : (leadsResult as { count: number }).count
   const totalPages = Math.max(1, Math.ceil(totalLeads / PAGE_SIZE))
+
+  // The Table / Kanban toggle keeps the current filters (it used to reset them).
+  const modeHref = (mode: 'list' | 'kanban') => {
+    const sp = new URLSearchParams()
+    for (const [k, v] of Object.entries(params)) {
+      if (k === 'page' || k === 'view_mode' || v == null) continue
+      if (Array.isArray(v)) v.forEach((x) => sp.append(k, x))
+      else sp.set(k, v as string)
+    }
+    sp.set('view_mode', mode)
+    return `/leads?${sp.toString()}`
+  }
 
   // Build a querystring that preserves filters while changing the page.
   const pageHref = (p: number) => {
@@ -80,7 +93,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
             {/* View toggle */}
             <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden">
               <Link
-                href={`/leads?view_mode=list`}
+                href={modeHref('list')}
                 className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
                   !isKanban ? 'bg-primary-600 text-white' : 'text-slate-600 hover:bg-slate-50'
                 }`}
@@ -89,7 +102,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
                 Table
               </Link>
               <Link
-                href={`/leads?view_mode=kanban`}
+                href={modeHref('kanban')}
                 className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
                   isKanban ? 'bg-primary-600 text-white' : 'text-slate-600 hover:bg-slate-50'
                 }`}
@@ -123,7 +136,10 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
 
       {/* Filters */}
       <Suspense fallback={null}>
-        <LeadFiltersBar />
+        <LeadFiltersBar
+          advisors={(profile?.role === 'admin' || profile?.role === 'manager') ? advisors.map((a) => ({ id: a.id, name: a.full_name })) : []}
+          projects={(projects ?? []).map((p: { id: string; name: string }) => ({ id: p.id, name: p.name }))}
+        />
       </Suspense>
 
       {/* Leads view */}
