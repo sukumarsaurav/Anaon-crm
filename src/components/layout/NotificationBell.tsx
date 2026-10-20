@@ -59,17 +59,28 @@ export default function NotificationBell() {
   const [loading, setLoading] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
 
-  const unreadCount = items.filter((n) => !n.is_read).length
+  // The badge used to count unread items among the latest 20 only, as a dot. Count them all.
+  const [unreadTotal, setUnreadTotal] = useState(0)
+  const unreadShown = items.filter((n) => !n.is_read).length
+  const unreadCount = Math.max(unreadTotal, unreadShown)
 
   const load = useCallback(async () => {
     setLoading(true)
-    const { data } = await supabase
-      .from('notifications')
-      .select('id, title, body, type, is_read, created_at, action_url')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(20)
+    const [{ data }, { count }] = await Promise.all([
+      supabase
+        .from('notifications')
+        .select('id, title, body, type, is_read, created_at, action_url')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(20),
+      supabase
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('is_read', false),
+    ])
     setItems((data ?? []) as NotificationRow[])
+    if (count != null) setUnreadTotal(count)
     setLoading(false)
   }, [supabase, userId])
 
@@ -101,12 +112,14 @@ export default function NotificationBell() {
 
   const markAllRead = async () => {
     setItems((prev) => prev.map((n) => ({ ...n, is_read: true })))
+    setUnreadTotal(0)
     await supabase.from('notifications').update({ is_read: true }).eq('user_id', userId).eq('is_read', false)
   }
 
   const handleClick = async (n: NotificationRow) => {
     if (!n.is_read) {
       setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, is_read: true } : x)))
+      setUnreadTotal((t) => Math.max(0, t - 1))
       await supabase.from('notifications').update({ is_read: true }).eq('id', n.id)
     }
     setOpen(false)
@@ -124,7 +137,9 @@ export default function NotificationBell() {
       >
         <Bell size={20} />
         {unreadCount > 0 && (
-          <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full ring-2 ring-white" aria-hidden="true" />
+          <span className="absolute top-1 right-1 min-w-4 h-4 px-1 bg-red-500 rounded-full ring-2 ring-white text-xs leading-4 font-bold text-white text-center" aria-hidden="true">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
         )}
       </button>
 

@@ -101,13 +101,6 @@ export default function LeadDetailActions({ lead, advisors }: LeadDetailActionsP
           })}
 
           {/* Terminal stages */}
-          {canDelete && (
-            <Button variant="ghost" size="sm" onClick={handleDelete} disabled={isPending} className="text-red-600 hover:bg-red-50 hover:text-red-700">
-              <Trash2 size={14} />
-              Delete
-            </Button>
-          )}
-
           {!TERMINAL_STAGES.includes(lead.stage) && (
             <div className="flex items-center gap-2 ml-auto">
               <button
@@ -127,6 +120,17 @@ export default function LeadDetailActions({ lead, advisors }: LeadDetailActionsP
             </div>
           )}
         </div>
+
+        {/* Kept apart from the everyday buttons: it sat between "Move to …" and "Mark Not
+            Interested", one slip away from the most-clicked actions on the page. */}
+        {canDelete && (
+          <div className="mt-3 pt-3 border-t border-slate-100 flex justify-end">
+            <Button variant="ghost" size="sm" onClick={handleDelete} disabled={isPending} className="text-red-600 hover:bg-red-50 hover:text-red-700">
+              <Trash2 size={14} />
+              Delete lead
+            </Button>
+          </div>
+        )}
       </div>
 
       <AssignModal

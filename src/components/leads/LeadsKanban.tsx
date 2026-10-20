@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import Link from 'next/link'
 import { Phone, MessageSquare, ChevronDown, Clock, Calendar } from 'lucide-react'
 import type { Lead, LeadStage } from '@/types/leads'
@@ -12,9 +12,12 @@ import { changeLeadStage } from '@/lib/leads/actions'
 import { formatPhone, getInitials, isFollowUpOverdue, waLink } from '@/lib/utils'
 import RelativeTime from '@/components/ui/RelativeTime'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/components/ui/Toast'
 
 interface LeadsKanbanProps {
   leads: Lead[]
+  /** The query's row cap, so the board can say when it is not showing everything. */
+  limit?: number
 }
 
 const KANBAN_STAGES: LeadStage[] = [
@@ -27,24 +30,35 @@ const KANBAN_STAGES: LeadStage[] = [
   'token_paid',
 ]
 
-function LeadKanbanCard({ lead }: { lead: Lead }) {
-  const [isChangingStage, setIsChangingStage] = useState(false)
+function LeadKanbanCard({
+  lead,
+  saving,
+  onMove,
+}: {
+  lead: Lead
+  saving: boolean
+  onMove: (lead: Lead, stage: LeadStage) => void
+}) {
   const [showStageMenu, setShowStageMenu] = useState(false)
   const overdue = isFollowUpOverdue(lead)
 
-  const handleStageChange = async (newStage: LeadStage) => {
-    setIsChangingStage(true)
+  const handleStageChange = (newStage: LeadStage) => {
     setShowStageMenu(false)
-    await changeLeadStage(lead.id, newStage)
-    setIsChangingStage(false)
+    onMove(lead, newStage)
   }
 
   return (
     <div
+      draggable={!saving}
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', lead.id)
+        e.dataTransfer.effectAllowed = 'move'
+      }}
+      aria-busy={saving || undefined}
       className={cn(
-        'bg-white rounded-xl border shadow-sm p-3.5 hover:shadow-md transition-shadow',
+        'bg-white rounded-xl border shadow-sm p-3.5 hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing',
         lead.temperature === 'hot' && 'border-red-200',
-        isChangingStage && 'opacity-60 pointer-events-none'
+        saving && 'opacity-60 pointer-events-none'
       )}
     >
       {/* Top: temp + score */}
@@ -149,20 +163,77 @@ function LeadKanbanCard({ lead }: { lead: Lead }) {
   )
 }
 
-export default function LeadsKanban({ leads }: LeadsKanbanProps) {
+export default function LeadsKanban({ leads: serverLeads, limit = 200 }: LeadsKanbanProps) {
+  const toast = useToast()
+  // Optimistic moves: a dragged card lands in its new column at once and goes back if saving fails.
+  const [moved, setMoved] = useState<Record<string, LeadStage>>({})
+  const [saving, setSaving] = useState<Set<string>>(new Set())
+  const [dropTarget, setDropTarget] = useState<LeadStage | null>(null)
+
+  // Fresh server data (after a save revalidates /leads) supersedes local moves.
+  const [seen, setSeen] = useState(serverLeads)
+  if (seen !== serverLeads) {
+    setSeen(serverLeads)
+    setMoved({})
+  }
+  const leads = serverLeads.map((l) => (moved[l.id] ? { ...l, stage: moved[l.id] } : l))
+
+  const move = useCallback(
+    async (lead: Lead, stage: LeadStage) => {
+      if (lead.stage === stage) return
+      const previous = lead.stage
+      setMoved((m) => ({ ...m, [lead.id]: stage }))
+      setSaving((s) => new Set(s).add(lead.id))
+      const result = await changeLeadStage(lead.id, stage)
+      setSaving((s) => {
+        const next = new Set(s)
+        next.delete(lead.id)
+        return next
+      })
+      if (!result.success) {
+        setMoved((m) => ({ ...m, [lead.id]: previous }))
+        toast.error(result.error ?? `Could not move ${lead.full_name}`)
+      }
+    },
+    [toast],
+  )
+
   const byStage = KANBAN_STAGES.reduce<Record<string, Lead[]>>((acc, stage) => {
     acc[stage] = leads.filter((l) => l.stage === stage)
     return acc
   }, {})
 
   return (
+    <div className="space-y-3">
+    {serverLeads.length >= limit && (
+      <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800" role="status">
+        Showing the first {limit} leads that match. Use the filters or the table view to see the rest.
+      </p>
+    )}
     <div className="flex gap-4 overflow-x-auto pb-4" style={{ minHeight: '60vh' }}>
       {KANBAN_STAGES.map((stage) => {
         const cfg = STAGE_CONFIG[stage]
         const stageLeads = byStage[stage]
 
         return (
-          <div key={stage} className="flex-shrink-0 w-72">
+          <div
+            key={stage}
+            className="flex-shrink-0 w-72"
+            onDragOver={(e) => {
+              e.preventDefault()
+              e.dataTransfer.dropEffect = 'move'
+              if (dropTarget !== stage) setDropTarget(stage)
+            }}
+            onDragLeave={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropTarget(null)
+            }}
+            onDrop={(e) => {
+              e.preventDefault()
+              setDropTarget(null)
+              const lead = leads.find((l) => l.id === e.dataTransfer.getData('text/plain'))
+              if (lead) void move(lead, stage)
+            }}
+          >
             {/* Column header */}
             <div className={cn('rounded-t-xl px-4 py-3 border-b-2', cfg.bgColor, cfg.borderColor)}>
               <div className="flex items-center justify-between">
@@ -185,9 +256,10 @@ export default function LeadsKanban({ leads }: LeadsKanbanProps) {
             {/* Cards */}
             <div
               className={cn(
-                'min-h-[400px] rounded-b-xl p-3 space-y-3',
+                'min-h-[400px] rounded-b-xl p-3 space-y-3 transition-shadow',
                 cfg.bgColor,
-                'bg-opacity-30'
+                'bg-opacity-30',
+                dropTarget === stage && 'ring-2 ring-primary-400 ring-inset'
               )}
             >
               {stageLeads.length === 0 ? (
@@ -195,7 +267,9 @@ export default function LeadsKanban({ leads }: LeadsKanbanProps) {
                   No leads
                 </div>
               ) : (
-                stageLeads.map((lead) => <LeadKanbanCard key={lead.id} lead={lead} />)
+                stageLeads.map((lead) => (
+                  <LeadKanbanCard key={lead.id} lead={lead} saving={saving.has(lead.id)} onMove={move} />
+                ))
               )}
             </div>
           </div>
@@ -218,6 +292,7 @@ export default function LeadsKanban({ leads }: LeadsKanbanProps) {
           )
         })}
       </div>
+    </div>
     </div>
   )
 }

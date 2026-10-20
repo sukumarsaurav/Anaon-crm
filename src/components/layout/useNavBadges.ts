@@ -12,6 +12,8 @@ export interface NavBadges {
 }
 
 const REFRESH_MS = 60_000
+/** The overdue count comes from get_lead_stats, which aggregates every lead; it changes slowly. */
+const STATS_REFRESH_MS = 5 * 60_000
 
 /** Lightweight counts for the sidebar. Polls while the tab is visible; failures leave the last value. */
 export function useNavBadges(): NavBadges {
@@ -21,20 +23,26 @@ export function useNavBadges(): NavBadges {
 
   useEffect(() => {
     let cancelled = false
+    let statsAt = 0
 
     const load = async () => {
       if (document.visibilityState === 'hidden') return
+      // The full lead-stats RPC ran every minute in every open tab just for this one number.
+      const wantStats = Date.now() - statsAt >= STATS_REFRESH_MS
       const [wa, stats] = await Promise.all([
         supabase
           .from('whatsapp_conversations')
           .select('id', { count: 'exact', head: true })
           .gt('unread_count', 0),
-        supabase.rpc('get_lead_stats', { p_user_id: userId, p_role: role, p_branch_id: branchId ?? null }),
+        wantStats
+          ? supabase.rpc('get_lead_stats', { p_user_id: userId, p_role: role, p_branch_id: branchId ?? null })
+          : null,
       ])
       if (cancelled) return
+      if (stats && !stats.error) statsAt = Date.now()
       setBadges((prev) => ({
         whatsappUnread: wa.error ? prev.whatsappUnread : (wa.count ?? 0),
-        overdueLeads: stats.error ? prev.overdueLeads : Number((stats.data as { overdue?: number } | null)?.overdue ?? 0),
+        overdueLeads: !stats || stats.error ? prev.overdueLeads : Number((stats.data as { overdue?: number } | null)?.overdue ?? 0),
       }))
     }
 

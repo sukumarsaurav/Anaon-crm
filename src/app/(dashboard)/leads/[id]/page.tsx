@@ -239,6 +239,15 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
                   Timeline: {lead.timeline.replace(/_/g, ' ')}
                 </p>
               )}
+              {/* WhatsApp and portal leads often arrive with none of these; an empty box read as broken. */}
+              {!lead.project && !lead.budget_min && !lead.budget_max && !lead.configuration && !lead.purpose && !lead.timeline && (
+                <p className="text-sm text-slate-400">
+                  No preferences captured yet.{' '}
+                  <Link href={`/leads/${id}/edit`} className="font-medium text-primary-600 hover:text-primary-700">
+                    Add project, budget or timeline
+                  </Link>
+                </p>
+              )}
             </div>
           </Card>
 
