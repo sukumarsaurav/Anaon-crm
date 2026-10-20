@@ -72,7 +72,7 @@ export default function DataTable<T>({
   return (
     <div
       className={cn(
-        'overflow-x-auto',
+        'relative overflow-x-auto',
         bordered && 'bg-white rounded-xl border border-slate-200',
         className,
       )}

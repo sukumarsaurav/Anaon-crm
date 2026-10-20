@@ -11,8 +11,9 @@ import {
   Users, Flame, Clock, CalendarCheck,
   Building2, CheckCircle2, AlertTriangle, CreditCard,
   BarChart2, Megaphone, UserCheck, Briefcase,
-  Scale, Bot, MessageCircle,
+  Scale, Bot, MessageCircle, BookOpen,
 } from 'lucide-react'
+import { formatInIST } from '@/lib/datetime'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { Card, StatCard } from '@/components/ui/Card'
 import PageHeader from '@/components/ui/PageHeader'
@@ -23,7 +24,7 @@ import type { BookingFull } from '@/types/bookings'
 const MODULES = [
   { href: '/leads',        label: 'Leads',        icon: Users,        color: 'text-primary-600', bg: 'bg-primary-50'  },
   { href: '/clients',      label: 'Clients',      icon: UserCheck,    color: 'text-blue-600',   bg: 'bg-blue-50'    },
-  { href: '/bookings',     label: 'Bookings',     icon: Building2,    color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  { href: '/bookings',     label: 'Bookings',     icon: BookOpen,     color: 'text-emerald-600', bg: 'bg-emerald-50' },
   { href: '/inventory',    label: 'Inventory',    icon: Building2,    color: 'text-cyan-600',   bg: 'bg-cyan-50'    },
   { href: '/loans',        label: 'Loans',        icon: CreditCard,   color: 'text-violet-600', bg: 'bg-violet-50'  },
   { href: '/marketing',    label: 'Marketing',    icon: Megaphone,    color: 'text-pink-600',   bg: 'bg-pink-50'    },
@@ -50,14 +51,18 @@ export default async function DashboardHome() {
   ])
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'there'
-  const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })
+  const now = new Date()
+  // Rendered on the server (UTC), so both the date and the greeting are taken in IST.
+  const today = formatInIST(now, { weekday: 'long', day: 'numeric', month: 'long' })
+  const hour = Number(formatInIST(now, { hour: 'numeric', hourCycle: 'h23' }))
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   const isManager = ['admin', 'manager'].includes(role)
 
   return (
     <div className="p-6 space-y-6">
       <PageHeader
-        title={`Good morning, ${firstName}`}
+        title={`${greeting}, ${firstName}`}
         subtitle={today}
       />
 
@@ -90,7 +95,7 @@ export default async function DashboardHome() {
             icon={<Clock size={20} className="text-amber-600" />}
             iconBg="bg-amber-50"
             accent={leadStats.overdue > 0 ? 'border-amber-500' : 'border-slate-200'}
-            href="/leads"
+            href="/leads?view=overdue"
           />
           <StatCard
             label="Today's Follow-ups"
@@ -99,7 +104,7 @@ export default async function DashboardHome() {
             icon={<CalendarCheck size={20} className="text-emerald-600" />}
             iconBg="bg-emerald-50"
             accent="border-emerald-500"
-            href="/leads"
+            href="/leads?view=today"
           />
         </div>
       </div>

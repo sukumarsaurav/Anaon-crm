@@ -18,7 +18,7 @@ import ClickToCallButton from '@/components/leads/ClickToCallButton'
 import { Card } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
-import { formatDate, formatDateTime, formatPhone, formatBudgetRange } from '@/lib/utils'
+import { formatDate, formatDateTime, formatPhone, formatBudgetRange, waLink } from '@/lib/utils'
 import RelativeTime from '@/components/ui/RelativeTime'
 import { cn } from '@/lib/utils'
 import { getProfile } from '@/lib/supabase/getProfile'
@@ -63,7 +63,7 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
           <>
             <ClickToCallButton leadId={lead.id} />
             <Button
-              href={`https://wa.me/${lead.phone}`}
+              href={waLink(lead.phone)}
               external
               variant="secondary"
               size="sm"

@@ -11,7 +11,7 @@ import ScoreBadge from './ScoreBadge'
 import BulkActionsBar from './BulkActionsBar'
 import EmptyState from '@/components/ui/EmptyState'
 import RelativeTime from '@/components/ui/RelativeTime'
-import { formatPhone, formatBudgetRange, getInitials, isFollowUpOverdue } from '@/lib/utils'
+import { formatPhone, formatBudgetRange, getInitials, isFollowUpOverdue, waLink } from '@/lib/utils'
 import { SOURCE_LABELS } from '@/types/leads'
 import { cn } from '@/lib/utils'
 
@@ -92,7 +92,9 @@ export default function LeadsTable({ leads, advisors }: LeadsTableProps) {
       )}
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* relative: the header's sr-only label is absolutely positioned; without a positioned
+            ancestor here it escapes the scroll box and widens the whole page on phones. */}
+        <div className="relative overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50">
@@ -171,7 +173,7 @@ export default function LeadsTable({ leads, advisors }: LeadsTableProps) {
                                 <Phone size={12} />
                               </a>
                               <a
-                                href={`https://wa.me/${lead.phone}`}
+                                href={waLink(lead.phone)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-slate-400 hover:text-green-600 transition-colors"

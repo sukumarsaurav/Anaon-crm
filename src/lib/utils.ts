@@ -83,6 +83,17 @@ export function formatPhone(phone: string | null | undefined): string {
   return phone
 }
 
+/**
+ * Click-to-chat link. wa.me wants digits with the country code: stored phones are either a bare
+ * 10-digit Indian number (read by WhatsApp as a foreign country code) or "+91-98…" (rejected).
+ */
+export function waLink(phone: string | null | undefined, text?: string): string {
+  let digits = (phone ?? '').replace(/\D/g, '')
+  if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1)
+  if (digits.length === 10) digits = `91${digits}`
+  return `https://wa.me/${digits}${text ? `?text=${encodeURIComponent(text)}` : ''}`
+}
+
 export function formatBudgetRange(min: number | null, max: number | null): string {
   if (!min && !max) return '—'
   if (min && max) return `${formatCurrency(min)} – ${formatCurrency(max)}`

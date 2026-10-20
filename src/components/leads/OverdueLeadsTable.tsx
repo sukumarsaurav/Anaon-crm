@@ -6,7 +6,7 @@ import { Phone, MessageSquare, UserCog, AlertTriangle } from 'lucide-react'
 import type { Lead } from '@/types/leads'
 import StageBadge from './StageBadge'
 import AssignModal from './AssignModal'
-import { formatPhone, getInitials, cn } from '@/lib/utils'
+import { formatPhone, getInitials, cn, waLink } from '@/lib/utils'
 
 interface OverdueLeadsTableProps {
   leads: Lead[]
@@ -97,7 +97,7 @@ export default function OverdueLeadsTable({ leads, advisors }: OverdueLeadsTable
                         <Phone size={15} />
                       </a>
                       <a
-                        href={`https://wa.me/${lead.phone}`}
+                        href={waLink(lead.phone)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"

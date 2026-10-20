@@ -10,10 +10,13 @@ const manrope = Manrope({
 });
 
 // Hindi script fallback — composed onto the same elements via the CSS stack.
+// Not preloaded: the UI is English, and the unicode-range means a weight is only fetched when
+// Devanagari text is actually on screen. Preloading cost 4 font requests on every page.
 const notoDevanagari = Noto_Sans_Devanagari({
   variable: "--font-devanagari",
   subsets: ["devanagari"],
   weight: ["400", "500", "600", "700"],
+  preload: false,
 });
 
 export const metadata: Metadata = {

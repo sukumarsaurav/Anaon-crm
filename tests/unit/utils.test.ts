@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatCurrency, formatPhone, formatBudgetRange, formatDate, getInitials, suggestNextFollowup, computeSlaStatus, isFollowUpOverdue } from '@/lib/utils'
+import { formatCurrency, formatPhone, formatBudgetRange, formatDate, getInitials, suggestNextFollowup, computeSlaStatus, isFollowUpOverdue, waLink } from '@/lib/utils'
 
 describe('formatCurrency', () => {
   it('formats rupees compactly', () => {
@@ -87,5 +87,18 @@ describe('time zones (the CRM is for India)', () => {
   it('formatInIST', () => {
     expect(formatInIST('2026-10-20T14:26:00Z', { hour: '2-digit', minute: '2-digit', hour12: false })).toBe('19:56')
     expect(formatInIST('garbage', {})).toBe('')
+  })
+})
+
+describe('waLink', () => {
+  it('adds the Indian country code to the stored phone formats', () => {
+    expect(waLink('8368233575')).toBe('https://wa.me/918368233575')
+    expect(waLink('+91-9876543210')).toBe('https://wa.me/919876543210')
+    expect(waLink('09876543210')).toBe('https://wa.me/919876543210')
+    expect(waLink('919876543210')).toBe('https://wa.me/919876543210')
+  })
+  it('keeps foreign numbers and encodes the prefilled text', () => {
+    expect(waLink('+1 415 555 0100')).toBe('https://wa.me/14155550100')
+    expect(waLink('9876543210', 'Hi, I need help')).toBe('https://wa.me/919876543210?text=Hi%2C%20I%20need%20help')
   })
 })

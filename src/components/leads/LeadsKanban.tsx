@@ -9,7 +9,7 @@ import StageBadge from './StageBadge'
 import TemperatureBadge from './TemperatureBadge'
 import ScoreBadge from './ScoreBadge'
 import { changeLeadStage } from '@/lib/leads/actions'
-import { formatPhone, getInitials, isFollowUpOverdue } from '@/lib/utils'
+import { formatPhone, getInitials, isFollowUpOverdue, waLink } from '@/lib/utils'
 import RelativeTime from '@/components/ui/RelativeTime'
 import { cn } from '@/lib/utils'
 
@@ -73,7 +73,7 @@ function LeadKanbanCard({ lead }: { lead: Lead }) {
             <Phone size={11} />
           </a>
           <a
-            href={`https://wa.me/${lead.phone}`}
+            href={waLink(lead.phone)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-slate-300 hover:text-green-600 transition-colors"

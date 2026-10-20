@@ -18,7 +18,7 @@ export default function WhatsAppLayout({ children }: { children: React.ReactNode
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Tab bar */}
-      <div className="flex-shrink-0 bg-white border-b border-slate-200 px-4 flex items-center gap-1">
+      <div className="flex-shrink-0 bg-white border-b border-slate-200 px-4 flex items-center gap-1 overflow-x-auto">
         {tabs.map(({ label, href, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + '/')
           return (
@@ -26,7 +26,7 @@ export default function WhatsAppLayout({ children }: { children: React.ReactNode
               key={href}
               href={href}
               className={cn(
-                'flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors',
+                'flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
                 active
                   ? 'border-primary-500 text-primary-700'
                   : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'

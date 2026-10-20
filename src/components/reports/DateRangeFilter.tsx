@@ -26,15 +26,15 @@ export default function DateRangeFilter() {
   const to = params.get('to') ?? ''
 
   return (
-    <form onSubmit={handleChange} className="flex items-center gap-2 flex-wrap">
-      <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
+    <form onSubmit={handleChange} className="flex items-center gap-2 flex-wrap min-w-0 max-w-full">
+      <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 min-w-0 max-w-full">
         <label htmlFor="daterangefilter-from" className="text-xs text-slate-500 shrink-0">From</label>
         <input id="daterangefilter-from" name="from" type="date" defaultValue={from}
-          className="text-sm text-slate-700 focus:outline-none" />
+          className="min-w-0 flex-1 text-sm text-slate-700 focus:outline-none" />
         <span className="text-slate-300">→</span>
         <label htmlFor="daterangefilter-to" className="text-xs text-slate-500 shrink-0">To</label>
         <input id="daterangefilter-to" name="to" type="date" defaultValue={to}
-          className="text-sm text-slate-700 focus:outline-none" />
+          className="min-w-0 flex-1 text-sm text-slate-700 focus:outline-none" />
       </div>
       <button type="submit"
         className="px-3 py-2 text-xs bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700">

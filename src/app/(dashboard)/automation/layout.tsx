@@ -20,7 +20,7 @@ export default function AutomationLayout({ children }: { children: React.ReactNo
 
   return (
     <div>
-      <div className="bg-white border-b border-slate-200 px-4 flex items-center gap-1">
+      <div className="bg-white border-b border-slate-200 px-4 flex items-center gap-1 overflow-x-auto">
         {tabs.map(({ label, href, icon: Icon }) => (
           <Link
             key={href}

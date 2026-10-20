@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { getPortalSession } from '@/lib/portal/session'
 import { getPortalClientData } from '@/lib/portal/queries'
 import { Phone, MessageSquare, Mail, Building2 } from 'lucide-react'
+import { waLink } from '@/lib/utils'
 
 const FAQS = [
   {
@@ -62,7 +63,7 @@ export default async function ClientPortalSupportPage() {
               </a>
             )}
             {advisor.phone && (
-              <a href={`https://wa.me/${advisor.phone.replace(/\D/g, '')}?text=Hi%2C%20I%20need%20help%20with%20my%20property`}
+              <a href={waLink(advisor.phone, 'Hi, I need help with my property')}
                 target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-2 px-4 py-3 bg-green-500 border border-green-500 rounded-xl text-sm font-medium text-white hover:bg-green-600">
                 <MessageSquare size={16} /> WhatsApp
