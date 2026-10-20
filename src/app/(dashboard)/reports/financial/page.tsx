@@ -8,6 +8,8 @@ import ExportButton from '@/components/reports/ExportButton'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import EmptyState from '@/components/ui/EmptyState'
 
+export const metadata = { title: 'Financial Report' }
+
 interface PageProps {
   searchParams: Promise<{ from?: string; to?: string }>
 }

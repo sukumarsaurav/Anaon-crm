@@ -68,7 +68,8 @@ export default function InboxSidebar({ initial }: { initial: WaConversation[] })
   }, [live, router])
 
   return (
-    <div className="w-80 border-r border-slate-200 bg-white flex flex-col">
+    // Phones show one pane at a time: the list on /whatsapp/inbox, the chat on /whatsapp/inbox/[id].
+    <div className={`w-full md:w-80 shrink-0 border-r border-slate-200 bg-white flex-col ${params?.id ? 'hidden md:flex' : 'flex'}`}>
       <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
         <h1 className="font-semibold text-slate-900">WhatsApp Inbox</h1>
         <span className="flex items-center gap-1.5 text-xs text-slate-500">
@@ -76,7 +77,7 @@ export default function InboxSidebar({ initial }: { initial: WaConversation[] })
             title={live ? 'Live' : 'Reconnecting — refreshing every 15s'}
             className={`inline-block size-1.5 rounded-full ${live ? 'bg-green-500' : 'bg-amber-400'}`}
           />
-          {conversations.length} conversations
+          {conversations.length} conversation{conversations.length === 1 ? '' : 's'}
         </span>
       </div>
       <div className="flex-1 overflow-hidden">

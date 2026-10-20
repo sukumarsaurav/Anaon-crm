@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import { recordTitle } from '@/lib/metadata/recordTitle'
 import { notFound } from 'next/navigation'
 import {
   getProjectById, getProjectStats, getPlots,
@@ -175,3 +176,5 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     </div>
   )
 }
+
+export const generateMetadata = ({ params }: { params: Promise<{ id: string }> }) => recordTitle('projects', ['name'], params, 'Project')

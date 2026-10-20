@@ -7,6 +7,8 @@ import PlotForm from '@/components/inventory/PlotForm'
 import BulkPlotForm from '@/components/inventory/BulkPlotForm'
 import PageHeader from '@/components/ui/PageHeader'
 
+export const metadata = { title: 'Add Plots' }
+
 interface PageProps {
   params:      Promise<{ id: string }>
   searchParams: Promise<{ mode?: string }>

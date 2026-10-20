@@ -8,6 +8,8 @@ import IPWhitelistManager from '@/components/security/IPWhitelistManager'
 import TeamSessionsManager from '@/components/security/TeamSessionsManager'
 import SecuritySettingsForm from '@/components/security/SecuritySettingsForm'
 
+export const metadata = { title: 'Security Admin' }
+
 export default async function AdminSecurityPage() {
   const supabase = await createClient()
   const user = (await getProfile())?.user

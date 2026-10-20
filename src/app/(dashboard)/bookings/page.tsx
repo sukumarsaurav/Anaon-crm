@@ -10,6 +10,8 @@ import PageHeader from '@/components/ui/PageHeader'
 import EmptyState from '@/components/ui/EmptyState'
 import { Plus, BookOpen } from 'lucide-react'
 
+export const metadata = { title: 'Bookings' }
+
 interface PageProps {
   searchParams: Promise<{ status?: string; search?: string; page?: string }>
 }

@@ -6,6 +6,8 @@ import { getCostSheet } from '@/lib/inventory/queries'
 import CostSheetView from '@/components/inventory/CostSheetView'
 import { ArrowLeft } from 'lucide-react'
 
+export const metadata = { title: 'Cost Sheet' }
+
 interface PageProps {
   params: Promise<{ id: string; plotId: string }>
 }

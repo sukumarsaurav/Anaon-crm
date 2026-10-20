@@ -8,6 +8,8 @@ import CandidateStageActions from '@/components/hr/CandidateStageActions'
 import { ArrowLeft, Star, Phone, Mail, Building2 } from 'lucide-react'
 import Link from 'next/link'
 
+export const metadata = { title: 'Recruitment' }
+
 export default async function RecruitmentPage() {
   const supabase = await createClient()
   const [candidates, profilesRes] = await Promise.all([

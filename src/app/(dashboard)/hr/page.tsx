@@ -7,6 +7,8 @@ import {
   IndianRupee, ArrowRight
 } from 'lucide-react'
 
+export const metadata = { title: 'HR & Hiring' }
+
 export default async function HRPage() {
   const stats = await getHRStats()
 

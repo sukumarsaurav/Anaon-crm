@@ -7,6 +7,8 @@ import EmptyState from '@/components/ui/EmptyState'
 import SyncTemplatesButton from '@/components/whatsapp/TemplateActions'
 import { agencyXConfigured } from '@/lib/whatsapp/agencyx-api'
 
+export const metadata = { title: 'Message Templates' }
+
 export const dynamic = 'force-dynamic'
 
 export default async function TemplatesPage() {

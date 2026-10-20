@@ -8,6 +8,8 @@ import NewDeletionRequestForm from '@/components/legal/NewDeletionRequestForm'
 import { ChevronLeft, Lock, UserX, ShieldCheck, AlertTriangle } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
+export const metadata = { title: 'Data Privacy' }
+
 export default async function PrivacyCompliancePage() {
   const [requests, stats, consentStats] = await Promise.all([
     getDataDeletionRequests(),

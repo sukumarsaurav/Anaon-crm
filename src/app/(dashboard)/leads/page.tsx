@@ -13,6 +13,8 @@ import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
 import { PageLoader } from '@/components/ui/Spinner'
 
+export const metadata = { title: 'Leads' }
+
 interface LeadsPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }

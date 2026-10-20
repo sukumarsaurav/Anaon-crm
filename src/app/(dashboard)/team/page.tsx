@@ -8,6 +8,8 @@ import PageHeader from '@/components/ui/PageHeader'
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
 
+export const metadata = { title: 'Sales Team' }
+
 export const dynamic = 'force-dynamic'
 
 export default async function TeamPage() {

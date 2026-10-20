@@ -46,8 +46,11 @@ export default function ChatWindow({ conversation, messages: initial, templates,
 
   // Opening a chat reads it. Done here, not while rendering the page, so it neither delays
   // the page nor re-renders the list; the sidebar sees the change over realtime.
+  // A chat left open in a background tab is read once the agent comes back to it.
   useEffect(() => {
     markRead()
+    document.addEventListener('visibilitychange', markRead)
+    return () => document.removeEventListener('visibilitychange', markRead)
   }, [markRead])
 
   useEffect(() => {
@@ -87,10 +90,36 @@ export default function ChatWindow({ conversation, messages: initial, templates,
     (p) => !messages.some((m) => m.direction === 'outbound' && m.body === p.body && new Date(m.created_at).getTime() >= p.at - 10_000),
   )
 
+  // Follow new messages only when the agent is already at the bottom. Jumping down on every
+  // message made it impossible to read back through a chat while the customer was typing.
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const atBottomRef = useRef(true)
+  const [unseen, setUnseen] = useState(0)
+  const onScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+    if (atBottomRef.current) setUnseen(0)
+  }, [])
+  const jumpToLatest = useCallback(() => {
+    bottomRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
+    setUnseen(0)
+  }, [])
+
   const count = messages.length + shownPending.length
+  const lastCount = useRef({ conversationId, count })
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: 'end' })
-  }, [count, conversationId])
+    const prev = lastCount.current
+    lastCount.current = { conversationId, count }
+    const switched = prev.conversationId !== conversationId
+    const own = shownPending.length > 0 // the agent just sent something: always show it
+    if (switched || own || atBottomRef.current) {
+      bottomRef.current?.scrollIntoView({ block: 'end' })
+      atBottomRef.current = true
+    } else if (count > prev.count) {
+      setUnseen((n) => n + (count - prev.count))
+    }
+  }, [count, conversationId, shownPending.length])
 
   const addPending = useCallback((body: string) => {
     const tempId = `tmp-${crypto.randomUUID()}`
@@ -106,7 +135,17 @@ export default function ChatWindow({ conversation, messages: initial, templates,
       <ConversationHeader conversation={conversation} advisors={advisors} />
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 bg-slate-50 space-y-1">
+      <div className="relative flex-1 min-h-0 flex flex-col">
+      {unseen > 0 && (
+        <button
+          type="button"
+          onClick={jumpToLatest}
+          className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 rounded-full bg-green-600 px-3 py-1.5 text-xs font-semibold text-white shadow-lg hover:bg-green-700 focus-ring"
+        >
+          {unseen} new message{unseen === 1 ? '' : 's'} ↓
+        </button>
+      )}
+      <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto px-4 py-4 bg-slate-50 space-y-1">
         {count === 0 && <div className="text-center text-slate-400 text-sm py-12">No messages yet</div>}
         {messages.map((msg) => (
           <MessageBubble key={msg.id} message={msg} />
@@ -127,6 +166,7 @@ export default function ChatWindow({ conversation, messages: initial, templates,
           />
         ))}
         <div ref={bottomRef} />
+      </div>
       </div>
 
       <ReplyBox

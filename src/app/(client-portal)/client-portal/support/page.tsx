@@ -6,6 +6,8 @@ import { getPortalClientData } from '@/lib/portal/queries'
 import { Phone, MessageSquare, Mail, Building2 } from 'lucide-react'
 import { waLink } from '@/lib/utils'
 
+export const metadata = { title: 'Support' }
+
 const FAQS = [
   {
     q: 'When will my plot be handed over?',

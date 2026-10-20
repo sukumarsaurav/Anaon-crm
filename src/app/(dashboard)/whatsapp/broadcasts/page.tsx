@@ -5,6 +5,8 @@ import PageHeader from '@/components/ui/PageHeader'
 import Button from '@/components/ui/Button'
 import EmptyState from '@/components/ui/EmptyState'
 
+export const metadata = { title: 'Broadcasts' }
+
 export const dynamic = 'force-dynamic'
 
 export default async function BroadcastsPage() {

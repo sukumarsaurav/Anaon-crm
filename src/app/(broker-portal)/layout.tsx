@@ -17,9 +17,10 @@ export default async function BrokerPortalLayout({ children }: { children: React
   if (!broker) redirect('/login')
 
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50">
       <BrokerNav brokerName={broker.full_name} firmName={broker.firm_name} />
-      <main className="ml-60 flex-1 overflow-y-auto">
+      {/* Room for the phone top bar (h-14) and bottom tabs; the desktop sidebar is w-60. */}
+      <main className="md:ml-60 pt-14 pb-20 md:pt-0 md:pb-0">
         {children}
       </main>
     </div>

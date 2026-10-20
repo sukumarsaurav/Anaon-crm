@@ -8,6 +8,8 @@ import EmployeeForm from '@/components/hr/EmployeeForm'
 import ActionButton from '@/components/ui/ActionButton'
 import { deactivateEmployee } from '@/lib/hr/actions'
 
+export const metadata = { title: 'Employee' }
+
 interface PageProps {
   params: Promise<{ id: string }>
 }

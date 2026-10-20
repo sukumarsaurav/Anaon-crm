@@ -5,6 +5,8 @@ import AttendanceCalendar from '@/components/team/AttendanceCalendar'
 import LeaveApplyForm from '@/components/team/LeaveApplyForm'
 import AttendancePageClient from '@/components/team/AttendancePageClient'
 
+export const metadata = { title: 'My Attendance' }
+
 export const dynamic = 'force-dynamic'
 
 export default async function AttendancePage() {

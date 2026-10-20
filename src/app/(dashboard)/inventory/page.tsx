@@ -9,6 +9,8 @@ import Button from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
 
+export const metadata = { title: 'Inventory' }
+
 interface PageProps {
   searchParams: Promise<{ status?: string; type?: string; search?: string }>
 }

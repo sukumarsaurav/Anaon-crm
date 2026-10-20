@@ -12,6 +12,8 @@ import type { LeadSource } from '@/types/leads'
 import DateRangeFilter from '@/components/reports/DateRangeFilter'
 import EmptyState from '@/components/ui/EmptyState'
 
+export const metadata = { title: 'Pipeline Report' }
+
 interface PageProps {
   searchParams: Promise<{ from?: string; to?: string }>
 }

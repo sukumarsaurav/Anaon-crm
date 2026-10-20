@@ -34,7 +34,32 @@ export default function BrokerNav({ brokerName, firmName }: Props) {
   }
 
   return (
-    <aside className="fixed left-0 top-0 z-30 h-screen w-60 bg-slate-900 flex flex-col">
+    <>
+    {/* Phones: compact top bar + bottom tabs. The fixed sidebar left channel partners, who mostly
+        work from a phone, about 135px of screen for the actual page. */}
+    <header className="md:hidden fixed top-0 left-0 right-0 z-30 h-14 bg-slate-900 flex items-center justify-between px-4">
+      <div className="min-w-0">
+        <p className="text-white font-bold text-sm leading-none truncate">{brokerName}</p>
+        <p className="text-primary-400 text-xs mt-0.5 truncate">{firmName || 'Partner Portal'}</p>
+      </div>
+      <button onClick={handleSignOut} aria-label="Sign out"
+        className="p-2 -mr-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-800 focus-ring">
+        <LogOut size={18} />
+      </button>
+    </header>
+    <nav aria-label="Partner portal" className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-slate-900 border-t border-slate-800 flex pb-[env(safe-area-inset-bottom)]">
+      {nav.map(({ label, href, icon: Icon }) => (
+        <Link key={href} href={href} aria-current={isActive(href) ? 'page' : undefined}
+          className={cn(
+            'flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors',
+            isActive(href) ? 'text-primary-400' : 'text-slate-500'
+          )}>
+          <Icon size={20} /><span>{label.replace('My ', '')}</span>
+        </Link>
+      ))}
+    </nav>
+
+    <aside className="hidden md:flex fixed left-0 top-0 z-30 h-screen w-60 bg-slate-900 flex-col">
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 px-5 border-b border-slate-800">
         <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
@@ -75,5 +100,6 @@ export default function BrokerNav({ brokerName, firmName }: Props) {
         </button>
       </div>
     </aside>
+    </>
   )
 }

@@ -7,6 +7,8 @@ import { getLeads, getActiveAdvisors } from '@/lib/leads/queries'
 import PageHeader from '@/components/ui/PageHeader'
 import OverdueLeadsTable from '@/components/leads/OverdueLeadsTable'
 
+export const metadata = { title: 'Overdue Follow-ups' }
+
 export default async function OverdueLeadsPage() {
   const session = await getProfile()
   const role = session?.profile?.role

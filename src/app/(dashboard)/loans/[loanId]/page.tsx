@@ -11,6 +11,8 @@ import DisbursementManager from '@/components/loans/DisbursementManager'
 import { ChevronLeft, CheckCircle2, XCircle, Phone, Building2, Users2 } from 'lucide-react'
 import { formatDate, formatCurrency } from '@/lib/utils'
 
+export const metadata = { title: 'Loan Application' }
+
 interface Props { params: Promise<{ loanId: string }> }
 
 const fmt = (n: number | null) => formatCurrency(n, { precision: 2 })

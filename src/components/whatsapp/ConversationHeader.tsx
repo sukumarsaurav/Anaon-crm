@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { Bot, User, Check } from 'lucide-react'
+import { ArrowLeft, Bot, User, Check } from 'lucide-react'
 import { assignConversation, resolveConversation, takeBotControl } from '@/lib/whatsapp/actions'
 import { CONVERSATION_STATUS_CONFIG } from '@/types/whatsapp'
 import type { WaConversation } from '@/types/whatsapp'
@@ -36,16 +36,24 @@ export default function ConversationHeader({ conversation, advisors }: Props) {
   }
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200">
+    <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-3 bg-white border-b border-slate-200">
       {/* Left: contact info */}
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-semibold text-sm">
+      <div className="flex items-center gap-3 min-w-0">
+        {/* On phones the list is hidden while a chat is open, so this is the way back to it. */}
+        <Link
+          href="/whatsapp/inbox"
+          aria-label="Back to conversations"
+          className="md:hidden -ml-1 p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 focus-ring shrink-0"
+        >
+          <ArrowLeft size={18} />
+        </Link>
+        <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-semibold text-sm shrink-0">
           {getInitials(name)}
         </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="font-semibold text-slate-900 text-sm">{name}</h2>
-            <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${statusCfg.color} ${statusCfg.bg}`}>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <h2 className="font-semibold text-slate-900 text-sm truncate">{name}</h2>
+            <span className={`shrink-0 whitespace-nowrap text-xs px-1.5 py-0.5 rounded-full font-medium ${statusCfg.color} ${statusCfg.bg}`}>
               {statusCfg.label}
             </span>
           </div>
@@ -54,7 +62,7 @@ export default function ConversationHeader({ conversation, advisors }: Props) {
         {conversation.lead && (
           <Link
             href={`/leads/${conversation.lead.id}`}
-            className="text-xs text-blue-600 hover:underline"
+            className="text-xs text-blue-600 hover:underline whitespace-nowrap shrink-0"
           >
             View Lead →
           </Link>
@@ -62,7 +70,7 @@ export default function ConversationHeader({ conversation, advisors }: Props) {
       </div>
 
       {/* Right: actions */}
-      <div className="flex items-center gap-2 relative">
+      <div className="flex items-center gap-2 relative ml-auto">
         {/* Bot toggle */}
         <button
           onClick={handleToggleBot}

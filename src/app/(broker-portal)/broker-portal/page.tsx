@@ -10,6 +10,8 @@ import { LEAD_REG_STATUS_CONFIG, BROKER_STATUS_CONFIG } from '@/types/brokers'
 import { COMMISSION_STATUS_CONFIG } from '@/types/bookings'
 import type { CommissionStatus } from '@/types/bookings'
 
+export const metadata = { title: 'Partner Dashboard' }
+
 export default async function BrokerPortalDashboard() {
   const user = (await getProfile())?.user
   if (!user) redirect('/login')

@@ -10,6 +10,8 @@ import PageHeader from '@/components/ui/PageHeader'
 import Button from '@/components/ui/Button'
 import EmptyState from '@/components/ui/EmptyState'
 
+export const metadata = { title: 'Audit Log' }
+
 const ACTION_COLORS: Record<string, string> = {
   login:                  'bg-emerald-100 text-emerald-700',
   logout:                 'bg-slate-100 text-slate-600',

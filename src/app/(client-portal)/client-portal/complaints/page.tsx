@@ -8,6 +8,8 @@ import { COMPLAINT_STATUS_CONFIG, COMPLAINT_CATEGORY_LABELS } from '@/types/clie
 import ComplaintForm from '@/components/client-portal/ComplaintForm'
 import type { ComplaintStatus, ComplaintCategory } from '@/types/clients'
 
+export const metadata = { title: 'Complaints & Requests' }
+
 export default async function ClientPortalComplaintsPage() {
   const session = await getPortalSession()
   if (!session) redirect('/client-portal/login')

@@ -7,6 +7,8 @@ import ExportButton from '@/components/reports/ExportButton'
 import { formatDate } from '@/lib/utils'
 import EmptyState from '@/components/ui/EmptyState'
 
+export const metadata = { title: 'Inventory Report' }
+
 export default async function InventoryReportsPage() {
   const [availability, plotAgeing, softHolds] = await Promise.all([
     getInventoryAvailability(),

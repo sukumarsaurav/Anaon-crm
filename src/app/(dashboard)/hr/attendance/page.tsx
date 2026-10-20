@@ -6,6 +6,8 @@ import { getAttendanceLogs } from '@/lib/hr/queries'
 import { formatDate } from '@/lib/utils'
 import { ArrowLeft, Clock, MapPin } from 'lucide-react'
 
+export const metadata = { title: 'Attendance' }
+
 function formatTime(ts: string | null) {
   if (!ts) return '—'
   return new Date(ts).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })

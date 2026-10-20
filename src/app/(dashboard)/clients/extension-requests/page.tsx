@@ -10,6 +10,8 @@ import EmptyState from '@/components/ui/EmptyState'
 import ExtensionReviewButtons from '@/components/clients/ExtensionReviewButtons'
 import { CalendarClock } from 'lucide-react'
 
+export const metadata = { title: 'Extension Requests' }
+
 export default async function ExtensionRequestsPage() {
   const [requests, session] = await Promise.all([getPaymentExtensionRequests(), getProfile()])
   const canReview = ['admin', 'manager'].includes(session?.profile?.role ?? '')

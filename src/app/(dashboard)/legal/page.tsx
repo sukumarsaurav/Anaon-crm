@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { getLegalStats, getAllProjectsRERAStatus } from '@/lib/legal/queries'
 import { Shield, AlertTriangle, CheckCircle2, XCircle, Clock, FileText, Lock, Building2 } from 'lucide-react'
 
+export const metadata = { title: 'Legal & Compliance' }
+
 function ScoreBar({ score }: { score: number }) {
   const color = score >= 80 ? 'bg-green-500' : score >= 55 ? 'bg-amber-500' : 'bg-red-500'
   return (

@@ -7,6 +7,8 @@ import { formatDate } from '@/lib/utils'
 import LeaveReviewActions from '@/components/hr/LeaveReviewActions'
 import { ArrowLeft, Calendar } from 'lucide-react'
 
+export const metadata = { title: 'Leave Requests' }
+
 export default async function LeavesPage() {
   const [pending, all] = await Promise.all([
     getLeaveRequests('pending'),

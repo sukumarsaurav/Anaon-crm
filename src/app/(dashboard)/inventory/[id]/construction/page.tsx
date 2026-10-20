@@ -16,6 +16,8 @@ import { Card } from '@/components/ui/Card'
 import Alert from '@/components/ui/Alert'
 import EmptyState from '@/components/ui/EmptyState'
 
+export const metadata = { title: 'Construction Progress' }
+
 interface PageProps {
   params: Promise<{ id: string }>
 }

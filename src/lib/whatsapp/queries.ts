@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { signWhatsAppMedia } from './media'
+import { searchOr } from '@/lib/supabase/search'
 import type { WaConversation, WaMessage, WaTemplate, WaBroadcast } from '@/types/whatsapp'
 
 export async function getConversations(filters: {
@@ -33,11 +34,8 @@ export async function getConversations(filters: {
 
   if (filters.status) query = query.eq('status', filters.status)
   if (filters.assigned_to) query = query.eq('assigned_to', filters.assigned_to)
-  if (filters.search) {
-    query = query.or(
-      `contact_name.ilike.%${filters.search}%,contact_phone.ilike.%${filters.search}%`
-    )
-  }
+  const search = searchOr(filters.search, { text: ['contact_name'], phone: ['contact_phone'] })
+  if (search) query = query.or(search)
 
   const { data, error } = await query.limit(100)
   if (error) return []

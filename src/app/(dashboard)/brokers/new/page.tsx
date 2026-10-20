@@ -3,6 +3,8 @@ export const dynamic = 'force-dynamic'
 import BrokerForm from '@/components/brokers/BrokerForm'
 import PageHeader from '@/components/ui/PageHeader'
 
+export const metadata = { title: 'Add Channel Partner' }
+
 export default function NewBrokerPage() {
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">

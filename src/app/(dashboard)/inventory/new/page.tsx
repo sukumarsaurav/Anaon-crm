@@ -1,6 +1,8 @@
 import ProjectForm from '@/components/inventory/ProjectForm'
 import PageHeader from '@/components/ui/PageHeader'
 
+export const metadata = { title: 'New Project' }
+
 export default function NewProjectPage() {
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">

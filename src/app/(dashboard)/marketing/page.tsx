@@ -14,6 +14,8 @@ import PageHeader from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { TrendingUp, Target, Users, IndianRupee, Megaphone, MousePointerClick } from 'lucide-react'
 
+export const metadata = { title: 'Marketing ROI' }
+
 export default async function MarketingPage() {
   const supabase = await createClient()
   const [campaigns, sourceROI, campaignROI, stats, projectsRes] = await Promise.all([

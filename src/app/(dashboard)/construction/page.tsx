@@ -13,6 +13,8 @@ import PageHeader from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
 
+export const metadata = { title: 'Construction' }
+
 export default async function ConstructionDashboardPage() {
   const data = await getConstructionDashboard()
 

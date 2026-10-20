@@ -6,6 +6,8 @@ import { getAllotmentLetterData } from '@/lib/bookings/queries'
 import AllotmentLetterView from '@/components/bookings/AllotmentLetterView'
 import { ChevronLeft, Download } from 'lucide-react'
 
+export const metadata = { title: 'Allotment Letter' }
+
 interface PageProps {
   params: Promise<{ id: string }>
 }

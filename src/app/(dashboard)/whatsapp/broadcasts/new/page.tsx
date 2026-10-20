@@ -3,6 +3,8 @@ import BroadcastForm from '@/components/whatsapp/BroadcastForm'
 import PageHeader from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 
+export const metadata = { title: 'New Broadcast' }
+
 export default async function NewBroadcastPage() {
   const templates = await getTemplates(true)
 

@@ -9,6 +9,8 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { Card } from '@/components/ui/Card'
 import PageHeader from '@/components/ui/PageHeader'
 
+export const metadata = { title: 'Payment Schedule' }
+
 interface PageProps {
   params: Promise<{ id: string; bookingId: string }>
 }

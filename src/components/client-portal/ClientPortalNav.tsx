@@ -70,8 +70,20 @@ export default function ClientPortalNav({ clientName, projectName }: Props) {
         </div>
       </aside>
 
+      {/* Mobile top bar: sign-out lived only in the desktop sidebar, so phones had no way out. */}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-30 h-14 bg-slate-900 flex items-center justify-between px-4">
+        <div className="min-w-0">
+          <p className="text-white font-bold text-sm leading-none truncate">{clientName}</p>
+          <p className="text-primary-400 text-xs mt-0.5 truncate">{projectName || 'Client Portal'}</p>
+        </div>
+        <button onClick={handleSignOut} aria-label="Sign out"
+          className="p-2 -mr-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-800 focus-ring">
+          <LogOut size={18} />
+        </button>
+      </header>
+
       {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-slate-900 border-t border-slate-800 flex">
+      <nav aria-label="Client portal" className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-slate-900 border-t border-slate-800 flex pb-[env(safe-area-inset-bottom)]">
         {nav.map(({ label, href, icon: Icon }) => (
           <Link key={href} href={href}
             className={cn(

@@ -3,6 +3,8 @@ import PageHeader from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { agencyXConfigured } from '@/lib/whatsapp/agencyx-api'
 
+export const metadata = { title: 'New Template' }
+
 export default function NewTemplatePage() {
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">

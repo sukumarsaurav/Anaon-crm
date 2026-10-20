@@ -1,3 +1,4 @@
+import { recordTitle } from '@/lib/metadata/recordTitle'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -326,3 +327,5 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
     </div>
   )
 }
+
+export const generateMetadata = ({ params }: { params: Promise<{ id: string }> }) => recordTitle('leads', ['full_name'], params, 'Lead')

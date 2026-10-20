@@ -4,6 +4,8 @@ import LeadForm from '@/components/leads/LeadForm'
 import { getProfile } from '@/lib/supabase/getProfile'
 import PageHeader from '@/components/ui/PageHeader'
 
+export const metadata = { title: 'Edit Lead' }
+
 interface EditLeadPageProps {
   params: Promise<{ id: string }>
 }

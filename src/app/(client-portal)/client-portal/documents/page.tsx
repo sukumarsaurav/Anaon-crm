@@ -16,6 +16,8 @@ import { ExternalLink, FileText, Upload } from 'lucide-react'
 import type { DocType, DocStatus } from '@/types/clients'
 import EmptyState from '@/components/ui/EmptyState'
 
+export const metadata = { title: 'My Documents' }
+
 export default async function ClientPortalDocumentsPage() {
   const session = await getPortalSession()
   if (!session) redirect('/client-portal/login')

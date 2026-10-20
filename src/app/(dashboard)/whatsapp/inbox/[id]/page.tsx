@@ -1,3 +1,4 @@
+import { recordTitle } from '@/lib/metadata/recordTitle'
 import { notFound } from 'next/navigation'
 import { getConversationById, getMessages, getTemplates } from '@/lib/whatsapp/queries'
 import { getActiveAdvisors } from '@/lib/leads/queries'
@@ -24,3 +25,5 @@ export default async function ConversationPage({ params }: Props) {
 
   return <ChatWindow conversation={conversation} messages={messages} templates={templates} advisors={advisors} />
 }
+
+export const generateMetadata = ({ params }: { params: Promise<{ id: string }> }) => recordTitle('whatsapp_conversations', ['contact_name', 'contact_phone'], params, 'WhatsApp Chat')

@@ -7,6 +7,8 @@ import { formatDate, formatCurrency } from '@/lib/utils'
 import PayrollRunActions, { FinalizeRunButton } from '@/components/hr/PayrollRunActions'
 import { ArrowLeft, IndianRupee, Users, CheckCircle2 } from 'lucide-react'
 
+export const metadata = { title: 'Payroll' }
+
 export default async function PayrollPage() {
   const runs = await getPayrollRuns()
   const latestRun = runs[0] ?? null

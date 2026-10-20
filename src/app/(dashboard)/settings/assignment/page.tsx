@@ -7,6 +7,8 @@ import { getAssignmentRules } from '@/lib/leads/assignmentRules'
 import PageHeader from '@/components/ui/PageHeader'
 import AssignmentRulesManager from '@/components/settings/AssignmentRulesManager'
 
+export const metadata = { title: 'Assignment Rules' }
+
 export default async function AssignmentSettingsPage() {
   const role = (await getProfile())?.profile?.role
   if (role !== 'admin') notFound()

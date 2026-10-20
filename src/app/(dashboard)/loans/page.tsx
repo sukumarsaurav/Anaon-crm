@@ -11,6 +11,8 @@ import { Card } from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
 import StatusBadge from '@/components/ui/StatusBadge'
 
+export const metadata = { title: 'Loans' }
+
 const fmt = (n: number) => formatCurrency(n)
 
 export default async function LoansPage() {

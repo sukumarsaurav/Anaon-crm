@@ -20,7 +20,8 @@ const notoDevanagari = Noto_Sans_Devanagari({
 });
 
 export const metadata: Metadata = {
-  title: "ANON INDIA CRM",
+  // Pages set their own title; every tab used to read "ANON INDIA CRM".
+  title: { template: "%s · ANON CRM", default: "ANON INDIA CRM" },
   description: "Real Estate CRM for ANON INDIA",
 };
 

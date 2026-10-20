@@ -5,6 +5,8 @@ import { getProjects } from '@/lib/leads/queries'
 import PageHeader from '@/components/ui/PageHeader'
 import AlbumsManager from '@/components/albums/AlbumsManager'
 
+export const metadata = { title: 'Property Albums' }
+
 export default async function AlbumsPage() {
   const [albums, projects] = await Promise.all([getAlbums(), getProjects()])
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''

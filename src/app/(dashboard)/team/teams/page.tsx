@@ -3,6 +3,8 @@ export const dynamic = 'force-dynamic'
 import { getTeamsData } from '@/lib/team/teams'
 import TeamTree from '@/components/team/TeamTree'
 
+export const metadata = { title: 'Teams' }
+
 export default async function TeamsPage() {
   const data = await getTeamsData()
   if (!data) return null

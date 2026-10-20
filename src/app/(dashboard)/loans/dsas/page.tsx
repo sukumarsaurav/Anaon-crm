@@ -6,6 +6,8 @@ import { Users2, Phone, Mail } from 'lucide-react'
 import PageHeader from '@/components/ui/PageHeader'
 import EmptyState from '@/components/ui/EmptyState'
 
+export const metadata = { title: 'DSAs' }
+
 export default async function DSAsPage() {
   const dsas = await getDSAs()
   const active = dsas.filter(d => d.is_active)

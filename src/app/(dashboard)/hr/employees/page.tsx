@@ -6,6 +6,8 @@ import { formatDate, formatCurrency } from '@/lib/utils'
 import { ArrowLeft, User, Phone, Mail, Building2 } from 'lucide-react'
 import Avatar from '@/components/ui/Avatar'
 
+export const metadata = { title: 'Employees' }
+
 export default async function EmployeesPage() {
   const employees = await getEmployees()
 

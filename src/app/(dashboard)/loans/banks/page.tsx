@@ -7,6 +7,8 @@ import { formatCurrency } from '@/lib/utils'
 import PageHeader from '@/components/ui/PageHeader'
 import EmptyState from '@/components/ui/EmptyState'
 
+export const metadata = { title: 'Bank Tie-ups' }
+
 export default async function BanksPage() {
   const banks = await getBankTieups()
   const active = banks.filter(b => b.is_active)

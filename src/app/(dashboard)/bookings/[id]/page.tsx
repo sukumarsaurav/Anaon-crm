@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import { recordTitle } from '@/lib/metadata/recordTitle'
 import { todayIST } from '@/lib/datetime'
 import { notFound } from 'next/navigation'
 import { getBookingById, getBookingPayments, getBookingCommission } from '@/lib/bookings/queries'
@@ -227,3 +228,5 @@ export default async function BookingDetailPage({ params }: PageProps) {
     </div>
   )
 }
+
+export const generateMetadata = ({ params }: { params: Promise<{ id: string }> }) => recordTitle('bookings', ['booking_number'], params, 'Booking')

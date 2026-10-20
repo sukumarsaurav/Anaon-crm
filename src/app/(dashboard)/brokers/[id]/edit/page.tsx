@@ -7,6 +7,8 @@ import { getProfile } from '@/lib/supabase/getProfile'
 import BrokerForm from '@/components/brokers/BrokerForm'
 import { ArrowLeft } from 'lucide-react'
 
+export const metadata = { title: 'Edit Channel Partner' }
+
 interface PageProps {
   params: Promise<{ id: string }>
 }

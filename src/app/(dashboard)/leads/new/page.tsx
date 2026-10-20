@@ -3,6 +3,8 @@ import LeadForm from '@/components/leads/LeadForm'
 import { getProfile } from '@/lib/supabase/getProfile'
 import PageHeader from '@/components/ui/PageHeader'
 
+export const metadata = { title: 'New Lead' }
+
 export default async function NewLeadPage() {
   const user = (await getProfile())?.user
   if (!user) return null

@@ -1,9 +1,11 @@
 import { MessageSquare } from 'lucide-react'
 import EmptyState from '@/components/ui/EmptyState'
 
+export const metadata = { title: 'WhatsApp Inbox' }
+
 export default function InboxPage() {
   return (
-    <div className="h-full flex items-center justify-center bg-slate-50">
+    <div className="h-full hidden md:flex items-center justify-center bg-slate-50">
       <EmptyState
         icon={<MessageSquare size={40} />}
         title="Select a conversation"

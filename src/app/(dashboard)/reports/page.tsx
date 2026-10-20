@@ -8,6 +8,8 @@ import SparkLine from '@/components/reports/SparkLine'
 import { BarChart3, Users, MapPin, BookOpen, IndianRupee, ArrowRight, Gauge } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 
+export const metadata = { title: 'Reports' }
+
 export default async function ReportsPage() {
   const [exec, dailyTrend, bySource, byProject, revenuetrend] = await Promise.all([
     getExecDashboard(),

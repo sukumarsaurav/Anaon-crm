@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import { recordTitle } from '@/lib/metadata/recordTitle'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -292,3 +293,5 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
     </div>
   )
 }
+
+export const generateMetadata = ({ params }: { params: Promise<{ id: string }> }) => recordTitle('clients', ['full_name'], params, 'Client')

@@ -9,6 +9,8 @@ import BookingStatusBadge from '@/components/bookings/BookingStatusBadge'
 import PageHeader from '@/components/ui/PageHeader'
 import Alert from '@/components/ui/Alert'
 
+export const metadata = { title: 'Cancel Booking' }
+
 interface PageProps {
   params: Promise<{ id: string }>
 }

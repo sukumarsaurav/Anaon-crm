@@ -10,6 +10,8 @@ import PageHeader from '@/components/ui/PageHeader'
 import EmptyState from '@/components/ui/EmptyState'
 import { Plus, Users } from 'lucide-react'
 
+export const metadata = { title: 'Clients' }
+
 interface PageProps {
   searchParams: Promise<{ search?: string; kyc_status?: string; project_id?: string; page?: string }>
 }

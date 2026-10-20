@@ -5,6 +5,8 @@ import { getPlotById, getProjectById } from '@/lib/inventory/queries'
 import PlotForm from '@/components/inventory/PlotForm'
 import PageHeader from '@/components/ui/PageHeader'
 
+export const metadata = { title: 'Edit Plot' }
+
 interface PageProps {
   params: Promise<{ id: string; plotId: string }>
 }

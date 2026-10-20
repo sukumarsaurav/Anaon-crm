@@ -5,6 +5,8 @@ import { ShieldCheck, Webhook, GitBranch, ChevronRight } from 'lucide-react'
 import { getProfile } from '@/lib/supabase/getProfile'
 import PageHeader from '@/components/ui/PageHeader'
 
+export const metadata = { title: 'Settings' }
+
 interface SettingLink {
   href: string
   title: string

@@ -5,6 +5,8 @@ import AutoReplyRuleList from '@/components/whatsapp/AutoReplyRuleList'
 import PageHeader from '@/components/ui/PageHeader'
 import { activeWhatsAppProvider } from '@/lib/whatsapp/send'
 
+export const metadata = { title: 'Auto-Reply Rules' }
+
 export default async function AutoReplyPage() {
   const rules = await getAutoReplyRules()
   // With AgencyX connected it owns the number and answers chats with its own bot and

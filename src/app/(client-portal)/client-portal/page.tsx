@@ -8,6 +8,8 @@ import { CreditCard, FileText, Building2, MessageSquare, AlertCircle, CheckCircl
 import Link from 'next/link'
 import { COMPLAINT_STATUS_CONFIG } from '@/types/clients'
 
+export const metadata = { title: 'My Property' }
+
 export default async function ClientPortalDashboard() {
   const session = await getPortalSession()
   if (!session) redirect('/client-portal/login')

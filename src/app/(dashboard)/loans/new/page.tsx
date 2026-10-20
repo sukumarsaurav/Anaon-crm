@@ -5,6 +5,8 @@ import { getBankTieups, getDSAs } from '@/lib/loans/queries'
 import PageHeader from '@/components/ui/PageHeader'
 import LoanApplicationForm from '@/components/loans/LoanApplicationForm'
 
+export const metadata = { title: 'New Loan Application' }
+
 export default async function NewLoanApplicationPage({
   searchParams,
 }: {

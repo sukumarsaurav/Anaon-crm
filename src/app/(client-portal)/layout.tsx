@@ -13,7 +13,7 @@ export default async function ClientPortalLayout({ children }: { children: React
       <ClientPortalNav
         clientName={client.full_name}
       />
-      <main className="md:ml-60 pb-20 md:pb-0">
+      <main className="md:ml-60 pt-14 pb-20 md:pt-0 md:pb-0">
         {children}
       </main>
     </div>

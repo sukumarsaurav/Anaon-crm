@@ -8,6 +8,8 @@ import DateRangeFilter from '@/components/reports/DateRangeFilter'
 import ExportButton from '@/components/reports/ExportButton'
 import { formatCurrency } from '@/lib/utils'
 
+export const metadata = { title: 'Lead Report' }
+
 interface PageProps {
   searchParams: Promise<{ from?: string; to?: string }>
 }

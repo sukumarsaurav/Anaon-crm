@@ -17,6 +17,8 @@ import type { BrokerStatus } from '@/types/brokers'
 import type { CommissionStatus } from '@/types/bookings'
 import EmptyState from '@/components/ui/EmptyState'
 
+export const metadata = { title: 'Channel Partner' }
+
 interface PageProps {
   params: Promise<{ id: string }>
 }

@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import OtpLoginForm from '@/components/client-portal/OtpLoginForm'
 
+export const metadata = { title: 'Client Login' }
+
 export default async function ClientPortalLoginPage() {
   // If already has a valid session, redirect to portal
   const cookieStore = await cookies()

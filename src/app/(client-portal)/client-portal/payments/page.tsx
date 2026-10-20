@@ -12,6 +12,8 @@ import type { PaymentStatus } from '@/types/clients'
 import { CheckCircle, Clock, AlertCircle } from 'lucide-react'
 import EmptyState from '@/components/ui/EmptyState'
 
+export const metadata = { title: 'My Payments' }
+
 export default async function ClientPortalPaymentsPage() {
   const session = await getPortalSession()
   if (!session) redirect('/client-portal/login')

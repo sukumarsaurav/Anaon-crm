@@ -7,6 +7,8 @@ import { formatDate } from '@/lib/utils'
 import AutomationToggle from '@/components/automation/AutomationToggle'
 import { Plus, Zap, CheckCircle2, XCircle, Clock, LayoutTemplate } from 'lucide-react'
 
+export const metadata = { title: 'Automations' }
+
 export default async function AutomationPage() {
   const [automations, logs, stats] = await Promise.all([
     getAutomations(),

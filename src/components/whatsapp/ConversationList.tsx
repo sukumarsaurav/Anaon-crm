@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import ConversationItem from './ConversationItem'
+import { getConversations } from '@/lib/whatsapp/queries'
 import type { WaConversation, WaConversationStatus } from '@/types/whatsapp'
 
 interface Props {
@@ -22,11 +23,33 @@ export default function ConversationList({ conversations, activeId }: Props) {
   const [statusFilter, setStatusFilter] = useState<WaConversationStatus | 'all'>('all')
   const [, startTransition] = useTransition()
 
-  const filtered = conversations.filter((c) => {
+  // Only the latest 100 chats are loaded, so filtering them could never find an older one.
+  // Two or more characters also search every conversation on the server.
+  const term = search.trim()
+  const [remote, setRemote] = useState<{ term: string; rows: WaConversation[] } | null>(null)
+  useEffect(() => {
+    if (term.length < 2) return
+    let cancelled = false
+    const t = setTimeout(async () => {
+      const rows = await getConversations({ search: term })
+      if (!cancelled) setRemote({ term, rows })
+    }, 300)
+    return () => {
+      cancelled = true
+      clearTimeout(t)
+    }
+  }, [term])
+  const serverRows = term.length >= 2 && remote?.term === term ? remote.rows : null
+  const searchingServer = term.length >= 2 && !serverRows
+
+  const lower = term.toLowerCase()
+  const digits = term.replace(/\D/g, '')
+  const filtered = (serverRows ?? conversations).filter((c) => {
     const matchesSearch =
-      !search ||
-      (c.contact_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      c.contact_phone.includes(search)
+      serverRows !== null ||
+      !term ||
+      (c.contact_name ?? '').toLowerCase().includes(lower) ||
+      (digits.length > 0 && c.contact_phone.replace(/\D/g, '').includes(digits))
     const matchesStatus = statusFilter === 'all' || c.status === statusFilter
     return matchesSearch && matchesStatus
   })
@@ -63,8 +86,15 @@ export default function ConversationList({ conversations, activeId }: Props) {
 
       {/* List */}
       <div className="flex-1 overflow-y-auto">
+        {searchingServer && (
+          <p className="px-4 py-2 text-xs text-slate-400" aria-live="polite">Searching all conversations…</p>
+        )}
         {filtered.length === 0 ? (
-          <div className="p-8 text-center text-slate-400 text-sm">No conversations</div>
+          !searchingServer && (
+            <div className="p-8 text-center text-slate-400 text-sm">
+              {term ? `No conversations match “${term}”` : 'No conversations'}
+            </div>
+          )
         ) : (
           filtered.map((conv) => (
             <ConversationItem key={conv.id} conversation={conv} isActive={conv.id === activeId} />

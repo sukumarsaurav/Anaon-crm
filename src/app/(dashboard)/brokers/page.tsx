@@ -11,6 +11,8 @@ import Button from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
 
+export const metadata = { title: 'Channel Partners' }
+
 interface PageProps {
   searchParams: Promise<{ status?: string; search?: string; page?: string }>
 }

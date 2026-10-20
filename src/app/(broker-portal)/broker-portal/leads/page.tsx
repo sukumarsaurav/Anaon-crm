@@ -9,6 +9,8 @@ import { formatDate } from '@/lib/utils'
 import { LEAD_REG_STATUS_CONFIG } from '@/types/brokers'
 import EmptyState from '@/components/ui/EmptyState'
 
+export const metadata = { title: 'My Leads' }
+
 export default async function BrokerLeadsPage() {
   const supabase = await createClient()
   const user = (await getProfile())?.user

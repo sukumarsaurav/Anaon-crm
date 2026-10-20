@@ -6,6 +6,8 @@ import { getActiveAdvisors } from '@/lib/leads/queries'
 import PageHeader from '@/components/ui/PageHeader'
 import CsvImport from '@/components/leads/CsvImport'
 
+export const metadata = { title: 'Import Leads' }
+
 export default async function LeadsImportPage() {
   const session = await getProfile()
   const role = session?.profile?.role

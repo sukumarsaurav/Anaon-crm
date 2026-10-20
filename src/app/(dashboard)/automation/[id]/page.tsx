@@ -9,6 +9,8 @@ import Link from 'next/link'
 import { ChevronLeft, CheckCircle2, XCircle, Clock } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
+export const metadata = { title: 'Automation' }
+
 interface Props { params: Promise<{ id: string }> }
 
 export default async function AutomationDetailPage({ params }: Props) {

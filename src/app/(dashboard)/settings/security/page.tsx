@@ -6,6 +6,8 @@ import { notFound } from 'next/navigation'
 import ActiveSessions from '@/components/security/ActiveSessions'
 import { getActiveSessions } from '@/lib/security/actions'
 
+export const metadata = { title: 'Security Settings' }
+
 export default async function SecuritySettingsPage() {
   const supabase = await createClient()
   const user = (await getProfile())?.user

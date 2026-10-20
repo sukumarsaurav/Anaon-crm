@@ -8,6 +8,8 @@ import PageHeader from '@/components/ui/PageHeader'
 import Button from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 
+export const metadata = { title: 'Performance' }
+
 export const dynamic = 'force-dynamic'
 
 interface Props {

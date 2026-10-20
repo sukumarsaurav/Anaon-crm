@@ -21,6 +21,8 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import { BOOKING_STATUS_CONFIG } from '@/types/bookings'
 import type { BookingFull } from '@/types/bookings'
 
+export const metadata = { title: 'Dashboard' }
+
 const MODULES = [
   { href: '/leads',        label: 'Leads',        icon: Users,        color: 'text-primary-600', bg: 'bg-primary-50'  },
   { href: '/clients',      label: 'Clients',      icon: UserCheck,    color: 'text-blue-600',   bg: 'bg-blue-50'    },

@@ -10,7 +10,7 @@ export default async function InboxLayout({ children }: { children: React.ReactN
   return (
     <div className="flex h-full">
       <InboxSidebar initial={conversations} />
-      <div className="flex-1 overflow-hidden">{children}</div>
+      <div className="flex-1 min-w-0 overflow-hidden">{children}</div>
     </div>
   )
 }

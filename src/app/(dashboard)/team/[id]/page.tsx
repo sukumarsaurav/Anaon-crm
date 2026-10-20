@@ -20,6 +20,8 @@ import Button from '@/components/ui/Button'
 import EmptyState from '@/components/ui/EmptyState'
 import Avatar from '@/components/ui/Avatar'
 
+export const metadata = { title: 'Team Member' }
+
 export const dynamic = 'force-dynamic'
 
 interface Props {

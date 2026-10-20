@@ -6,6 +6,8 @@ import { formatCurrency } from '@/lib/utils'
 import CommissionBatchPanel from '@/components/brokers/CommissionBatchPanel'
 import { ArrowLeft, DollarSign, Clock, CheckCircle } from 'lucide-react'
 
+export const metadata = { title: 'Commissions' }
+
 interface PageProps {
   searchParams: Promise<{ status?: string }>
 }

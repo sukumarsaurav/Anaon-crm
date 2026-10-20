@@ -6,6 +6,8 @@ import { Card } from '@/components/ui/Card'
 import BroadcastControls from '@/components/whatsapp/BroadcastControls'
 import { formatDateTime } from '@/lib/utils'
 
+export const metadata = { title: 'Broadcast' }
+
 export const dynamic = 'force-dynamic'
 
 const STATUS_STYLE: Record<string, string> = {

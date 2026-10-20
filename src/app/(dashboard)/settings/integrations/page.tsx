@@ -5,6 +5,8 @@ import { getProfile } from '@/lib/supabase/getProfile'
 import PageHeader from '@/components/ui/PageHeader'
 import IntegrationsPanel from '@/components/settings/IntegrationsPanel'
 
+export const metadata = { title: 'Integrations' }
+
 export default async function IntegrationsSettingsPage() {
   const role = (await getProfile())?.profile?.role
   if (role !== 'admin') notFound()

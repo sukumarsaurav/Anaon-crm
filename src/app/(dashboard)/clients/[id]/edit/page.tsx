@@ -5,6 +5,8 @@ import { getClientById } from '@/lib/clients/queries'
 import ClientForm from '@/components/clients/ClientForm'
 import PageHeader from '@/components/ui/PageHeader'
 
+export const metadata = { title: 'Edit Client' }
+
 interface PageProps {
   params: Promise<{ id: string }>
 }

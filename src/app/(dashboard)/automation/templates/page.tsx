@@ -4,6 +4,8 @@ import InstallTemplateButton from '@/components/automation/InstallTemplateButton
 import { createClient } from '@/lib/supabase/server'
 import { ChevronLeft, Zap } from 'lucide-react'
 
+export const metadata = { title: 'Automation Templates' }
+
 export const dynamic = 'force-dynamic'
 
 const CATEGORY_ORDER = ['Lead', 'Sales', 'Finance', 'Construction', 'Client', 'Broker']

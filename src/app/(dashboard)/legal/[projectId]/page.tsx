@@ -10,6 +10,8 @@ async function uploadDoc(fd: FormData) { 'use server'; const { addProjectDocumen
 import { ChevronLeft, CheckCircle2, XCircle, AlertTriangle, Upload, ExternalLink, Clock } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
+export const metadata = { title: 'Project Compliance' }
+
 interface Props { params: Promise<{ projectId: string }> }
 
 export default async function ProjectRERAPage({ params }: Props) {

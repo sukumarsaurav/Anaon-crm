@@ -6,6 +6,8 @@ import { getPortalClientData } from '@/lib/portal/queries'
 import { formatDate } from '@/lib/utils'
 import { Building2, CheckCircle, Clock } from 'lucide-react'
 
+export const metadata = { title: 'Construction Progress' }
+
 export default async function ClientPortalConstructionPage() {
   const session = await getPortalSession()
   if (!session) redirect('/client-portal/login')

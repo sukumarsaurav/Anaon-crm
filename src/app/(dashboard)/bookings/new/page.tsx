@@ -5,6 +5,8 @@ import { getActiveBrokers } from '@/lib/bookings/queries'
 import BookingCreateForm from '@/components/bookings/BookingCreateForm'
 import PageHeader from '@/components/ui/PageHeader'
 
+export const metadata = { title: 'New Booking' }
+
 export default async function NewBookingPage() {
   const supabase = await createClient()
 

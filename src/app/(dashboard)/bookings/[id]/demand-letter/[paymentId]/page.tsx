@@ -6,6 +6,8 @@ import { getDemandLetterData } from '@/lib/bookings/queries'
 import DemandLetterView from '@/components/bookings/DemandLetterView'
 import { ChevronLeft, Download } from 'lucide-react'
 
+export const metadata = { title: 'Demand Letter' }
+
 interface PageProps {
   params: Promise<{ id: string; paymentId: string }>
 }

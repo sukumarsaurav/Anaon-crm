@@ -5,6 +5,8 @@ import AutomationBuilder from '@/components/automation/AutomationBuilder'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 
+export const metadata = { title: 'New Automation' }
+
 export default async function NewAutomationPage() {
   const supabase = await createClient()
 

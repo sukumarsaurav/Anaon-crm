@@ -9,6 +9,8 @@ import { toggleLegalTemplate } from '@/lib/legal/actions'
 import { ChevronLeft, FileText, Download, CheckCircle2, XCircle } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
+export const metadata = { title: 'Legal Templates' }
+
 const TYPE_ORDER = LEGAL_DOCUMENT_TYPES
 
 export default async function LegalDocumentsPage() {

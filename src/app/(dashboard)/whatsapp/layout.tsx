@@ -16,7 +16,7 @@ export default function WhatsAppLayout({ children }: { children: React.ReactNode
   const pathname = usePathname()
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
+    <div className="flex flex-col h-[calc(100dvh-4rem)]">
       {/* Tab bar */}
       <div className="flex-shrink-0 bg-white border-b border-slate-200 px-4 flex items-center gap-1 overflow-x-auto">
         {tabs.map(({ label, href, icon: Icon }) => {

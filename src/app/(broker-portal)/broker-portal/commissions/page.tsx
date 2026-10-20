@@ -9,6 +9,8 @@ import type { CommissionStatus } from '@/types/bookings'
 import { DollarSign, Clock, CheckCircle, TrendingUp } from 'lucide-react'
 import EmptyState from '@/components/ui/EmptyState'
 
+export const metadata = { title: 'My Commissions' }
+
 export default async function BrokerCommissionsPage() {
   const user = (await getProfile())?.user
   if (!user) redirect('/login')

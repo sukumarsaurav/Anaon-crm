@@ -6,6 +6,8 @@ import { getBrokerByAuthUser, getPortalAvailablePlots } from '@/lib/brokers/quer
 import { formatCurrency } from '@/lib/utils'
 import { Building2 } from 'lucide-react'
 
+export const metadata = { title: 'Available Inventory' }
+
 export default async function BrokerInventoryPage() {
   const user = (await getProfile())?.user
   if (!user) redirect('/login')
