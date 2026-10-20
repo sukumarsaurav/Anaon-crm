@@ -13,7 +13,7 @@ export default function NotFound() {
           It may have been moved or deleted, or you may not have access to it.
         </p>
         <Link
-          href="/"
+          href="/dashboard"
           className="mt-6 inline-flex h-10 items-center px-4 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-hover focus-ring"
         >
           Go to dashboard

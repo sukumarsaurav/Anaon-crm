@@ -39,7 +39,7 @@ export default function ErrorView({
           {/* Plain anchor on purpose: a full navigation clears a broken client state. */}
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a
-            href="/"
+            href="/dashboard"
             className="h-10 px-4 inline-flex items-center rounded-lg border border-slate-300 bg-white text-sm font-bold text-slate-700 hover:bg-slate-50 focus-ring"
           >
             Go to dashboard

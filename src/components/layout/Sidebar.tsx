@@ -32,7 +32,7 @@ const navGroups: NavGroup[] = [
   {
     label: 'Core CRM',
     items: [
-      { label: 'Dashboard', href: '/', icon: LayoutDashboard },
+      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
       { label: 'Leads', href: '/leads', icon: Users, badge: 'overdueLeads' },
       { label: 'Clients', href: '/clients', icon: UserCheck },
       { label: 'Bookings', href: '/bookings', icon: BookOpen },
