@@ -433,14 +433,19 @@ export async function getBrokerCommissions(from?: string, to?: string) {
   const supabase = await createClient()
   let q = supabase
     .from('broker_commissions')
-    .select('*, broker:brokers(name, phone), booking:bookings(booking_number, total_sale_value, project:projects(name))')
+    // brokers has full_name (not name), and the amount column is commission_amount (not amount):
+    // the bad column made the whole query fail, so this report was always empty ("Commission due ₹0").
+    .select('*, broker:brokers(full_name, phone), booking:bookings(booking_number, total_sale_value, project:projects(name))')
     .order('created_at', { ascending: false })
   if (from) q = q.gte('created_at', from)
   if (to) q = q.lte('created_at', to)
-  const { data } = await q
-  const due = (data ?? []).filter((c: any) => c.status === 'pending').reduce((s: number, c: any) => s + Number(c.amount ?? 0), 0)
-  const paid = (data ?? []).filter((c: any) => c.status === 'paid').reduce((s: number, c: any) => s + Number(c.amount ?? 0), 0)
-  return { commissions: data ?? [], due, paid }
+  const { data, error } = await q
+  if (error) console.error('[reports] broker commissions query failed:', error.message)
+  const rows = (data ?? []).map((c: any) => ({ ...c, amount: Number(c.commission_amount ?? 0), broker: c.broker ? { ...c.broker, name: c.broker.full_name } : null }))
+  // Still owed to brokers = approved or awaiting approval; voided ones are neither.
+  const due = rows.filter((c: any) => c.status === 'pending' || c.status === 'approved').reduce((s: number, c: any) => s + c.amount, 0)
+  const paid = rows.filter((c: any) => c.status === 'paid').reduce((s: number, c: any) => s + c.amount, 0)
+  return { commissions: rows, due, paid }
 }
 
 // ── Inventory Reports ─────────────────────────────────────────────────────────

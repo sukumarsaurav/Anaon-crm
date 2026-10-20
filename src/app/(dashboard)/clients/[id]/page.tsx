@@ -11,6 +11,7 @@ import { createClient as createSupabase } from '@/lib/supabase/server'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { OCCUPATION_LABELS } from '@/types/clients'
 import KycStatusBadge from '@/components/clients/KycStatusBadge'
+import { displayPii } from '@/lib/security/pii'
 import KycChecklist from '@/components/clients/KycChecklist'
 import BookingSummaryCard from '@/components/clients/BookingSummaryCard'
 import ClientDocumentList from '@/components/clients/ClientDocumentList'
@@ -137,7 +138,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
                 {client.pan_encrypted && (
                   <div>
                     <p className="text-xs text-slate-500">PAN</p>
-                    <p className="font-medium text-slate-800 font-mono">{client.pan_encrypted}</p>
+                    <p className="font-medium text-slate-800 font-mono">{displayPii(client.pan_encrypted)}</p>
                   </div>
                 )}
                 {client.occupation_type && (

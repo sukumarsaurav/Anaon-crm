@@ -9,12 +9,14 @@ export function renderTemplate(
   variableNames: string[],
   values: Record<string, string>
 ): string {
-  let rendered = body
-  variableNames.forEach((name, i) => {
-    const value = values[name] || `[${name}]`
-    rendered = rendered.replaceAll(`{{${i + 1}}}`, value).replaceAll(`{{${name}}}`, value)
+  // One pass: replacing variable by variable re-scanned text already substituted, so a value
+  // that happened to contain "{{2}}" was expanded again.
+  return body.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (whole, key: string) => {
+    const byPosition = /^\d+$/.test(key) ? variableNames[Number(key) - 1] : undefined
+    const name = byPosition ?? (variableNames.includes(key) ? key : undefined)
+    if (name === undefined) return whole
+    return values[name] || `[${name}]`
   })
-  return rendered
 }
 
 /** Named variables in first-appearance order — the order Meta numbers them in. */

@@ -11,7 +11,7 @@ const BOOKING_SELECT = `
   project:projects!bookings_project_id_fkey(id, name, city, type, rera_number, address),
   advisor:profiles!bookings_advisor_id_fkey(id, full_name, phone),
   approver:profiles!bookings_approved_by_fkey(id, full_name),
-  broker:brokers!bookings_broker_id_fkey(id, full_name, firm_name, commission_rate)
+  broker:brokers!bookings_broker_fk(id, full_name, firm_name, commission_rate)
 `
 
 export async function getBookings(filters: {
@@ -52,7 +52,9 @@ export async function getBookings(filters: {
   const offset = filters.offset ?? 0
   query = query.range(offset, offset + limit - 1)
 
-  const { data, count } = await query
+  const { data, count, error } = await query
+  // A bad embed or column used to come back as "no bookings" with nothing logged.
+  if (error) console.error('[bookings] list query failed:', error.message)
   return { bookings: (data ?? []) as BookingFull[], total: count ?? 0 }
 }
 

@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  // Test doubles are deliberately loosely typed.
+  { files: ["tests/**/*.{ts,mjs}"], rules: { "@typescript-eslint/no-explicit-any": "off" } },
 ]);
 
 export default eslintConfig;

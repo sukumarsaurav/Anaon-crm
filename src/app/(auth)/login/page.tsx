@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Building2, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 
@@ -9,6 +9,13 @@ export default function LoginPage() {
   const [isPending, startTransition] = useTransition()
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Set after mount (not in the initial state) so the server and client render the same HTML.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('reason') === 'deactivated') {
+      setError('This account has been deactivated. Contact an administrator.')
+    }
+  }, [])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()

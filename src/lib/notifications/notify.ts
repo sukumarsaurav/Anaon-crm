@@ -23,7 +23,7 @@ export async function notifyUsers(userIds: string[], input: NotifyInput): Promis
 
   // 1. In-app notification rows
   try {
-    await supabase.from('notifications').insert(
+    const { error } = await supabase.from('notifications').insert(
       ids.map((user_id) => ({
         user_id,
         title: input.title,
@@ -34,6 +34,9 @@ export async function notifyUsers(userIds: string[], input: NotifyInput): Promis
         action_url: input.action_url ?? null,
       })),
     )
+    // supabase-js returns failures instead of throwing, so the catch below never saw them:
+    // a rejected insert (bad column, RLS, non-uuid related id) lost every notification silently.
+    if (error) console.error('[notify] insert failed:', error.message)
   } catch (e) {
     console.error('[notify] insert failed:', e)
   }

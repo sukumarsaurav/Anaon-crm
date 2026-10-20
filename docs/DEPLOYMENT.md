@@ -140,6 +140,7 @@ The browser service worker is `crm/public/sw.js`; users opt in via the "Enable a
 | `EXOTEL_SID` / `EXOTEL_API_KEY` / `EXOTEL_API_TOKEN` | Exotel account credentials |
 | `EXOTEL_CALLER_ID` | Your ExoPhone (the number shown to leads) |
 | `EXOTEL_SUBDOMAIN` | `api.exotel.com` (default) or `api.in.exotel.com` |
+| `PII_ENCRYPTION_KEY` | **Required to save PAN / Aadhaar.** 32-byte key (`openssl rand -hex 32`); IDs are stored AES-256-GCM encrypted and shown masked. Back it up: without it stored IDs cannot be read |
 | `EXOTEL_WEBHOOK_TOKEN` | **Required.** Random secret (`openssl rand -hex 24`). The StatusCallback must be `https://<crm>/api/webhooks/exotel?token=<value>`; without it every callback is rejected with 401 |
 
 Click-to-call from a lead detail rings the agent (their `profiles.phone`) first, then dials the lead. Set the Exotel **StatusCallback** / passthru to `https://dashboard.anonindia.com/api/webhooks/exotel` — it records call duration + recording URL on the lead timeline (and logs inbound calls by matching the caller's phone to a lead). Recording requires `Record=true` to be permitted on the ExoPhone.

@@ -1,5 +1,6 @@
 'use server'
 
+import { decryptPii } from '@/lib/security/pii'
 import { createClient } from '@/lib/supabase/server'
 import { formatCurrency } from '@/lib/utils'
 import type {
@@ -51,7 +52,9 @@ export async function getClients(filters: {
 export async function getClientById(id: string): Promise<Client | null> {
   const supabase = await createClient()
   const { data } = await supabase.from('clients').select('*').eq('id', id).single()
-  return data as Client | null
+  if (!data) return null
+  // Decrypted for the edit form; pages that merely show the ID pass it through displayPii().
+  return { ...data, pan_encrypted: decryptPii(data.pan_encrypted), aadhar_encrypted: decryptPii(data.aadhar_encrypted) } as Client
 }
 
 // ── Bookings ──────────────────────────────────────────────────

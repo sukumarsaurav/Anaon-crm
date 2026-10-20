@@ -238,17 +238,29 @@ export async function getCampaignROI(fromDate?: string, toDate?: string): Promis
 
 export async function getMarketingStats() {
   const supabase = await createClient()
-  const [campaigns, leads, visits, bookings] = await Promise.all([
+  const [campaigns, leads, visits, bookings, clientLeads] = await Promise.all([
     supabase.from('marketing_campaigns').select('id, spend, status'),
     supabase.from('leads').select('id, utm_source').not('utm_source', 'is', null),
     supabase.from('site_visits').select('id'),
-    supabase.from('bookings').select('id, total_sale_value').eq('status', 'confirmed'),
+    supabase.from('bookings').select('id, client_id, total_sale_value').eq('status', 'confirmed'),
+    supabase.from('clients').select('id, lead_id'),
   ])
+
+  // Revenue and bookings are counted only when the buyer came from a PAID channel, the same basis as
+  // the by-source and by-campaign tables. The headline used every confirmed booking (Rs 1.6 Cr) against
+  // paid spend, giving a 42x ROAS next to tables that showed Rs 19.5 L.
+  const PAID = ['facebook', 'instagram', 'google']
+  const sourceByLead = new Map((leads.data ?? []).map((l) => [l.id, l.utm_source as string | null]))
+  const leadByClient = new Map((clientLeads.data ?? []).map((c) => [c.id, c.lead_id as string | null]))
+  const paidBookings = (bookings.data ?? []).filter((b) => {
+    const leadId = leadByClient.get(b.client_id)
+    return leadId ? PAID.includes(sourceByLead.get(leadId) ?? '') : false
+  })
 
   const totalSpend = (campaigns.data ?? []).reduce((s, c) => s + Number(c.spend ?? 0), 0)
   const activeCampaigns = (campaigns.data ?? []).filter(c => c.status === 'active').length
   const paidLeads = (leads.data ?? []).filter(l => ['facebook', 'instagram', 'google'].includes(l.utm_source ?? '')).length
-  const totalRevenue = (bookings.data ?? []).reduce((s, b) => s + Number(b.total_sale_value ?? 0), 0)
+  const totalRevenue = paidBookings.reduce((s, b) => s + Number(b.total_sale_value ?? 0), 0)
 
   return {
     totalSpend,
@@ -256,7 +268,7 @@ export async function getMarketingStats() {
     totalLeads: (leads.data ?? []).length,
     paidLeads,
     totalSiteVisits: (visits.data ?? []).length,
-    totalBookings: (bookings.data ?? []).length,
+    totalBookings: paidBookings.length,
     totalRevenue,
     overallROAS: totalSpend > 0 ? Math.round((totalRevenue / totalSpend) * 100) / 100 : null,
     overallCPL: totalSpend > 0 && paidLeads > 0 ? Math.round(totalSpend / paidLeads) : null,

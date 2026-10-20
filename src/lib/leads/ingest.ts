@@ -1,5 +1,5 @@
 import { createServiceClient } from '@/lib/supabase/service'
-import { calculateLeadScore } from './scoring'
+import { scoreLead } from './scoreLead'
 import { resolveAssignee } from './assignment'
 import { fireAutomations } from '@/lib/automation/engine'
 import { notifyUsers } from '@/lib/notifications/notify'
@@ -119,10 +119,7 @@ export async function ingestLead(input: NormalizedLeadInput): Promise<IngestResu
     whatsapp_opt_in: true,
   }
 
-  const { score, temperature } = calculateLeadScore({
-    lead: leadPayload as Partial<Lead>,
-    activities: [],
-  })
+  const { score, temperature } = await scoreLead(supabase, leadPayload as Partial<Lead>, [])
   leadPayload.score = score
   leadPayload.temperature = temperature
 

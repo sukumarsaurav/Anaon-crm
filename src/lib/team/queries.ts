@@ -227,7 +227,8 @@ export async function getTeamPerformanceSummary(
           achievement_revenue_pct,
           achievement_bookings_pct,
           achievement_visits_pct,
-          is_at_risk: isAtRisk(achievement_revenue_pct),
+          // No target set means there is nothing to be behind on (it showed every member At Risk).
+          is_at_risk: (target?.target_revenue ?? 0) > 0 && isAtRisk(achievement_revenue_pct),
           today_attendance: todayAttendance,
         }
       })

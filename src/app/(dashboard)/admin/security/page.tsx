@@ -25,11 +25,21 @@ export default async function AdminSecurityPage() {
       .eq('is_active', true)
       .order('full_name'),
     supabase.from('audit_logs')
-      .select('id, action, created_at, ip_address, metadata, profiles:user_id(full_name)')
+      // user_id references auth.users, so a `profiles:user_id(...)` embed is invalid (the list was always empty)
+      .select('id, action, created_at, ip_address, metadata, user_id')
       .in('action', ['login_failed', 'login_locked'])
       .order('created_at', { ascending: false })
       .limit(20),
   ])
+
+  // Attach names to the security events (see the note on the query above).
+  const eventUserIds = [...new Set((recentFailedRes.data ?? []).map((e) => e.user_id).filter(Boolean))] as string[]
+  const eventNames = new Map<string, string>()
+  if (eventUserIds.length) {
+    const { data: eventProfiles } = await supabase.from('profiles').select('id, full_name').in('id', eventUserIds)
+    for (const p of eventProfiles ?? []) eventNames.set(p.id, p.full_name)
+  }
+  const recentEvents = (recentFailedRes.data ?? []).map((e) => ({ ...e, profiles: e.user_id ? { full_name: eventNames.get(e.user_id) ?? '' } : null }))
 
   const lockedUsers = (teamRes.data ?? []).filter(p =>
     p.lockout_until && new Date(p.lockout_until) > new Date()
@@ -128,11 +138,11 @@ export default async function AdminSecurityPage() {
       {/* Recent failed logins */}
       <div className="bg-white border border-slate-200 rounded-xl p-5">
         <h2 className="font-semibold text-slate-900 mb-4">Recent Security Events</h2>
-        {(recentFailedRes.data ?? []).length === 0 ? (
+        {recentEvents.length === 0 ? (
           <p className="text-sm text-slate-400">No recent security events.</p>
         ) : (
           <div className="space-y-2">
-            {recentFailedRes.data?.map(log => {
+            {recentEvents.map(log => {
               const action = log.action === 'login_locked' ? 'Account Locked'
                 : log.action === 'login_failed' ? 'Failed Login'
                 : 'Security Event'

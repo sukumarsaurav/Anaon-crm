@@ -20,9 +20,10 @@ export default async function BrokersPage({ searchParams }: PageProps) {
   const limit  = 20
   const offset = (page - 1) * limit
 
-  const [{ brokers, total }, topBrokers] = await Promise.all([
+  const [{ brokers, total }, topBrokers, { total: approvedTotal, brokers: approvedBrokers }] = await Promise.all([
     getBrokers({ status: sp.status, search: sp.search, limit, offset }),
     getTopBrokers(5),
+    getBrokers({ status: 'approved', limit: 500 }),
   ])
 
   const totalPages = Math.ceil(total / limit)
@@ -37,8 +38,9 @@ export default async function BrokersPage({ searchParams }: PageProps) {
 
   const stats = [
     { label: 'Total Brokers',  value: total,                                    icon: Users,       color: 'text-blue-600',   bg: 'bg-blue-50'  },
-    { label: 'Approved',       value: topBrokers.length,                        icon: CheckCircle, color: 'text-green-600',  bg: 'bg-green-50' },
-    { label: 'Top Commission', value: topBrokers[0] ? `${topBrokers[0].commission_rate}%` : '—', icon: TrendingUp, color: 'text-primary-600', bg: 'bg-primary-50' },
+    // Counts and the highest RATE come from all approved brokers, not from the top-earners list.
+    { label: 'Approved',       value: approvedTotal,                            icon: CheckCircle, color: 'text-green-600',  bg: 'bg-green-50' },
+    { label: 'Top Commission', value: approvedBrokers.length ? `${Math.max(...approvedBrokers.map((b) => Number(b.commission_rate ?? 0)))}%` : '—', icon: TrendingUp, color: 'text-primary-600', bg: 'bg-primary-50' },
     { label: 'Total Earned',   value: formatCurrency(topBrokers.reduce((a, b) => a + b.total_commission_earned, 0)), icon: DollarSign, color: 'text-amber-600', bg: 'bg-amber-50' },
   ]
 

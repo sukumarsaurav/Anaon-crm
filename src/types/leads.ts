@@ -133,6 +133,8 @@ export interface Lead {
   is_active: boolean
   created_by: string | null
   created_at: string
+  /** When the lead entered its current stage (SLA clock). Null only on rows from before the column existed. */
+  stage_changed_at?: string | null
   updated_at: string
   // Joined
   assigned_profile?: Profile | null

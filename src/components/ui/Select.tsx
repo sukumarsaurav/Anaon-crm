@@ -24,6 +24,9 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         <select
           ref={ref}
           id={selectId}
+          // The placeholder is a disabled option, which the browser skips when choosing a default:
+          // with no value given, the FIRST REAL option ended up selected (e.g. "Assign To" → a manager).
+          defaultValue={placeholder && props.value === undefined && props.defaultValue === undefined ? '' : props.defaultValue}
           className={cn(
             'w-full rounded-lg border bg-white text-sm text-slate-900',
             'focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500',

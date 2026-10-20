@@ -1,4 +1,5 @@
 import React from 'react'
+import { displayPii } from '@/lib/security/pii'
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer'
 import type { AllotmentLetterData, DemandLetterData } from '@/types/bookings'
 import type { Payment } from '@/types/clients'
@@ -98,7 +99,7 @@ export function AllotmentLetterDoc({ data }: { data: AllotmentLetterData }) {
           <Text style={s.sectionTitle}>Allottee</Text>
           <KV label="Name" value={b.client?.full_name ?? '—'} />
           <KV label="Phone" value={b.client?.phone ?? '—'} />
-          <KV label="PAN" value={b.client?.pan_encrypted ?? '—'} />
+          <KV label="PAN" value={displayPii(b.client?.pan_encrypted) || '—'} />
           <KV label="Address" value={b.client?.permanent_address ?? '—'} />
         </View>
 

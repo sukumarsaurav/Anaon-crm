@@ -85,8 +85,7 @@ export async function getAuditLogs({
     .from('audit_logs')
     .select(`
       id, action, table_name, record_id, old_values, new_values,
-      ip_address, user_agent, metadata, created_at,
-      profiles:user_id (full_name, role)
+      user_id, ip_address, user_agent, metadata, created_at
     `, { count: 'exact' })
     .order('created_at', { ascending: false })
     .range((page - 1) * pageSize, page * pageSize - 1)
@@ -97,5 +96,17 @@ export async function getAuditLogs({
   if (startDate) q = q.gte('created_at', `${startDate}T00:00:00`)
   if (endDate) q = q.lte('created_at', `${endDate}T23:59:59`)
 
-  return q
+  const res = await q
+  // audit_logs.user_id references auth.users, not profiles, so `profiles:user_id (...)` was not a
+  // valid embed: the whole query failed and the Audit Log page (and CSV export) showed nothing.
+  // Look the names up separately.
+  const rows = res.data ?? []
+  const ids = [...new Set(rows.map((r) => r.user_id).filter(Boolean))] as string[]
+  const names = new Map<string, { full_name: string; role: string }>()
+  if (ids.length) {
+    const { data: profiles } = await supabase.from('profiles').select('id, full_name, role').in('id', ids)
+    for (const p of profiles ?? []) names.set(p.id, { full_name: p.full_name, role: p.role })
+  }
+  if (res.error) console.error('[audit] log query failed:', res.error.message)
+  return { ...res, data: rows.map((r) => ({ ...r, profiles: (r.user_id && names.get(r.user_id)) || null })) }
 }

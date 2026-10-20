@@ -135,10 +135,12 @@ async function executeAction(
         .in('role', roles)
         .eq('is_active', true)
 
+      // Global, whitespace-tolerant: String.replace with a string only changed the FIRST token, so a
+      // body mentioning {{lead_name}} twice kept the second one as raw text.
       const body = (payload.notification_body ?? '')
-        .replace('{{lead_name}}', ctx.lead?.full_name ?? 'Unknown')
-        .replace('{{client_name}}', ctx.client?.full_name ?? 'Unknown')
-        .replace('{{amount}}', String(ctx.payment?.amount_due ?? ''))
+        .replace(/\{\{\s*lead_name\s*\}\}/g, ctx.lead?.full_name ?? 'Unknown')
+        .replace(/\{\{\s*client_name\s*\}\}/g, ctx.client?.full_name ?? 'Unknown')
+        .replace(/\{\{\s*amount\s*\}\}/g, String(ctx.payment?.amount_due ?? ''))
 
       const userIds = (profiles ?? []).map(p => p.id)
       await notifyUsers(userIds, {
@@ -324,6 +326,14 @@ async function fireAutomationsNow(
       .eq('is_active', true)
 
     if (!automations || automations.length === 0) return
+
+    // Conditions on "score" never matched: no caller puts the score in the context. Load it once,
+    // only when some automation for this trigger actually asks for it.
+    const wantsScore = (automations as Automation[]).some((a) => (a.conditions ?? []).some((c) => c.field === 'score'))
+    if (wantsScore && ctx.lead?.id && ctx.lead.score == null) {
+      const { data: row } = await supabase.from('leads').select('score').eq('id', ctx.lead.id).maybeSingle()
+      if (row?.score != null) ctx = { ...ctx, lead: { ...ctx.lead, score: Number(row.score) } }
+    }
 
     for (const automation of automations as Automation[]) {
       if (!passesConditions(automation, ctx)) continue

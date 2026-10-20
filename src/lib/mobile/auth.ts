@@ -27,6 +27,9 @@ export async function getMobileUser(req: NextRequest) {
     .single()
 
   if (!profile?.is_active) return null
+  // The mobile API is for field staff. Brokers also hold Supabase logins now; their tokens
+  // must not work here.
+  if (!['admin', 'manager', 'sales_advisor', 'telecaller'].includes(String(profile.role))) return null
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

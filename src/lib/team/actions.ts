@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
+import { istToIso } from '@/lib/datetime'
+import { decideLeave } from '@/lib/hr/leave'
 
 async function requireRole(roles: string[]) {
   const supabase = await createClient()
@@ -116,10 +118,10 @@ export async function applyLeave(formData: FormData) {
 
   const fromDate = new Date(formData.get('from_date') as string)
   const toDate   = new Date(formData.get('to_date') as string)
-  const daysCount = Math.max(
-    1,
-    Math.round((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
-  )
+  // An empty or reversed range used to be saved (as 1 day, or NaN and a database error).
+  if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) return { success: false, error: 'Choose the first and last day of leave' }
+  if (toDate < fromDate) return { success: false, error: 'The last day cannot be before the first day' }
+  const daysCount = Math.round((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
 
   const { error } = await supabase.from('leave_requests').insert({
     user_id:    user.id,
@@ -140,17 +142,9 @@ export async function reviewLeave(leaveId: string, approved: boolean, note?: str
   const auth = await requireRole(['admin', 'manager'])
   if (!auth.ok) return { success: false, error: auth.error }
 
-  const { error } = await auth.supabase.from('leave_requests').update({
-    status:      approved ? 'approved' : 'rejected',
-    reviewed_by: auth.userId,
-    reviewed_at: new Date().toISOString(),
-    review_note: note ?? null,
-    updated_at:  new Date().toISOString(),
-  }).eq('id', leaveId)
-
-  if (error) return { success: false, error: error.message }
-  revalidatePath('/team/attendance')
-  return { success: true }
+  const r = await decideLeave(auth.supabase, { leaveId, reviewerId: auth.userId, approve: approved, note })
+  if (r.success) revalidatePath('/team/attendance')
+  return r
 }
 
 export async function cancelLeave(leaveId: string) {
@@ -183,7 +177,7 @@ export async function createAnnouncement(formData: FormData) {
     is_pinned:  formData.get('is_pinned') === 'true',
     branch_id:  formData.get('branch_id') as string || null,
     author_id:  auth.userId,
-    expires_at: formData.get('expires_at') as string || null,
+    expires_at: istToIso(formData.get('expires_at') as string),
   })
 
   if (error) return { success: false, error: error.message }
@@ -253,6 +247,8 @@ export async function updateMemberProfile(userId: string, formData: FormData) {
 export async function toggleMemberActive(userId: string, isActive: boolean) {
   const auth = await requireRole(['admin'])
   if (!auth.ok) return { success: false, error: auth.error }
+  // Deactivating yourself — possibly the only admin — locks everyone out of administration.
+  if (!isActive && auth.userId === userId) return { success: false, error: 'You cannot deactivate your own account' }
 
   const { error } = await auth.supabase
     .from('profiles')

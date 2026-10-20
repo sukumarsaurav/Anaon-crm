@@ -1,0 +1,9 @@
+// Deterministic env for every test: no real keys, fixed secrets.
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321'
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon'
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'service'
+process.env.CRON_SECRET = 'cron-secret'
+process.env.LEAD_WEBHOOK_SECRET = 'lead-secret'
+process.env.AGENCYX_WEBHOOK_SECRET = 'agencyx-secret'
+process.env.RAZORPAY_WEBHOOK_SECRET = 'rzp-secret'
+process.env.EXOTEL_WEBHOOK_TOKEN = 'exotel-token'

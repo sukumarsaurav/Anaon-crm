@@ -25,16 +25,20 @@ export interface TemplateContext {
 function valueFor(rawName: string, ctx: TemplateContext): string | null {
   if (ctx.overrides?.[rawName]) return ctx.overrides[rawName]
   const k = rawName.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
-  const has = (...words: string[]) => words.some((w) => k.includes(w))
+  // Whole words only. Substring matching made "first name" an amount ("rs"), "payment terms"
+  // and "confirmation" the advisor ("rm"), and "website link" the project ("site").
+  const words = new Set(k.split(' '))
+  const has = (...candidates: string[]) => candidates.some((w) => (w.includes(' ') ? ` ${k} `.includes(` ${w} `) : words.has(w)))
 
   // Most specific first: "project name" and "advisor name" both contain "name".
+  if (has('link', 'url', 'website')) return ctx.link ?? null
   if (has('project', 'property', 'site')) return ctx.project ?? null
   if (has('advisor', 'agent', 'executive', 'manager', 'rm')) {
     return has('phone', 'mobile', 'number', 'contact') ? ctx.advisor_phone ?? null : ctx.advisor_name ?? null
   }
   if (has('phone', 'mobile', 'contact')) return ctx.advisor_phone ?? null
   if (has('amount', 'price', 'due amount', 'rs', 'inr')) return ctx.amount != null ? String(ctx.amount) : null
-  if (has('due')) return ctx.due_date ?? null
+  if (has('due', 'overdue')) return ctx.due_date ?? null
   if (has('date', 'day')) return ctx.date ?? ctx.due_date ?? null
   if (has('time', 'slot')) return ctx.time ?? null
   if (has('booking')) return ctx.booking_no ?? null

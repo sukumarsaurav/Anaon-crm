@@ -120,7 +120,7 @@ export async function getPlots(
     .select(`
       *,
       held_by_profile:profiles!plots_held_by_fkey(id, full_name),
-      booked_by_client:clients!plots_booked_by_client_id_fkey(id, full_name)
+      booked_by_client:clients!plots_booked_by_client_fk(id, full_name)
     `)
     .eq('project_id', projectId)
 
@@ -137,7 +137,7 @@ export async function getPlotById(id: string): Promise<Plot | null> {
     .select(`
       *,
       held_by_profile:profiles!plots_held_by_fkey(id, full_name),
-      booked_by_client:clients!plots_booked_by_client_id_fkey(id, full_name)
+      booked_by_client:clients!plots_booked_by_client_fk(id, full_name)
     `)
     .eq('id', id)
     .single()

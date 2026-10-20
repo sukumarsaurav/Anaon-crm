@@ -110,7 +110,7 @@ export async function getTopBrokers(limit = 10): Promise<BrokerWithStats[]> {
     .select('*')
     .eq('status', 'approved')
     .order('full_name')
-    .limit(limit)
+    .limit(500)
 
   if (!brokers?.length) return []
 
@@ -121,7 +121,7 @@ export async function getTopBrokers(limit = 10): Promise<BrokerWithStats[]> {
     supabase.from('broker_commissions').select('broker_id, commission_amount, status').in('broker_id', brokerIds),
   ])
 
-  return brokers.map((b) => {
+  const ranked = brokers.map((b) => {
     const bl = (leads ?? []).filter((l) => l.broker_id === b.id)
     const bc = (commissions ?? []).filter((c) => c.broker_id === b.id)
     const converted = bl.filter((l) => l.status === 'converted').length
@@ -137,6 +137,11 @@ export async function getTopBrokers(limit = 10): Promise<BrokerWithStats[]> {
       conversion_rate:          bl.length > 0 ? Math.round((converted / bl.length) * 100) : 0,
     } as BrokerWithStats
   })
+  // "Top" brokers: the limit used to be applied to an alphabetical list BEFORE the figures were
+  // computed, so the "top" five were just the first five names.
+  return ranked
+    .sort((a, b) => b.total_commission_earned - a.total_commission_earned || a.full_name.localeCompare(b.full_name))
+    .slice(0, limit)
 }
 
 // ── Broker portal queries ──────────────────────────────────────────

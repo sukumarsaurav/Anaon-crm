@@ -12,6 +12,12 @@ export default async function Layout({ children }: { children: React.ReactNode }
 
   const { user, profile } = session
 
+  // A deactivated account used to keep working until its token expired. Data was already blocked by
+  // the database policies, but every page still rendered.
+  if (profile && profile.is_active === false) {
+    redirect('/api/auth/signout?reason=deactivated')
+  }
+
   // Brokers have their own portal
   if (profile?.role === 'broker') {
     redirect('/broker-portal')

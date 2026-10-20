@@ -3,9 +3,11 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
-import { calculateLeadScore } from './scoring'
+import { scoreLead } from './scoreLead'
 import { getLeadActivities } from './queries'
 import { resolveAssignee } from './assignment'
+import { normalizePhone } from './ingest'
+import { istToIso } from '@/lib/datetime'
 import { notifyUsers } from '@/lib/notifications/notify'
 import { sendWhatsAppText, sendWhatsAppTemplate, isWhatsAppOptedOut, isMarketingCategory, recordOutboundWhatsApp } from '@/lib/whatsapp/send'
 import { fillTemplateVariables } from '@/lib/whatsapp/variables'
@@ -23,7 +25,9 @@ export async function createLead(formData: FormData): Promise<{ success: boolean
 
   const payload: Record<string, unknown> = {
     full_name: formData.get('full_name'),
-    phone: (formData.get('phone') as string)?.replace(/\s/g, ''),
+    // Stored as 10 digits when it is a usable Indian mobile. Only whitespace was stripped before, so
+    // "98100-01025" was saved as typed and never matched the de-duplication lookup.
+    phone: normalizePhone(formData.get('phone') as string) ?? (formData.get('phone') as string)?.replace(/\s/g, ''),
     alternate_phone: formData.get('alternate_phone') || null,
     email: formData.get('email') || null,
     city: formData.get('city') || null,
@@ -67,10 +71,7 @@ export async function createLead(formData: FormData): Promise<{ success: boolean
   }
 
   // Initial scoring
-  const { score, temperature } = calculateLeadScore({
-    lead: payload as Partial<Lead>,
-    activities: [],
-  })
+  const { score, temperature } = await scoreLead(supabase, payload as Partial<Lead>, [])
   payload.score = score
   payload.temperature = temperature
 
@@ -139,15 +140,13 @@ export async function updateLead(
   ] as const
   const safe: Record<string, unknown> = {}
   for (const k of EDITABLE) if (k in updates) safe[k] = (updates as Record<string, unknown>)[k]
+  if (typeof safe.phone === 'string') safe.phone = normalizePhone(safe.phone) ?? safe.phone.replace(/\s/g, '')
 
   const { data: oldLead } = await supabase.from('leads').select('*').eq('id', id).single()
   if (!oldLead) return { success: false, error: 'Lead not found' }
 
   const activities = await getLeadActivities(id)
-  const { score, temperature } = calculateLeadScore({
-    lead: { ...oldLead, ...safe },
-    activities,
-  })
+  const { score, temperature } = await scoreLead(supabase, { ...oldLead, ...safe }, activities)
 
   const { error } = await supabase
     .from('leads')
@@ -180,16 +179,15 @@ export async function changeLeadStage(
   const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Not authenticated' }
 
-  const { data: lead } = await supabase.from('leads').select('stage, score').eq('id', leadId).single()
+  // The whole row: scoring needs created_at (first-response bonus), source, budget… A partial
+  // select dropped those signals, so moving a lead FORWARD could lower its score (15 → 10).
+  const { data: lead } = await supabase.from('leads').select('*').eq('id', leadId).single()
   if (!lead) return { success: false, error: 'Lead not found' }
 
   const oldStage = lead.stage as LeadStage
 
   const activities = await getLeadActivities(leadId)
-  const { score, temperature } = calculateLeadScore({
-    lead: { ...lead, stage: newStage },
-    activities,
-  })
+  const { score, temperature } = await scoreLead(supabase, { ...lead, stage: newStage }, activities)
 
   const updates: Record<string, unknown> = {
     stage: newStage,
@@ -245,7 +243,7 @@ export async function logActivity(formData: FormData): Promise<{ success: boolea
   const notes = formData.get('notes') as string
   const durationSec = formData.get('duration_seconds')
   const scheduleFollowup = formData.get('schedule_followup') === 'true'
-  const followupAt = formData.get('followup_at') as string | null
+  const followupAt = istToIso(formData.get('followup_at') as string | null)
 
   const { error } = await supabase.from('lead_activities').insert({
     lead_id: leadId,
@@ -279,7 +277,7 @@ export async function logActivity(formData: FormData): Promise<{ success: boolea
   const activities = await getLeadActivities(leadId)
   const { data: lead } = await supabase.from('leads').select('*').eq('id', leadId).single()
   if (lead) {
-    const { score, temperature } = calculateLeadScore({ lead, activities })
+    const { score, temperature } = await scoreLead(supabase, lead, activities)
     await supabase.from('leads').update({ score, temperature }).eq('id', leadId)
   }
 
@@ -425,7 +423,7 @@ export async function bulkChangeStage(
     const activities = await getLeadActivities(l.id)
     const { data: full } = await supabase.from('leads').select('*').eq('id', l.id).single()
     if (full) {
-      const { score, temperature } = calculateLeadScore({ lead: full, activities })
+      const { score, temperature } = await scoreLead(supabase, full, activities)
       await supabase.from('leads').update({ score, temperature }).eq('id', l.id)
     }
     fireAutomations('lead_stage_changed', {

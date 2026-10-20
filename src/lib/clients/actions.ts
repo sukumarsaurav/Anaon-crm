@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { fireAutomations } from '@/lib/automation/engine'
 import { sendReceiptEmail } from '@/lib/email/send'
+import { encryptPii } from '@/lib/security/pii'
 
 async function getAuth() {
   const supabase = await createClient()
@@ -22,14 +23,22 @@ export async function createClientProfile(formData: FormData) {
   const auth = await getAuth()
   if (!auth.ok) return { success: false, error: 'Unauthorized' }
 
+  let pan: string | null, aadhar: string | null
+  try {
+    pan = encryptPii(formData.get('pan') as string)
+    aadhar = encryptPii(formData.get('aadhar') as string)
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+
   const { data, error } = await auth.supabase.from('clients').insert({
     full_name:             formData.get('full_name') as string,
     phone:                 formData.get('phone') as string,
     alternate_phone:       formData.get('alternate_phone') as string || null,
     email:                 formData.get('email') as string || null,
     date_of_birth:         formData.get('date_of_birth') as string || null,
-    pan_encrypted:         formData.get('pan') as string || null,
-    aadhar_encrypted:      formData.get('aadhar') as string || null,
+    pan_encrypted:         pan,
+    aadhar_encrypted:      aadhar,
     permanent_address:     formData.get('permanent_address') as string || null,
     communication_address: formData.get('communication_address') as string || null,
     photo_url:             formData.get('photo_url') as string || null,
@@ -60,14 +69,22 @@ export async function updateClientProfile(id: string, formData: FormData) {
   const auth = await getAuth()
   if (!auth.ok) return { success: false, error: 'Unauthorized' }
 
+  let pan: string | null, aadhar: string | null
+  try {
+    pan = encryptPii(formData.get('pan') as string)
+    aadhar = encryptPii(formData.get('aadhar') as string)
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+
   const { error } = await auth.supabase.from('clients').update({
     full_name:             formData.get('full_name') as string,
     phone:                 formData.get('phone') as string,
     alternate_phone:       formData.get('alternate_phone') as string || null,
     email:                 formData.get('email') as string || null,
     date_of_birth:         formData.get('date_of_birth') as string || null,
-    pan_encrypted:         formData.get('pan') as string || null,
-    aadhar_encrypted:      formData.get('aadhar') as string || null,
+    pan_encrypted:         pan,
+    aadhar_encrypted:      aadhar,
     permanent_address:     formData.get('permanent_address') as string || null,
     communication_address: formData.get('communication_address') as string || null,
     photo_url:             formData.get('photo_url') as string || null,
@@ -206,7 +223,13 @@ export async function waivePayment(paymentId: string) {
   if (!auth.ok || !isManager(auth.role)) return { success: false, error: 'Forbidden' }
 
   const { data: payment } = await auth.supabase
-    .from('payments').select('client_id').eq('id', paymentId).single()
+    .from('payments').select('client_id, status, amount_paid').eq('id', paymentId).single()
+  if (!payment) return { success: false, error: 'Installment not found' }
+  // Waiving money that was already received would turn a paid installment into "forgiven" and
+  // drop it from collections.
+  if (payment.status === 'paid' || Number(payment.amount_paid ?? 0) > 0) {
+    return { success: false, error: 'This installment has payments recorded — it cannot be waived' }
+  }
 
   const { error } = await auth.supabase.from('payments')
     .update({ status: 'waived', updated_at: new Date().toISOString() })
@@ -309,6 +332,9 @@ export async function updateComplaintStatus(
     update.resolved_at       = new Date().toISOString()
     update.resolution_notes  = resolutionNotes ?? null
     update.satisfaction_rating = rating ?? null
+  } else {
+    // Reopened or still being worked: it is not resolved any more.
+    update.resolved_at = null
   }
 
   const { error } = await auth.supabase.from('complaints').update(update).eq('id', complaintId)

@@ -15,6 +15,7 @@ import PageHeader from '@/components/ui/PageHeader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import Alert from '@/components/ui/Alert'
 import Link from 'next/link'
+import { displayPii } from '@/lib/security/pii'
 import ActionButton from '@/components/ui/ActionButton'
 import { markAllotmentLetterSent, uploadAgreement } from '@/lib/bookings/actions'
 
@@ -100,7 +101,7 @@ export default async function BookingDetailPage({ params }: PageProps) {
             <h3 className="font-semibold text-slate-900 mb-3">Booking Details</h3>
             <Row label="Client"            value={booking.client?.full_name} />
             <Row label="Phone"             value={booking.client?.phone} />
-            <Row label="PAN"               value={booking.client?.pan_encrypted} />
+            <Row label="PAN"               value={displayPii(booking.client?.pan_encrypted)} />
             <Row label="Project"           value={booking.project?.name} />
             <Row label="RERA"              value={booking.project?.rera_number} />
             <Row label="Plot"              value={`${booking.plot?.plot_number} · ${booking.plot?.type?.replace('_',' ')}`} />

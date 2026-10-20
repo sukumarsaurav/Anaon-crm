@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { CalendarCheck, Plus, ClipboardCheck } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import Modal from '@/components/ui/Modal'
@@ -33,6 +34,7 @@ export default function SiteVisitsCard({
   advisors,
   projects,
 }: SiteVisitsCardProps) {
+  const router = useRouter()
   const [showSchedule, setShowSchedule] = useState(false)
   const [outcomeVisit, setOutcomeVisit] = useState<SiteVisit | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -42,7 +44,7 @@ export default function SiteVisitsCard({
     setError(null)
     startTransition(async () => {
       const res = await scheduleSiteVisit(formData)
-      if (res.success) setShowSchedule(false)
+      if (res.success) { setShowSchedule(false); router.refresh() }
       else setError(res.error ?? 'Failed to schedule')
     })
   }
@@ -51,7 +53,7 @@ export default function SiteVisitsCard({
     setError(null)
     startTransition(async () => {
       const res = await recordSiteVisitOutcome(formData)
-      if (res.success) setOutcomeVisit(null)
+      if (res.success) { setOutcomeVisit(null); router.refresh() }
       else setError(res.error ?? 'Failed to record')
     })
   }

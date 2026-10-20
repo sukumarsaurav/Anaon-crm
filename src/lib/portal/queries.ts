@@ -19,7 +19,7 @@ export async function getPortalClientData(clientId: string): Promise<PortalClien
     project:projects!bookings_project_id_fkey(id, name, city, type, rera_number, address),
     advisor:profiles!bookings_advisor_id_fkey(id, full_name, phone),
     approver:profiles!bookings_approved_by_fkey(id, full_name),
-    broker:brokers!bookings_broker_id_fkey(id, full_name, firm_name, commission_rate)
+    broker:brokers!bookings_broker_fk(id, full_name, firm_name, commission_rate)
   `
 
   const [

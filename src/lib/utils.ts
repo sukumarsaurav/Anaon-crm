@@ -14,16 +14,40 @@ export function formatCurrency(
   if (amount == null) return '—'
   const { precision = 1, mode = 'compact' } = opts
   if (mode === 'exact') return `₹${amount.toLocaleString('en-IN')}`
-  if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(precision)}Cr`
-  if (amount >= 100000) return `₹${(amount / 100000).toFixed(precision)}L`
-  if (amount >= 1000) return `₹${(amount / 1000).toFixed(0)}K`
+  // Round first, then pick the unit: 99,99,999 used to print as "₹100.0L" and 9,99,999 as "₹1000K".
+  const cr = Number((amount / 10000000).toFixed(precision))
+  if (cr >= 1) return `₹${cr.toFixed(precision)}Cr`
+  const lakh = Number((amount / 100000).toFixed(precision))
+  if (lakh >= 1) return lakh >= 100 ? `₹${(1).toFixed(precision)}Cr` : `₹${lakh.toFixed(precision)}L`
+  const k = Math.round(amount / 1000)
+  if (k >= 1000) return `₹${(1).toFixed(precision)}L`
+  if (amount >= 1000) return `₹${k}K`
   return `₹${amount.toLocaleString('en-IN')}`
+}
+
+// Timestamps are shown in IST wherever the code runs. date-fns `format` uses the machine's zone:
+// the server (UTC) and the browser (IST) rendered different text for the same instant, so pages
+// showed "1:02 AM" for something the timeline showed as "6:32 AM" and React logged hydration error #418.
+const IST = 'Asia/Kolkata'
+const isDateOnly = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s)
+
+function istParts(d: Date, withTime: boolean) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: IST, day: '2-digit', month: 'short', year: 'numeric',
+    ...(withTime ? { hour: 'numeric', minute: '2-digit', hour12: true } : {}),
+  }).formatToParts(d)
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? ''
+  const date = `${get('day')} ${get('month')} ${get('year')}`
+  return withTime ? `${date}, ${get('hour')}:${get('minute')} ${get('dayPeriod').toUpperCase()}` : date
 }
 
 export function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '—'
   try {
-    return format(parseISO(dateStr), 'dd MMM yyyy')
+    // A bare date (a booking date, a DOB) has no time to convert.
+    if (isDateOnly(dateStr)) return format(parseISO(dateStr), 'dd MMM yyyy')
+    const d = new Date(dateStr)
+    return Number.isNaN(d.getTime()) ? '—' : istParts(d, false)
   } catch {
     return '—'
   }
@@ -32,7 +56,8 @@ export function formatDate(dateStr: string | null | undefined): string {
 export function formatDateTime(dateStr: string | null | undefined): string {
   if (!dateStr) return '—'
   try {
-    return format(parseISO(dateStr), 'dd MMM yyyy, h:mm a')
+    const d = isDateOnly(dateStr) ? parseISO(dateStr) : new Date(dateStr)
+    return Number.isNaN(d.getTime()) ? '—' : istParts(d, true)
   } catch {
     return '—'
   }
@@ -49,7 +74,9 @@ export function formatRelative(dateStr: string | null | undefined): string {
 
 export function formatPhone(phone: string | null | undefined): string {
   if (!phone) return '—'
-  const digits = phone.replace(/\D/g, '')
+  let digits = phone.replace(/\D/g, '')
+  if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2)
+  else if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1)
   if (digits.length === 10) {
     return `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`
   }
@@ -74,8 +101,10 @@ export function computeSlaStatus(lead: Lead): { status: SlaStatus; hoursRemainin
   const window = slaWindowHours[lead.stage]
   if (window == null) return { status: 'on_time', hoursRemaining: null }
 
-  const createdAt = parseISO(lead.created_at)
-  const deadline = addHours(createdAt, window)
+  // The clock starts when the lead ENTERED this stage. From creation, any lead older than a day
+  // sat in "breached" for every stage that has a window.
+  const startedAt = parseISO(lead.stage_changed_at ?? lead.created_at)
+  const deadline = addHours(startedAt, window)
   const now = new Date()
 
   if (isAfter(now, deadline)) {

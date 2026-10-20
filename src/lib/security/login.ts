@@ -9,6 +9,12 @@ import { writeAuditLog } from './audit'
  * publish an unauthenticated endpoint that reveals whether an email exists.
  */
 
+/** ILIKE treats _ and % as wildcards, so "a_b@x.com" also matched "axb@x.com" (failures and lockouts
+ *  were attributed to the wrong account). Escape them to match the email literally. */
+function likeLiteral(value: string): string {
+  return value.replace(/[\\%_]/g, (c) => `\\${c}`)
+}
+
 function serviceSupabase() {
   return createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -54,7 +60,7 @@ async function findAuthUserIdByEmail(
   const { data: profile } = await svc
     .from('profiles')
     .select('id')
-    .ilike('email', needle)
+    .ilike('email', likeLiteral(needle))
     .maybeSingle()
 
   if (profile?.id) return profile.id
@@ -98,7 +104,7 @@ export async function checkAccountLockout(email: string): Promise<LockoutStatus>
   const { data: profile } = await svc
     .from('profiles')
     .select('id, lockout_until')
-    .ilike('email', email.trim().toLowerCase())
+    .ilike('email', likeLiteral(email.trim().toLowerCase()))
     .maybeSingle()
 
   let userId = profile?.id ?? null

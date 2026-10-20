@@ -37,6 +37,7 @@ export async function createCampaign(formData: FormData) {
       notes:            (formData.get('notes') as string) || null,
       created_by:       user.id,
     })
+    if (error?.code === '23505') return { success: false, error: 'Another campaign already uses that UTM campaign tag - each campaign needs its own, or their leads and spend merge in the reports.' }
     if (error) return { success: false, error: error.message }
     revalidatePath('/marketing')
     return { success: true }

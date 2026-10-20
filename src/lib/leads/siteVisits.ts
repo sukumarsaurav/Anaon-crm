@@ -5,6 +5,9 @@ import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { fireAutomations } from '@/lib/automation/engine'
 import { STAGE_ORDER } from '@/types/leads'
+import { istToIso } from '@/lib/datetime'
+import { scoreLead } from './scoreLead'
+import { getLeadActivities } from './queries'
 import type { LeadStage } from '@/types/leads'
 
 /** Advance a lead's stage only forward (never move it backward in the pipeline). */
@@ -17,6 +20,13 @@ async function advanceStageForward(
 ) {
   if (STAGE_ORDER.indexOf(currentStage) >= STAGE_ORDER.indexOf(target)) return
   await supabase.from('leads').update({ stage: target, updated_at: new Date().toISOString() }).eq('id', leadId)
+  // "Has visited site" is worth +20 and stage bonuses apply, but nothing rescored the lead here,
+  // so a lead that completed a visit kept its old score (and temperature) until the next edit.
+  const { data: full } = await supabase.from('leads').select('*').eq('id', leadId).single()
+  if (full) {
+    const { score, temperature } = await scoreLead(supabase, full, await getLeadActivities(leadId))
+    await supabase.from('leads').update({ score, temperature }).eq('id', leadId)
+  }
   await supabase.from('lead_activities').insert({
     lead_id: leadId,
     type: 'stage_change',
@@ -33,7 +43,7 @@ export async function scheduleSiteVisit(formData: FormData): Promise<{ success: 
   if (!user) return { success: false, error: 'Not authenticated' }
 
   const leadId = formData.get('lead_id') as string
-  const scheduledAt = formData.get('scheduled_at') as string
+  const scheduledAt = istToIso(formData.get('scheduled_at') as string) as string
   if (!leadId || !scheduledAt) return { success: false, error: 'Lead and date/time are required' }
 
   const projectId = (formData.get('project_id') as string) || null
@@ -104,7 +114,7 @@ export async function recordSiteVisitOutcome(formData: FormData): Promise<{ succ
   if (!visitId || !leadId || !status) return { success: false, error: 'Missing fields' }
 
   const feedback = (formData.get('client_feedback') as string) || null
-  const followupAt = (formData.get('followup_at') as string) || null
+  const followupAt = istToIso(formData.get('followup_at') as string)
 
   const { error } = await supabase
     .from('site_visits')

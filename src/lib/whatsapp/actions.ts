@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { istToIso } from '@/lib/datetime'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { createServiceClient } from '@/lib/supabase/service'
 import { sendTextMessage, sendTemplateMessage } from './provider'
@@ -317,6 +318,7 @@ export async function createTemplate(formData: FormData) {
     created_by: auth.user.id,
   }).select('id').single()
 
+  if (error?.code === '23505') return { success: false, error: 'A template with that name already exists in ' + input.language + '. WhatsApp allows one per name and language - pick another name.' }
   if (error || !created) return { success: false, error: error?.message ?? 'Could not save the template' }
 
   if (formData.get('submit_for_approval') === 'true') {
@@ -508,7 +510,7 @@ export async function createBroadcast(formData: FormData) {
   } catch {
     return { success: false, error: 'Invalid audience filters' }
   }
-  const scheduledAt = (formData.get('scheduled_at') as string) || null
+  const scheduledAt = istToIso(formData.get('scheduled_at') as string)
   if (scheduledAt && Number.isNaN(Date.parse(scheduledAt))) return { success: false, error: 'Invalid schedule time' }
 
   const { data, error } = await supabase.from('whatsapp_broadcasts').insert({
@@ -574,21 +576,36 @@ export async function cancelBroadcast(broadcastId: string) {
 }
 
 export async function saveAutoReplyRule(formData: FormData) {
+  // Only managers/admins change automatic replies. (It only checked for a session, so any
+  // signed-in user could — the database policy now blocks it, but with a raw error.)
+  const auth = await requireManager()
+  if (!auth.ok) return { success: false, error: auth.error }
   const supabase = await createClient()
-  const user = (await getProfile())?.user
-  if (!user) return { success: false, error: 'Unauthorized' }
+
+  // `formData.get(x) as string ?? '{}'` never applied the default (get() returns null, not
+  // undefined) and an invalid value threw an unhandled error.
+  const parse = (key: string, fallback: unknown) => {
+    const raw = formData.get(key)
+    if (typeof raw !== 'string' || !raw.trim()) return fallback
+    return JSON.parse(raw)
+  }
 
   const id = formData.get('id') as string | null
-  const payload = {
-    name: formData.get('name') as string,
-    is_active: formData.get('is_active') === 'true',
-    priority: parseInt(formData.get('priority') as string, 10) || 10,
-    trigger_type: formData.get('trigger_type') as string,
-    trigger_config: JSON.parse(formData.get('trigger_config') as string ?? '{}'),
-    response_type: formData.get('response_type') as string,
-    response_text: formData.get('response_text') as string || null,
-    response_template_id: formData.get('response_template_id') as string || null,
-    response_buttons: JSON.parse(formData.get('response_buttons') as string ?? '[]'),
+  let payload
+  try {
+    payload = {
+      name: formData.get('name') as string,
+      is_active: formData.get('is_active') === 'true',
+      priority: parseInt(formData.get('priority') as string, 10) || 10,
+      trigger_type: formData.get('trigger_type') as string,
+      trigger_config: parse('trigger_config', {}),
+      response_type: formData.get('response_type') as string,
+      response_text: formData.get('response_text') as string || null,
+      response_template_id: formData.get('response_template_id') as string || null,
+      response_buttons: parse('response_buttons', []),
+    }
+  } catch {
+    return { success: false, error: 'Trigger or button settings are not valid JSON' }
   }
 
   let error
