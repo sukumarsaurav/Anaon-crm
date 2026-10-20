@@ -69,13 +69,13 @@ export default async function CommissionsPage({ searchParams }: PageProps) {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-1 bg-slate-100 p-1 rounded-lg w-fit">
+      <div className="flex max-w-full gap-1 overflow-x-auto bg-slate-100 p-1 rounded-lg w-fit">
         {statusTabs.map((t) => {
           const active = (sp.status ?? undefined) === t.value
           const href = t.value ? `?status=${t.value}` : '?'
           return (
             <Link key={t.label} href={href}
-              className={`px-3 py-1.5 text-sm rounded-md font-medium transition-colors ${active ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
+              className={`shrink-0 whitespace-nowrap px-3 py-1.5 text-sm rounded-md font-medium transition-colors ${active ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
               {t.label}
             </Link>
           )

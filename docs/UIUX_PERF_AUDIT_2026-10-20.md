@@ -43,6 +43,15 @@
 - **#11:** the manager-only dashboard queries are skipped for other roles.
 - **#17:** ⌘K ignores stale responses and shows an error state.
 - **Correction to #15:** kanban cards already have a stage menu. Only drag-and-drop is missing.
+- **Correction to #9:** /leads is 245 KB uncompressed but **18 KB over the wire**, gzipped. Most of the remainder is server-rendered table markup (about 4.3 KB per row of Tailwind classes and inline SVG), which compresses very well. The column trim mainly cut the RSC data (now about 55 KB uncompressed).
+
+**Batch 3 done and deployed (2026-10-20, `c2b24f2` + follow-up):** #2, #3, #13, #14.
+- **#2:** on phones the inbox shows one pane at a time, with a back button in the chat header and `100dvh`. Verified live at 375px: list → chat → back.
+- **#3:** the broker portal has a phone top bar and bottom tabs. The client portal phone layout had no sign-out at all; it now has a top bar with one. Neither portal is verified signed in (no broker or client login available).
+- **#13:** `%s · ANON CRM` template; 87 static titles via `scripts/codemods/page-titles.py`; record names on lead, client, booking, project and chat pages. Verified live.
+- **#14:** server-side inbox search, "N new messages" pill instead of a forced scroll, re-mark read on tab focus, plural fix, and a shorter reply placeholder.
+- **Phone-width sweep after deploy:** all 24 main pages are ≤375px. The last offender, the /brokers status tabs at 412px, is fixed, along with the same control on commissions.
+- **Not a regression:** a missing lead returns HTTP 200 with the not-found screen and `noindex`, because `leads/loading.tsx` streams the response before `notFound()` runs.
 
 ## Summary
 

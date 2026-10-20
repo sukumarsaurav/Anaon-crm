@@ -76,7 +76,7 @@ export default async function BrokersPage({ searchParams }: PageProps) {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex gap-1 bg-slate-100 p-1 rounded-lg">
+        <div className="flex max-w-full gap-1 overflow-x-auto bg-slate-100 p-1 rounded-lg">
           {statusTabs.map((t) => {
             const active = (sp.status ?? undefined) === t.value
             const params = new URLSearchParams()
@@ -85,7 +85,7 @@ export default async function BrokersPage({ searchParams }: PageProps) {
             const href = `?${params.toString()}`
             return (
               <Link key={t.label} href={href}
-                className={`px-3 py-1.5 text-sm rounded-md font-medium transition-colors ${active ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
+                className={`shrink-0 whitespace-nowrap px-3 py-1.5 text-sm rounded-md font-medium transition-colors ${active ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
                 {t.label}
               </Link>
             )
