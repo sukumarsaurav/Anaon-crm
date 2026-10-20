@@ -106,7 +106,7 @@ export default function BulkActionsBar({ selectedIds, advisors, onClear }: BulkA
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
-      <div className="bg-slate-900 rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-4">
+      <div className="bg-slate-900 rounded-xl shadow-2xl px-5 py-3 flex items-center gap-4">
         <span className="text-white text-sm font-medium">
           {selectedIds.length} lead{selectedIds.length !== 1 ? 's' : ''} selected
         </span>
@@ -187,7 +187,7 @@ export default function BulkActionsBar({ selectedIds, advisors, onClear }: BulkA
               <p className="text-xs font-semibold text-slate-500 mb-1.5">
                 Message {selectedIds.length} lead{selectedIds.length !== 1 ? 's' : ''} · use <code className="bg-slate-100 px-1 rounded">{'{{name}}'}</code>
               </p>
-              <select
+              <select aria-label="WhatsApp template"
                 value={waTemplateId}
                 onChange={(e) => setWaTemplateId(e.target.value)}
                 className="w-full text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 mb-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-400"
@@ -198,7 +198,7 @@ export default function BulkActionsBar({ selectedIds, advisors, onClear }: BulkA
                 ))}
               </select>
               {!waTemplateId && (
-                <textarea
+                <textarea aria-label="Hi {{name}}, ..."
                   value={waText}
                   onChange={(e) => setWaText(e.target.value)}
                   rows={3}

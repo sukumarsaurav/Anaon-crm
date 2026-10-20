@@ -4,7 +4,8 @@ import { useState, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createCampaign } from '@/lib/marketing/actions'
 import { CAMPAIGN_PLATFORMS, CAMPAIGN_OBJECTIVES } from '@/types/marketing'
-import { Plus, X } from 'lucide-react'
+import { Plus } from 'lucide-react'
+import Modal from '@/components/ui/Modal'
 
 interface Props {
   projects: { id: string; name: string }[]
@@ -43,27 +44,19 @@ export default function CampaignForm({ projects }: Props) {
         <Plus size={16} /> New Campaign
       </button>
 
-      {open && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-5 border-b border-slate-200 sticky top-0 bg-white">
-              <h2 className="font-semibold text-slate-900">New Campaign</h2>
-              <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-600">
-                <X size={18} />
-              </button>
-            </div>
+      <Modal open={open} onClose={() => setOpen(false)} title="New Campaign" size="lg">
 
-            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Campaign Name <span className="text-red-500">*</span></label>
-                  <input name="name" required placeholder="e.g. Vedanta Hills – May 2025 – Facebook"
+                  <label htmlFor="campaignform-name" className="block text-sm font-medium text-slate-700 mb-1">Campaign Name <span className="text-red-500">*</span></label>
+                  <input id="campaignform-name" name="name" required placeholder="e.g. Vedanta Hills – May 2025 – Facebook"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Platform <span className="text-red-500">*</span></label>
-                  <select name="platform" required
+                  <label htmlFor="campaignform-platform" className="block text-sm font-medium text-slate-700 mb-1">Platform <span className="text-red-500">*</span></label>
+                  <select id="campaignform-platform" name="platform" required
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
                     {CAMPAIGN_PLATFORMS.map(p => (
                       <option key={p.value} value={p.value}>{p.label}</option>
@@ -72,8 +65,8 @@ export default function CampaignForm({ projects }: Props) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Objective</label>
-                  <select name="objective"
+                  <label htmlFor="campaignform-objective" className="block text-sm font-medium text-slate-700 mb-1">Objective</label>
+                  <select id="campaignform-objective" name="objective"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
                     <option value="">Select objective</option>
                     {CAMPAIGN_OBJECTIVES.map(o => (
@@ -83,8 +76,8 @@ export default function CampaignForm({ projects }: Props) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Project</label>
-                  <select name="project_id"
+                  <label htmlFor="campaignform-project-id" className="block text-sm font-medium text-slate-700 mb-1">Project</label>
+                  <select id="campaignform-project-id" name="project_id"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
                     <option value="">All projects</option>
                     {projects.map(p => (
@@ -94,20 +87,20 @@ export default function CampaignForm({ projects }: Props) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Budget (₹)</label>
-                  <input name="budget" type="number" min="0" step="100" placeholder="50000"
+                  <label htmlFor="campaignform-budget" className="block text-sm font-medium text-slate-700 mb-1">Budget (₹)</label>
+                  <input id="campaignform-budget" name="budget" type="number" min="0" step="100" placeholder="50000"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Start Date <span className="text-red-500">*</span></label>
-                  <input name="start_date" type="date" required
+                  <label htmlFor="campaignform-start-date" className="block text-sm font-medium text-slate-700 mb-1">Start Date <span className="text-red-500">*</span></label>
+                  <input id="campaignform-start-date" name="start_date" type="date" required
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
-                  <input name="end_date" type="date"
+                  <label htmlFor="campaignform-end-date" className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
+                  <input id="campaignform-end-date" name="end_date" type="date"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                 </div>
 
@@ -115,18 +108,18 @@ export default function CampaignForm({ projects }: Props) {
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">UTM Parameters</p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-xs text-slate-600 mb-1">utm_source</label>
-                      <input name="utm_source" placeholder="facebook"
+                      <label htmlFor="campaignform-utm-source" className="block text-xs text-slate-600 mb-1">utm_source</label>
+                      <input id="campaignform-utm-source" name="utm_source" placeholder="facebook"
                         className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                     </div>
                     <div>
-                      <label className="block text-xs text-slate-600 mb-1">utm_medium</label>
-                      <input name="utm_medium" placeholder="cpc"
+                      <label htmlFor="campaignform-utm-medium" className="block text-xs text-slate-600 mb-1">utm_medium</label>
+                      <input id="campaignform-utm-medium" name="utm_medium" placeholder="cpc"
                         className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                     </div>
                     <div>
-                      <label className="block text-xs text-slate-600 mb-1">utm_campaign</label>
-                      <input name="utm_campaign" placeholder="vedanta-jaipur-may25"
+                      <label htmlFor="campaignform-utm-campaign" className="block text-xs text-slate-600 mb-1">utm_campaign</label>
+                      <input id="campaignform-utm-campaign" name="utm_campaign" placeholder="vedanta-jaipur-may25"
                         className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                     </div>
                   </div>
@@ -136,13 +129,13 @@ export default function CampaignForm({ projects }: Props) {
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Meta IDs (optional)</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs text-slate-600 mb-1">Meta Campaign ID</label>
-                      <input name="meta_campaign_id" placeholder="120210..."
+                      <label htmlFor="campaignform-meta-campaign-id" className="block text-xs text-slate-600 mb-1">Meta Campaign ID</label>
+                      <input id="campaignform-meta-campaign-id" name="meta_campaign_id" placeholder="120210..."
                         className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                     </div>
                     <div>
-                      <label className="block text-xs text-slate-600 mb-1">Meta Ad Set ID</label>
-                      <input name="meta_adset_id" placeholder="120211..."
+                      <label htmlFor="campaignform-meta-adset-id" className="block text-xs text-slate-600 mb-1">Meta Ad Set ID</label>
+                      <input id="campaignform-meta-adset-id" name="meta_adset_id" placeholder="120211..."
                         className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                     </div>
                   </div>
@@ -162,9 +155,7 @@ export default function CampaignForm({ projects }: Props) {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
     </>
   )
 }

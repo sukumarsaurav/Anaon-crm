@@ -81,11 +81,13 @@ export default function OtpLoginForm() {
 
               <form onSubmit={handleSendOtp} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-primary-200 block mb-1.5">Mobile Number</label>
+                  <label htmlFor="otp-phone" className="text-sm font-medium text-primary-200 block mb-1.5">Mobile Number</label>
                   <div className="relative">
                     <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-300" />
                     <input
+                      id="otp-phone"
                       type="tel"
+                      autoComplete="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       required
@@ -118,11 +120,14 @@ export default function OtpLoginForm() {
 
               <form onSubmit={handleVerifyOtp} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-primary-200 block mb-1.5">6-Digit OTP</label>
+                  <label htmlFor="otp-code" className="text-sm font-medium text-primary-200 block mb-1.5">6-Digit OTP</label>
                   <div className="relative">
                     <Shield size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-300" />
                     <input
+                      id="otp-code"
                       type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                       required

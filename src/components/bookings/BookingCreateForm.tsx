@@ -79,8 +79,8 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
         <h2 className="font-semibold text-slate-900">Client & Property</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-slate-600 mb-1">Client *</label>
-            <select name="client_id" required
+            <label htmlFor="bookingcreateform-client-id" className="block text-xs font-medium text-slate-600 mb-1">Client *</label>
+            <select id="bookingcreateform-client-id" name="client_id" required
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
               <option value="">— Select client —</option>
               {clients.map((c) => (
@@ -89,8 +89,8 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Project *</label>
-            <select name="project_id" required value={projectId} onChange={(e) => { setProjectId(e.target.value); setSelectedPlot(null) }}
+            <label htmlFor="bookingcreateform-project-id" className="block text-xs font-medium text-slate-600 mb-1">Project *</label>
+            <select id="bookingcreateform-project-id" name="project_id" required value={projectId} onChange={(e) => { setProjectId(e.target.value); setSelectedPlot(null) }}
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
               <option value="">— Select project —</option>
               {projects.map((p) => (
@@ -99,11 +99,11 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Plot *</label>
+            <label htmlFor="bookingcreateform-plot" className="block text-xs font-medium text-slate-600 mb-1">Plot *</label>
             {loadingPlots ? (
               <div className="px-3 py-2 text-sm text-slate-400 border border-slate-300 rounded-lg">Loading plots...</div>
             ) : (
-              <select required value={selectedPlot?.id ?? ''}
+              <select id="bookingcreateform-plot" required value={selectedPlot?.id ?? ''}
                 onChange={(e) => setSelectedPlot(plots.find((p) => p.id === e.target.value) ?? null)}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 disabled={!projectId || plots.length === 0}>
@@ -130,20 +130,20 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
         <h2 className="font-semibold text-slate-900">Financials & Payment Plan</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Total Sale Value (₹) *</label>
-            <input name="total_sale_value" type="number" min="1" required
+            <label htmlFor="bookingcreateform-total-sale-value" className="block text-xs font-medium text-slate-600 mb-1">Total Sale Value (₹) *</label>
+            <input id="bookingcreateform-total-sale-value" name="total_sale_value" type="number" min="1" required
               value={totalValue || ''}
               onChange={(e) => setTotalValue(parseFloat(e.target.value) || 0)}
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Booking Amount (₹) *</label>
-            <input name="booking_amount" type="number" min="1" required
+            <label htmlFor="bookingcreateform-booking-amount" className="block text-xs font-medium text-slate-600 mb-1">Booking Amount (₹) *</label>
+            <input id="bookingcreateform-booking-amount" name="booking_amount" type="number" min="1" required
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Payment Plan Type</label>
-            <select name="payment_plan_type" defaultValue="custom"
+            <label htmlFor="bookingcreateform-payment-plan-type" className="block text-xs font-medium text-slate-600 mb-1">Payment Plan Type</label>
+            <select id="bookingcreateform-payment-plan-type" name="payment_plan_type" defaultValue="custom"
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
               {Object.entries(PAYMENT_PLAN_LABELS).map(([v, label]) => (
                 <option key={v} value={v}>{label}</option>
@@ -151,19 +151,19 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Payment Plan Notes</label>
-            <input name="payment_plan" placeholder="e.g. 50:50, 10:90..."
+            <label htmlFor="bookingcreateform-payment-plan" className="block text-xs font-medium text-slate-600 mb-1">Payment Plan Notes</label>
+            <input id="bookingcreateform-payment-plan" name="payment_plan" placeholder="e.g. 50:50, 10:90..."
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Booking Date *</label>
-            <input name="booking_date" type="date" required
+            <label htmlFor="bookingcreateform-booking-date" className="block text-xs font-medium text-slate-600 mb-1">Booking Date *</label>
+            <input id="bookingcreateform-booking-date" name="booking_date" type="date" required
               defaultValue={new Date().toISOString().split('T')[0]}
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Expected Possession</label>
-            <input name="expected_possession_date" type="date"
+            <label htmlFor="bookingcreateform-expected-possession-date" className="block text-xs font-medium text-slate-600 mb-1">Expected Possession</label>
+            <input id="bookingcreateform-expected-possession-date" name="expected_possession_date" type="date"
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
         </div>
@@ -174,8 +174,8 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
         <h2 className="font-semibold text-slate-900">Team & Source</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Sales Advisor</label>
-            <select name="advisor_id"
+            <label htmlFor="bookingcreateform-advisor-id" className="block text-xs font-medium text-slate-600 mb-1">Sales Advisor</label>
+            <select id="bookingcreateform-advisor-id" name="advisor_id"
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
               <option value="">— Self —</option>
               {advisors.map((a) => (
@@ -184,8 +184,8 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Lead Source</label>
-            <select name="referred_by_source"
+            <label htmlFor="bookingcreateform-referred-by-source" className="block text-xs font-medium text-slate-600 mb-1">Lead Source</label>
+            <select id="bookingcreateform-referred-by-source" name="referred_by_source"
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
               <option value="">— Select —</option>
               {Object.entries(REFERRED_BY_LABELS).map(([v, label]) => (
@@ -194,8 +194,8 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Channel Partner (Broker)</label>
-            <select name="broker_id" value={brokerId} onChange={(e) => setBrokerId(e.target.value)}
+            <label htmlFor="bookingcreateform-broker-id" className="block text-xs font-medium text-slate-600 mb-1">Channel Partner (Broker)</label>
+            <select id="bookingcreateform-broker-id" name="broker_id" value={brokerId} onChange={(e) => setBrokerId(e.target.value)}
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
               <option value="">— None —</option>
               {brokers.map((b) => (
@@ -211,8 +211,8 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
             )}
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
-            <input name="notes" placeholder="Any special terms or observations"
+            <label htmlFor="bookingcreateform-notes" className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
+            <input id="bookingcreateform-notes" name="notes" placeholder="Any special terms or observations"
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
         </div>

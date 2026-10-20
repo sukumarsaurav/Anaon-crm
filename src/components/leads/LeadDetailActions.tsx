@@ -12,6 +12,9 @@ import LossReasonModal from './LossReasonModal'
 import { changeLeadStage, deleteLead } from '@/lib/leads/actions'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
+import { useToast } from '@/components/ui/Toast'
+import { useProfile } from '@/components/layout/ProfileProvider'
 
 interface LeadDetailActionsProps {
   lead: Lead
@@ -25,6 +28,9 @@ export default function LeadDetailActions({ lead, advisors }: LeadDetailActionsP
   const [showLossReason, setShowLossReason] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  const { role } = useProfile()
+  // Matches the server rule in deleteLead(); the action re-checks it.
+  const canDelete = role === 'admin'
 
   const nextStages = STAGE_ORDER.filter(
     (s) => !TERMINAL_STAGES.includes(s) && s !== lead.stage
@@ -36,11 +42,16 @@ export default function LeadDetailActions({ lead, advisors }: LeadDetailActionsP
     })
   }
 
-  const handleDelete = () => {
-    if (!confirm('Are you sure you want to delete this lead? This cannot be undone.')) return
+  const askConfirm = useConfirm()
+  const toast = useToast()
+  const handleDelete = async () => {
+    if (!(await askConfirm({ title: 'Delete lead', message: `Delete ${lead.full_name}? The lead is removed from lists, the pipeline and reports. It is archived rather than erased, and the deletion is recorded in the audit log.`, confirmLabel: 'Delete lead' }))) return
     startTransition(async () => {
       const result = await deleteLead(lead.id)
-      if (result.success) router.push('/leads')
+      if (result.success) {
+        toast.success('Lead deleted')
+        router.push('/leads')
+      } else toast.error(result.error ?? 'Could not delete the lead')
     })
   }
 
@@ -90,6 +101,13 @@ export default function LeadDetailActions({ lead, advisors }: LeadDetailActionsP
           })}
 
           {/* Terminal stages */}
+          {canDelete && (
+            <Button variant="ghost" size="sm" onClick={handleDelete} disabled={isPending} className="text-red-600 hover:bg-red-50 hover:text-red-700">
+              <Trash2 size={14} />
+              Delete
+            </Button>
+          )}
+
           {!TERMINAL_STAGES.includes(lead.stage) && (
             <div className="flex items-center gap-2 ml-auto">
               <button

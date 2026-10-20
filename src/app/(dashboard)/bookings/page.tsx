@@ -45,7 +45,7 @@ export default async function BookingsPage({ searchParams }: PageProps) {
       {/* Filters */}
       <div className="bg-white border border-slate-200 rounded-xl px-4 py-3">
         <form method="get" className="flex flex-wrap gap-3">
-          <input name="search" defaultValue={params.search}
+          <input aria-label="Search client name..." name="search" defaultValue={params.search}
             placeholder="Search client name..."
             className="flex-1 min-w-44 px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500" />
           <div className="flex gap-1 p-1 bg-slate-100 rounded-lg">

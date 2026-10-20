@@ -46,10 +46,10 @@ export default function ApprovalPanel({ bookingId }: Props) {
       </p>
 
       <div className="mb-3">
-        <label className="block text-xs font-medium text-slate-600 mb-1">
+        <label htmlFor="approvalpanel-field" className="block text-xs font-medium text-slate-600 mb-1">
           {mode === 'reject' ? 'Rejection Reason *' : 'Approval Notes (optional)'}
         </label>
-        <textarea
+        <textarea id="approvalpanel-field"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={2}

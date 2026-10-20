@@ -6,6 +6,9 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { PAYMENT_STATUS_CONFIG } from '@/types/clients'
 import type { Payment } from '@/types/clients'
 import { Plus, Trash2 } from 'lucide-react'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
+import { useToast } from '@/components/ui/Toast'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Props {
   bookingId:    string
@@ -39,11 +42,14 @@ export default function PaymentPlanBuilder({ bookingId, clientId, totalValue, pa
     })
   }
 
-  function handleDelete(paymentId: string) {
-    if (!confirm('Delete this installment?')) return
+  const askConfirm = useConfirm()
+  const toast = useToast()
+  async function handleDelete(paymentId: string) {
+    if (!(await askConfirm({ title: 'Delete installment', message: 'Delete this installment from the payment plan?' }))) return
     startTransition(async () => {
       const result = await deleteBookingInstallment(paymentId, bookingId)
       if (!result.success) setError(result.error ?? 'Failed')
+      else toast.success('Installment deleted')
     })
   }
 
@@ -72,18 +78,18 @@ export default function PaymentPlanBuilder({ bookingId, clientId, totalValue, pa
         <form onSubmit={handleAdd} className="mb-4 p-4 bg-primary-50 rounded-xl space-y-3">
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Amount (₹) *</label>
-              <input name="amount_due" type="number" min="1" required
+              <label htmlFor="paymentplanbuilder-amount-due" className="block text-xs font-medium text-slate-600 mb-1">Amount (₹) *</label>
+              <input id="paymentplanbuilder-amount-due" name="amount_due" type="number" min="1" required
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Due Date *</label>
-              <input name="due_date" type="date" required
+              <label htmlFor="paymentplanbuilder-due-date" className="block text-xs font-medium text-slate-600 mb-1">Due Date *</label>
+              <input id="paymentplanbuilder-due-date" name="due_date" type="date" required
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Description</label>
-              <input name="description" placeholder="Booking amount / EMI..."
+              <label htmlFor="paymentplanbuilder-description" className="block text-xs font-medium text-slate-600 mb-1">Description</label>
+              <input id="paymentplanbuilder-description" name="description" placeholder="Booking amount / EMI..."
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
           </div>
@@ -109,7 +115,7 @@ export default function PaymentPlanBuilder({ bookingId, clientId, totalValue, pa
       {/* Installment list */}
       <div className="space-y-2">
         {payments.length === 0 && (
-          <p className="text-sm text-slate-400 text-center py-6">No installments scheduled yet</p>
+          <EmptyState title="No installments scheduled yet" className="py-6" />
         )}
         {payments.map((p) => {
           const today = new Date().toISOString().split('T')[0]

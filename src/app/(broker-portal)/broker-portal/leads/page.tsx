@@ -7,6 +7,7 @@ import { getBrokerByAuthUser, getBrokerLeadRegistrations } from '@/lib/brokers/q
 import BrokerLeadForm from '@/components/broker-portal/BrokerLeadForm'
 import { formatDate } from '@/lib/utils'
 import { LEAD_REG_STATUS_CONFIG } from '@/types/brokers'
+import EmptyState from '@/components/ui/EmptyState'
 
 export default async function BrokerLeadsPage() {
   const supabase = await createClient()
@@ -47,16 +48,16 @@ export default async function BrokerLeadsPage() {
           <span className="text-xs text-slate-400">{leads.length} total</span>
         </div>
         {leads.length === 0 ? (
-          <p className="text-sm text-slate-400 text-center py-6">No leads registered yet. Use the form above to register your first lead.</p>
+          <EmptyState title="No leads registered yet" description="Use the form above to register your first lead." className="py-6" />
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto"><table className="w-full text-sm">
             <thead className="border-b border-slate-100">
               <tr className="text-xs text-slate-500">
-                <th className="pb-2 text-left">Client</th>
-                <th className="pb-2 text-left">Phone</th>
-                <th className="pb-2 text-left">Project</th>
-                <th className="pb-2 text-left">Registered</th>
-                <th className="pb-2 text-left">Status</th>
+                <th scope="col" className="pb-2 text-left">Client</th>
+                <th scope="col" className="pb-2 text-left">Phone</th>
+                <th scope="col" className="pb-2 text-left">Project</th>
+                <th scope="col" className="pb-2 text-left">Registered</th>
+                <th scope="col" className="pb-2 text-left">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -77,7 +78,7 @@ export default async function BrokerLeadsPage() {
                 )
               })}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
     </div>

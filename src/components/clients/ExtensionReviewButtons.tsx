@@ -3,14 +3,19 @@
 import { useState, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { reviewExtensionRequest } from '@/lib/portal/actions'
+import { usePrompt } from '@/components/ui/PromptDialog'
 
 export default function ExtensionReviewButtons({ requestId }: { requestId: string }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  function review(status: 'approved' | 'rejected') {
-    const notes = status === 'rejected' ? (window.prompt('Reason for rejecting (shown in the record):') ?? '') : undefined
+  const askPrompt = usePrompt()
+
+  async function review(status: 'approved' | 'rejected') {
+    const notes = status === 'rejected'
+      ? (await askPrompt('Reason for rejecting (shown in the record)', { title: 'Reject request', confirmLabel: 'Reject' })) ?? ''
+      : undefined
     if (status === 'rejected' && !notes?.trim()) return
     setLoading(true)
     setError(null)

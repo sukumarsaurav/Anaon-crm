@@ -9,7 +9,7 @@ import { formatDateTime } from '@/lib/utils'
 export const dynamic = 'force-dynamic'
 
 const STATUS_STYLE: Record<string, string> = {
-  queued: 'bg-gray-100 text-gray-600',
+  queued: 'bg-slate-100 text-slate-600',
   sent: 'bg-blue-50 text-blue-700',
   delivered: 'bg-green-50 text-green-700',
   read: 'bg-purple-50 text-purple-700',
@@ -73,10 +73,10 @@ export default async function BroadcastDetailPage({ params }: { params: Promise<
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-xs text-slate-500">
               <tr>
-                <th className="text-left px-4 py-2">Recipient</th>
-                <th className="text-left px-4 py-2">Phone</th>
-                <th className="text-left px-4 py-2">Status</th>
-                <th className="text-left px-4 py-2">Detail</th>
+                <th scope="col" className="text-left px-4 py-2">Recipient</th>
+                <th scope="col" className="text-left px-4 py-2">Phone</th>
+                <th scope="col" className="text-left px-4 py-2">Status</th>
+                <th scope="col" className="text-left px-4 py-2">Detail</th>
               </tr>
             </thead>
             <tbody>

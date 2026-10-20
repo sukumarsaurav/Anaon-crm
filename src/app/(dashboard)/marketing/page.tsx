@@ -71,19 +71,19 @@ export default async function MarketingPage() {
           <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
             <h2 className="text-sm font-semibold text-slate-900">ROI by Campaign</h2>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:bg-slate-50 [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:bg-white">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                  <th className="px-4 py-3 text-left">Campaign</th>
-                  <th className="px-4 py-3 text-left">Platform</th>
-                  <th className="px-4 py-3 text-right">Leads</th>
-                  <th className="px-4 py-3 text-right">Visits</th>
-                  <th className="px-4 py-3 text-right">Bookings</th>
-                  <th className="px-4 py-3 text-right">Revenue</th>
-                  <th className="px-4 py-3 text-right">Spend</th>
-                  <th className="px-4 py-3 text-right">CPL</th>
-                  <th className="px-4 py-3 text-right">ROAS</th>
+                  <th scope="col" className="px-4 py-3 text-left">Campaign</th>
+                  <th scope="col" className="px-4 py-3 text-left">Platform</th>
+                  <th scope="col" className="px-4 py-3 text-right">Leads</th>
+                  <th scope="col" className="px-4 py-3 text-right">Visits</th>
+                  <th scope="col" className="px-4 py-3 text-right">Bookings</th>
+                  <th scope="col" className="px-4 py-3 text-right">Revenue</th>
+                  <th scope="col" className="px-4 py-3 text-right">Spend</th>
+                  <th scope="col" className="px-4 py-3 text-right">CPL</th>
+                  <th scope="col" className="px-4 py-3 text-right">ROAS</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

@@ -39,7 +39,7 @@ export default function PlotGrid({ plots, projectId, canManage }: Props) {
     <div className="space-y-4">
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-3">
-        <input
+        <input aria-label="Search plot number..."
           type="text"
           placeholder="Search plot number..."
           value={search}
@@ -98,7 +98,7 @@ export default function PlotGrid({ plots, projectId, canManage }: Props) {
               >
                 <span className="leading-tight text-center px-1 break-all">{plot.plot_number}</span>
                 {plot.size_sqyd && (
-                  <span className="text-[9px] opacity-80 leading-none">{plot.size_sqyd}sy</span>
+                  <span className="text-xs opacity-80 leading-none">{plot.size_sqyd}sy</span>
                 )}
                 {plot.status === 'soft_hold' && (
                   <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full border border-white" />

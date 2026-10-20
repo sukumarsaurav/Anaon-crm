@@ -10,6 +10,7 @@ import {
 import { SOURCE_LABELS } from '@/types/leads'
 import type { LeadSource } from '@/types/leads'
 import DateRangeFilter from '@/components/reports/DateRangeFilter'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface PageProps {
   searchParams: Promise<{ from?: string; to?: string }>
@@ -91,16 +92,16 @@ export default async function PipelineAnalyticsPage({ searchParams }: PageProps)
           <table className="w-full text-sm">
             <thead>
               <tr className="text-xs text-slate-500 uppercase tracking-wide border-b border-slate-100">
-                <th className="px-5 py-2.5 text-left">Source</th>
-                <th className="px-5 py-2.5 text-right">Leads</th>
-                <th className="px-5 py-2.5 text-right">Visits</th>
-                <th className="px-5 py-2.5 text-right">Bookings</th>
-                <th className="px-5 py-2.5 text-right">Conversion</th>
+                <th scope="col" className="px-5 py-2.5 text-left">Source</th>
+                <th scope="col" className="px-5 py-2.5 text-right">Leads</th>
+                <th scope="col" className="px-5 py-2.5 text-right">Visits</th>
+                <th scope="col" className="px-5 py-2.5 text-right">Bookings</th>
+                <th scope="col" className="px-5 py-2.5 text-right">Conversion</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {sources.length === 0 ? (
-                <tr><td colSpan={5} className="px-5 py-6 text-center text-slate-400">No data for this period.</td></tr>
+                <tr><td colSpan={5} className="p-0"><EmptyState title="No data for this period" description="Try a wider date range." className="py-8" /></td></tr>
               ) : (
                 sources.map((s) => (
                   <tr key={s.source} className="hover:bg-slate-50">
@@ -131,16 +132,16 @@ export default async function PipelineAnalyticsPage({ searchParams }: PageProps)
           <table className="w-full text-sm">
             <thead>
               <tr className="text-xs text-slate-500 uppercase tracking-wide border-b border-slate-100">
-                <th className="px-5 py-2.5 text-left">Rep</th>
-                <th className="px-5 py-2.5 text-right">Leads</th>
-                <th className="px-5 py-2.5 text-right">Responded</th>
-                <th className="px-5 py-2.5 text-right">Response Rate</th>
-                <th className="px-5 py-2.5 text-right">Avg Response</th>
+                <th scope="col" className="px-5 py-2.5 text-left">Rep</th>
+                <th scope="col" className="px-5 py-2.5 text-right">Leads</th>
+                <th scope="col" className="px-5 py-2.5 text-right">Responded</th>
+                <th scope="col" className="px-5 py-2.5 text-right">Response Rate</th>
+                <th scope="col" className="px-5 py-2.5 text-right">Avg Response</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {responseTimes.length === 0 ? (
-                <tr><td colSpan={5} className="px-5 py-6 text-center text-slate-400">No assigned leads for this period.</td></tr>
+                <tr><td colSpan={5} className="p-0"><EmptyState title="No assigned leads" description="Nothing was assigned in this date range." className="py-8" /></td></tr>
               ) : (
                 responseTimes.map((r) => (
                   <tr key={r.advisor} className="hover:bg-slate-50">

@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useId, useRef } from 'react'
+import { useDialogBehavior } from './useDialogBehavior'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -16,45 +17,8 @@ interface ModalProps {
 export default function Modal({ open, onClose, title, children, size = 'md', footer }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose()
-        return
-      }
-      // Focus trap: cycle Tab within the panel.
-      if (e.key === 'Tab' && panelRef.current) {
-        const focusables = panelRef.current.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
-        )
-        if (focusables.length === 0) return
-        const first = focusables[0]
-        const last = focusables[focusables.length - 1]
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault()
-          last.focus()
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault()
-          first.focus()
-        }
-      }
-    }
-    if (open) {
-      document.addEventListener('keydown', handleKey)
-      document.body.style.overflow = 'hidden'
-      // Move focus into the dialog.
-      requestAnimationFrame(() => {
-        panelRef.current?.querySelector<HTMLElement>(
-          'a[href], button:not([disabled]), textarea, input, select',
-        )?.focus()
-      })
-    }
-    return () => {
-      document.removeEventListener('keydown', handleKey)
-      document.body.style.overflow = ''
-    }
-  }, [open, onClose])
+  const titleId = useId()
+  useDialogBehavior(open, onClose, panelRef)
 
   if (!open) return null
 
@@ -78,18 +42,18 @@ export default function Modal({ open, onClose, title, children, size = 'md', foo
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-labelledby={titleId}
         className={cn(
-          'relative w-full bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] border border-slate-200',
+          'relative w-full bg-white rounded-xl shadow-2xl flex flex-col max-h-[90vh] border border-slate-200',
           sizes[size]
         )}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-          <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+          <h2 id={titleId} className="text-base font-semibold text-slate-900">{title}</h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors focus-ring"
             aria-label="Close dialog"
           >
             <X size={18} />

@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react'
 
 export interface DataTableColumn<T> {
   key: string
@@ -10,6 +11,8 @@ export interface DataTableColumn<T> {
   /** Hide on small screens. Useful for secondary metadata. */
   hideOn?: 'sm' | 'md' | 'lg'
   className?: string
+  /** Renders the header as a sort button; requires `sort` + `onSort` on the table. */
+  sortable?: boolean
 }
 
 interface DataTableProps<T> {
@@ -23,6 +26,9 @@ interface DataTableProps<T> {
   /** Compact row padding (`py-2`) for dense tables. Default false (`py-3`). */
   dense?: boolean
   className?: string
+  /** Currently sorted column + direction (controlled). */
+  sort?: { key: string; dir: 'asc' | 'desc' }
+  onSort?: (key: string) => void
 }
 
 const alignClass = {
@@ -45,6 +51,8 @@ export default function DataTable<T>({
   bordered = true,
   dense = false,
   className,
+  sort,
+  onSort,
 }: DataTableProps<T>) {
   if (rows.length === 0 && empty) {
     return (
@@ -76,6 +84,7 @@ export default function DataTable<T>({
               <th
                 key={col.key}
                 scope="col"
+                aria-sort={col.sortable && sort?.key === col.key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}
                 className={cn(
                   'px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide',
                   alignClass[col.align ?? 'left'],
@@ -84,7 +93,20 @@ export default function DataTable<T>({
                 )}
                 style={col.width ? { width: col.width } : undefined}
               >
-                {col.header}
+                {col.sortable && onSort ? (
+                  <button
+                    type="button"
+                    onClick={() => onSort(col.key)}
+                    className="inline-flex items-center gap-1 uppercase tracking-wide hover:text-slate-900 focus-ring rounded"
+                  >
+                    {col.header}
+                    {sort?.key === col.key
+                      ? (sort.dir === 'asc' ? <ArrowUp size={12} aria-hidden="true" /> : <ArrowDown size={12} aria-hidden="true" />)
+                      : <ArrowUpDown size={12} aria-hidden="true" />}
+                  </button>
+                ) : (
+                  col.header
+                )}
               </th>
             ))}
           </tr>

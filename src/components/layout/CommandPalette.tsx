@@ -138,12 +138,12 @@ export default function CommandPalette() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 bg-slate-50 rounded-lg pl-3 pr-2 py-2 border border-slate-200 hover:border-slate-300 transition-colors text-slate-400 focus-ring w-full max-w-xs"
+        className="flex items-center justify-center sm:justify-start gap-2 bg-slate-50 rounded-lg size-10 sm:size-auto sm:w-full sm:max-w-xs sm:pl-3 sm:pr-2 sm:py-2 border border-slate-200 hover:border-slate-300 transition-colors text-slate-400 focus-ring"
         aria-label="Open search"
       >
         <Search size={15} className="shrink-0" />
-        <span className="text-sm flex-1 text-left">Search leads, clients…</span>
-        <kbd className="hidden sm:inline-flex text-[10px] font-mono bg-white border border-slate-200 px-1.5 py-0.5 rounded shrink-0">
+        <span className="hidden sm:block text-sm flex-1 text-left">Search leads, clients…</span>
+        <kbd className="hidden sm:inline-flex text-xs font-mono bg-white border border-slate-200 px-1.5 py-0.5 rounded shrink-0">
           ⌘K
         </kbd>
       </button>
@@ -156,7 +156,7 @@ export default function CommandPalette() {
     <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-[12vh]" role="dialog" aria-modal="true" aria-label="Search">
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setOpen(false)} aria-hidden="true" />
 
-      <div className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+      <div className="relative w-full max-w-xl bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden">
         <div className="flex items-center gap-3 px-4 border-b border-slate-200">
           <Search size={18} className="text-slate-400 shrink-0" />
           <input
@@ -168,7 +168,7 @@ export default function CommandPalette() {
             className="flex-1 h-12 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 outline-none"
             aria-label="Search query"
           />
-          <kbd className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded shrink-0">esc</kbd>
+          <kbd className="text-xs font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded shrink-0">esc</kbd>
         </div>
 
         <div className="max-h-[50vh] overflow-y-auto py-2">
@@ -189,7 +189,7 @@ export default function CommandPalette() {
               return (
                 <div key={`${r.group}-${r.id}`}>
                   {showHeader && (
-                    <p className="px-4 pt-2 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">{r.group}</p>
+                    <p className="px-4 pt-2 pb-1 text-xs font-bold uppercase tracking-wider text-slate-400">{r.group}</p>
                   )}
                   <button
                     onMouseEnter={() => setActive(i)}

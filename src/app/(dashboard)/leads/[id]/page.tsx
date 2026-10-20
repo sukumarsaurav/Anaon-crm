@@ -36,7 +36,8 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
     getProjects(),
   ])
 
-  if (!lead) notFound()
+  // Soft-deleted leads must not stay reachable by URL.
+  if (!lead || lead.is_active === false) notFound()
 
   const user = (await getProfile())?.user
   if (!user) return null

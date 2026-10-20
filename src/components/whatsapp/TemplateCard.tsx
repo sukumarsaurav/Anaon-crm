@@ -6,6 +6,7 @@ import { toggleTemplateActive, submitTemplateForApproval, updateTemplate, resubm
 import { namedVariables } from '@/lib/whatsapp/template-render'
 import { sampleValueFor } from '@/lib/whatsapp/template-render'
 import type { WaTemplate } from '@/types/whatsapp'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
 
 interface Props {
   template: WaTemplate
@@ -15,9 +16,9 @@ interface Props {
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   approved: { label: 'Approved', color: 'text-green-700', bg: 'bg-green-50' },
   pending_approval: { label: 'In review', color: 'text-amber-700', bg: 'bg-amber-50' },
-  draft: { label: 'Draft', color: 'text-gray-600', bg: 'bg-gray-100' },
+  draft: { label: 'Draft', color: 'text-slate-600', bg: 'bg-slate-100' },
   rejected: { label: 'Rejected', color: 'text-red-700', bg: 'bg-red-50' },
-  disabled: { label: 'Disabled', color: 'text-gray-500', bg: 'bg-gray-100' },
+  disabled: { label: 'Disabled', color: 'text-slate-500', bg: 'bg-slate-100' },
 }
 
 export default function TemplateCard({ template, canSubmit }: Props) {
@@ -66,8 +67,9 @@ export default function TemplateCard({ template, canSubmit }: Props) {
     })
   }
 
-  function handleDelete() {
-    if (!window.confirm(`Delete template "${template.display_name}"? This also removes it from WhatsApp if it was submitted.`)) return
+  const askConfirm = useConfirm()
+  async function handleDelete() {
+    if (!(await askConfirm({ title: 'Delete template', message: `Delete template "${template.display_name}"? This also removes it from WhatsApp if it was submitted.` }))) return
     setSubmitMsg(null)
     startTransition(async () => {
       const r = await deleteTemplate(template.id)
@@ -81,17 +83,17 @@ export default function TemplateCard({ template, canSubmit }: Props) {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition-shadow">
+    <div className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm transition-shadow">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
-          <h3 className="font-semibold text-gray-900 text-sm">{template.display_name}</h3>
-          <p className="text-xs text-gray-500 font-mono mt-0.5">{template.name}</p>
+          <h3 className="font-semibold text-slate-900 text-sm">{template.display_name}</h3>
+          <p className="text-xs text-slate-500 font-mono mt-0.5">{template.name}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusCfg.color} ${statusCfg.bg}`}>
             {statusCfg.label}
           </span>
-          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full capitalize">
+          <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full capitalize">
             {template.category}
           </span>
         </div>
@@ -102,8 +104,8 @@ export default function TemplateCard({ template, canSubmit }: Props) {
       )}
 
       {/* Body preview */}
-      <div className="bg-gray-50 rounded-lg p-3 mb-3">
-        <p className="text-sm text-gray-700 whitespace-pre-wrap line-clamp-3">{template.body}</p>
+      <div className="bg-slate-50 rounded-lg p-3 mb-3">
+        <p className="text-sm text-slate-700 whitespace-pre-wrap line-clamp-3">{template.body}</p>
       </div>
 
       {template.buttons?.length > 0 && (
@@ -133,7 +135,7 @@ export default function TemplateCard({ template, canSubmit }: Props) {
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-400">{template.language.toUpperCase()}</span>
+          <span className="text-xs text-slate-400">{template.language.toUpperCase()}</span>
           {editable && !editing && (
             <button onClick={() => setEditing(true)} disabled={isPending} className="text-xs text-blue-600 hover:underline disabled:opacity-40">Edit</button>
           )}
@@ -157,7 +159,7 @@ export default function TemplateCard({ template, canSubmit }: Props) {
             className={`text-xs px-3 py-1 rounded-lg font-medium transition-colors ${
               template.is_active
                 ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
             {template.is_active ? 'Active' : 'Inactive'}
@@ -165,20 +167,20 @@ export default function TemplateCard({ template, canSubmit }: Props) {
         )}
       </div>
       {showSubmit && (
-        <div className="mt-3 border-t border-gray-100 pt-3 space-y-2">
-          <p className="text-xs text-gray-500">Sample values WhatsApp&apos;s reviewers will see:</p>
+        <div className="mt-3 border-t border-slate-100 pt-3 space-y-2">
+          <p className="text-xs text-slate-500">Sample values WhatsApp&apos;s reviewers will see:</p>
           {template.variable_names.map((v) => (
-            <label key={v} className="flex items-center gap-2 text-xs text-gray-600">
+            <label key={v} className="flex items-center gap-2 text-xs text-slate-600">
               <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full shrink-0">{`{{${v}}}`}</span>
               <input
                 value={examples[v] ?? ''}
                 onChange={(e) => setExamples((x) => ({ ...x, [v]: e.target.value }))}
-                className="flex-1 min-w-0 px-2 py-1 border border-gray-300 rounded-md text-sm"
+                className="flex-1 min-w-0 px-2 py-1 border border-slate-300 rounded-md text-sm"
               />
             </label>
           ))}
           <div className="flex justify-end gap-2">
-            <button onClick={() => setShowSubmit(false)} className="text-xs px-3 py-1 text-gray-600">Cancel</button>
+            <button onClick={() => setShowSubmit(false)} className="text-xs px-3 py-1 text-slate-600">Cancel</button>
             <button
               onClick={handleSubmit}
               disabled={isPending}
@@ -190,18 +192,18 @@ export default function TemplateCard({ template, canSubmit }: Props) {
         </div>
       )}
       {editing && (
-        <div className="mt-3 border-t border-gray-100 pt-3 space-y-2">
-          <input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Display name"
-            className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm" />
-          <textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={5}
-            className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm" />
+        <div className="mt-3 border-t border-slate-100 pt-3 space-y-2">
+          <input aria-label="Display name" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Display name"
+            className="w-full px-2 py-1 border border-slate-300 rounded-md text-sm" />
+          <textarea aria-label="Template body" value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={5}
+            className="w-full px-2 py-1 border border-slate-300 rounded-md text-sm" />
           {namedVariables(editBody).length > 0 && (
-            <p className="text-xs text-gray-500">Variables: {namedVariables(editBody).map((v) => `{{${v}}}`).join(', ')}</p>
+            <p className="text-xs text-slate-500">Variables: {namedVariables(editBody).map((v) => `{{${v}}}`).join(', ')}</p>
           )}
-          <input value={editFooter} onChange={(e) => setEditFooter(e.target.value)} placeholder="Footer (optional)"
-            className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm" />
+          <input aria-label="Footer (optional)" value={editFooter} onChange={(e) => setEditFooter(e.target.value)} placeholder="Footer (optional)"
+            className="w-full px-2 py-1 border border-slate-300 rounded-md text-sm" />
           <div className="flex justify-end gap-2">
-            <button onClick={() => setEditing(false)} className="text-xs px-3 py-1 text-gray-600">Cancel</button>
+            <button onClick={() => setEditing(false)} className="text-xs px-3 py-1 text-slate-600">Cancel</button>
             <button onClick={handleSaveEdit} disabled={isPending || !editBody.trim()}
               className="text-xs px-3 py-1 rounded-lg font-medium bg-green-500 text-white hover:bg-green-600 disabled:opacity-40">
               {isPending ? 'Saving…' : template.status === 'rejected' ? 'Save & resubmit' : 'Save'}
@@ -209,7 +211,7 @@ export default function TemplateCard({ template, canSubmit }: Props) {
           </div>
         </div>
       )}
-      {submitMsg && <p className="mt-2 text-xs text-gray-600">{submitMsg}</p>}
+      {submitMsg && <p className="mt-2 text-xs text-slate-600">{submitMsg}</p>}
     </div>
   )
 }

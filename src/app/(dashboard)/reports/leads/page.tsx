@@ -74,11 +74,11 @@ export default async function LeadReportsPage({ searchParams }: PageProps) {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-xs text-slate-500 uppercase tracking-wide">
-                <th className="pb-3 text-left">Stage</th>
-                <th className="pb-3 text-right">Count</th>
-                <th className="pb-3 text-right">Share</th>
-                <th className="pb-3 text-right">Drop-off</th>
-                <th className="pb-3 pl-4">Visual</th>
+                <th scope="col" className="pb-3 text-left">Stage</th>
+                <th scope="col" className="pb-3 text-right">Count</th>
+                <th scope="col" className="pb-3 text-right">Share</th>
+                <th scope="col" className="pb-3 text-right">Drop-off</th>
+                <th scope="col" className="pb-3 pl-4">Visual</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -127,17 +127,17 @@ export default async function LeadReportsPage({ searchParams }: PageProps) {
           <h2 className="font-semibold text-slate-900 text-sm">Source Performance</h2>
           <ExportButton reportType="source_performance" from={from} to={to} label="CSV" />
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:bg-slate-50 [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:bg-white">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-                <th className="px-4 py-2.5 text-left">Source</th>
-                <th className="px-4 py-2.5 text-right">Leads</th>
-                <th className="px-4 py-2.5 text-right">Visits</th>
-                <th className="px-4 py-2.5 text-right">Bookings</th>
-                <th className="px-4 py-2.5 text-right">Revenue</th>
-                <th className="px-4 py-2.5 text-right">L→V%</th>
-                <th className="px-4 py-2.5 text-right">V→B%</th>
+                <th scope="col" className="px-4 py-2.5 text-left">Source</th>
+                <th scope="col" className="px-4 py-2.5 text-right">Leads</th>
+                <th scope="col" className="px-4 py-2.5 text-right">Visits</th>
+                <th scope="col" className="px-4 py-2.5 text-right">Bookings</th>
+                <th scope="col" className="px-4 py-2.5 text-right">Revenue</th>
+                <th scope="col" className="px-4 py-2.5 text-right">L→V%</th>
+                <th scope="col" className="px-4 py-2.5 text-right">V→B%</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

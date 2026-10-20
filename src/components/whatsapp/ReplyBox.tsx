@@ -10,9 +10,12 @@ interface Props {
   conversationId: string
   templates: WaTemplate[]
   isOptedOut?: boolean
+  /** Shows the message in the thread right away; returns an id for onFailed. */
+  onOptimistic?: (text: string) => string
+  onFailed?: (tempId: string) => void
 }
 
-export default function ReplyBox({ conversationId, templates, isOptedOut }: Props) {
+export default function ReplyBox({ conversationId, templates, isOptedOut, onOptimistic, onFailed }: Props) {
   const [text, setText] = useState('')
   const [showTemplates, setShowTemplates] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -24,9 +27,11 @@ export default function ReplyBox({ conversationId, templates, isOptedOut }: Prop
     const msg = text.trim()
     setText('')
     setError(null)
+    const tempId = onOptimistic?.(msg)
     startTransition(async () => {
       const result = await sendMessage(conversationId, msg)
       if (!result.success) {
+        if (tempId) onFailed?.(tempId)
         setError(result.error ?? 'Failed to send')
         setText(msg) // don't lose what they typed
       }
@@ -41,7 +46,7 @@ export default function ReplyBox({ conversationId, templates, isOptedOut }: Prop
   }
 
   return (
-    <div className="border-t border-gray-200 bg-white">
+    <div className="border-t border-slate-200 bg-white">
       {isOptedOut && (
         <div className="px-4 py-2 bg-amber-50 border-b border-amber-200 text-xs text-amber-700">
           Opted out of WhatsApp marketing (replied STOP). You can still reply to their messages and send utility templates.
@@ -60,19 +65,19 @@ export default function ReplyBox({ conversationId, templates, isOptedOut }: Prop
       <div className="flex items-end gap-2 px-4 py-3">
         <button
           onClick={() => setShowTemplates((v) => !v)}
-          className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+          className="flex-shrink-0 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"
           title="Use template"
         >
           <FileText size={16} />
         </button>
-        <textarea
+        <textarea aria-label="Type a message... (Enter to send, Shift+Enter for new line)"
           ref={textareaRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
           rows={1}
-          className="flex-1 resize-none px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 max-h-32 overflow-y-auto"
+          className="flex-1 resize-none px-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 max-h-32 overflow-y-auto"
           style={{ minHeight: '38px' }}
         />
         <button

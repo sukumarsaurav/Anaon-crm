@@ -16,6 +16,8 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import { cn } from '@/lib/utils'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
+import { useToast } from '@/components/ui/Toast'
 
 interface Advisor {
   id: string
@@ -145,10 +147,13 @@ export default function AssignmentRulesManager({
     })
   }
 
-  const remove = (id: string) => {
-    if (!confirm('Delete this rule?')) return
-    startTransition(() => {
-      void deleteAssignmentRule(id)
+  const askConfirm = useConfirm()
+  const toast = useToast()
+  const remove = async (id: string) => {
+    if (!(await askConfirm({ title: 'Delete rule', message: 'Delete this assignment rule? Leads will stop being routed by it.' }))) return
+    startTransition(async () => {
+      await deleteAssignmentRule(id)
+      toast.success('Rule deleted')
     })
   }
 
@@ -168,7 +173,7 @@ export default function AssignmentRulesManager({
       </div>
 
       {initialRules.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
           <p className="font-semibold text-slate-900">No rules yet</p>
           <p className="text-sm text-slate-500 mt-1">
             All leads currently round-robin across active advisors. Add a rule to route by area,

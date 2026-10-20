@@ -49,43 +49,43 @@ export function DSAFormButton({ dsa }: Props) {
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Name <span className="text-red-500">*</span></label>
-            <input name="name" required defaultValue={dsa?.name ?? ''} placeholder="Agent full name"
+            <label htmlFor="dsaform-name" className="block text-xs font-medium text-slate-600 mb-1">Name <span className="text-red-500">*</span></label>
+            <input id="dsaform-name" name="name" required defaultValue={dsa?.name ?? ''} placeholder="Agent full name"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Firm Name</label>
-            <input name="firm_name" defaultValue={dsa?.firm_name ?? ''} placeholder="Agency / firm name"
+            <label htmlFor="dsaform-firm-name" className="block text-xs font-medium text-slate-600 mb-1">Firm Name</label>
+            <input id="dsaform-firm-name" name="firm_name" defaultValue={dsa?.firm_name ?? ''} placeholder="Agency / firm name"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Phone</label>
-            <input type="tel" name="contact_phone" defaultValue={dsa?.contact_phone ?? ''} placeholder="+91 98765 43210"
+            <label htmlFor="dsaform-contact-phone" className="block text-xs font-medium text-slate-600 mb-1">Phone</label>
+            <input id="dsaform-contact-phone" type="tel" name="contact_phone" defaultValue={dsa?.contact_phone ?? ''} placeholder="+91 98765 43210"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
-            <input type="email" name="contact_email" defaultValue={dsa?.contact_email ?? ''} placeholder="dsa@example.com"
+            <label htmlFor="dsaform-contact-email" className="block text-xs font-medium text-slate-600 mb-1">Email</label>
+            <input id="dsaform-contact-email" type="email" name="contact_email" defaultValue={dsa?.contact_email ?? ''} placeholder="dsa@example.com"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">City</label>
-            <input name="city" defaultValue={dsa?.city ?? ''} placeholder="Jaipur"
+            <label htmlFor="dsaform-city" className="block text-xs font-medium text-slate-600 mb-1">City</label>
+            <input id="dsaform-city" name="city" defaultValue={dsa?.city ?? ''} placeholder="Jaipur"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Commission Rate (%)</label>
-            <input type="number" step="0.01" name="commission_rate" defaultValue={dsa?.commission_rate ?? ''} placeholder="0.5"
+            <label htmlFor="dsaform-commission-rate" className="block text-xs font-medium text-slate-600 mb-1">Commission Rate (%)</label>
+            <input id="dsaform-commission-rate" type="number" step="0.01" name="commission_rate" defaultValue={dsa?.commission_rate ?? ''} placeholder="0.5"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-slate-600 mb-1">Bank Empanelments (comma-separated)</label>
-            <input name="bank_empanelments" defaultValue={(dsa?.bank_empanelments ?? []).join(', ')} placeholder="Comma-separated bank names"
+            <label htmlFor="dsaform-bank-empanelments" className="block text-xs font-medium text-slate-600 mb-1">Bank Empanelments (comma-separated)</label>
+            <input id="dsaform-bank-empanelments" name="bank_empanelments" defaultValue={(dsa?.bank_empanelments ?? []).join(', ')} placeholder="Comma-separated bank names"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
-            <textarea name="notes" rows={2} defaultValue={dsa?.notes ?? ''} placeholder="Specialties, remarks..."
+            <label htmlFor="dsaform-notes" className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
+            <textarea id="dsaform-notes" name="notes" rows={2} defaultValue={dsa?.notes ?? ''} placeholder="Specialties, remarks..."
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
           </div>
         </div>

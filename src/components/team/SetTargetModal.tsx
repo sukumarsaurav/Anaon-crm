@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { X } from 'lucide-react'
 import { setMonthlyTarget } from '@/lib/team/actions'
 import type { TeamMember, TeamTarget } from '@/types/team'
+import Modal from '@/components/ui/Modal'
 
 interface Props {
   member: TeamMember
@@ -35,14 +35,9 @@ export default function SetTargetModal({ member, existingTarget, month, year, on
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between p-5 border-b border-slate-200">
-          <h2 className="font-semibold text-slate-900">Set Monthly Target</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
-        </div>
+    <Modal open onClose={onClose} title="Set Monthly Target" size="sm">
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="text-sm text-slate-600 bg-slate-50 rounded-lg p-3">
             Setting target for <strong>{member.full_name}</strong> —{' '}
             {new Date(year, month - 1).toLocaleString('default', { month: 'long', year: 'numeric' })}
@@ -50,8 +45,8 @@ export default function SetTargetModal({ member, existingTarget, month, year, on
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Revenue Target (₹)</label>
-              <input
+              <label htmlFor="settargetmodal-target-revenue" className="block text-xs font-medium text-slate-600 mb-1">Revenue Target (₹)</label>
+              <input id="settargetmodal-target-revenue"
                 name="target_revenue"
                 type="number"
                 min="0"
@@ -61,8 +56,8 @@ export default function SetTargetModal({ member, existingTarget, month, year, on
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Bookings</label>
-              <input
+              <label htmlFor="settargetmodal-target-bookings" className="block text-xs font-medium text-slate-600 mb-1">Bookings</label>
+              <input id="settargetmodal-target-bookings"
                 name="target_bookings"
                 type="number"
                 min="0"
@@ -72,8 +67,8 @@ export default function SetTargetModal({ member, existingTarget, month, year, on
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Site Visits</label>
-              <input
+              <label htmlFor="settargetmodal-target-site-visits" className="block text-xs font-medium text-slate-600 mb-1">Site Visits</label>
+              <input id="settargetmodal-target-site-visits"
                 name="target_site_visits"
                 type="number"
                 min="0"
@@ -83,8 +78,8 @@ export default function SetTargetModal({ member, existingTarget, month, year, on
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Calls</label>
-              <input
+              <label htmlFor="settargetmodal-target-calls" className="block text-xs font-medium text-slate-600 mb-1">Calls</label>
+              <input id="settargetmodal-target-calls"
                 name="target_calls"
                 type="number"
                 min="0"
@@ -114,7 +109,6 @@ export default function SetTargetModal({ member, existingTarget, month, year, on
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   )
 }

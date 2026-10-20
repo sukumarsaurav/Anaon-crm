@@ -19,7 +19,7 @@ Single neutral family: **slate**. Never use `gray-*`, `zinc-*`, or `neutral-*`.
 | Disabled text   | `text-slate-400`                             |
 | Hover surface   | `hover:bg-slate-50` or `hover:bg-slate-100`  |
 
-**Primary accent:** `indigo-600` (buttons, focus rings, active states).
+**Primary accent:** the `primary` token (`#136dec`, defined in `globals.css`) — `bg-primary`, `text-primary`, `ring-primary`. Don't use `indigo-*` for brand colour.
 **Semantic colors:** `emerald-*` (success), `amber-*` (warning), `red-*` (error), `blue-*` (info). Avoid `green-*`, `orange-*`, `yellow-*` in new code.
 
 ---
@@ -33,7 +33,7 @@ Single neutral family: **slate**. Never use `gray-*`, `zinc-*`, or `neutral-*`.
 | `rounded-xl`    | **surfaces**: Card, Modal, Alert, info banners, filter bars       |
 | `rounded-full`  | avatars, dots, status pills (`<Badge>`), counter chips            |
 
-Never use `rounded`, `rounded-sm`, `rounded-2xl`, or `rounded-3xl`.
+Never use `rounded`, `rounded-sm`, `rounded-2xl`, or `rounded-3xl`. (Exceptions: chat bubbles and the dark branded login/OTP/client-portal landing screens.)
 
 ---
 
@@ -99,19 +99,21 @@ Never use 13, 15, 17, 19. Pick the nearest scale value.
 
 Always use `<Button>` from `./Button.tsx`. Never style a raw `<button>` or `<Link>` to look like a button.
 
-Variants: `primary` (indigo), `secondary` (white + slate border), `ghost` (no background), `outline` (indigo border), `danger` (red), `success` (emerald).
+Variants: `primary` (brand blue), `secondary` (slate fill), `ghost` (no background), `outline` (white + slate border), `danger` (red), `success` (emerald).
 
 Sizes: `xs` / `sm` / `md` (default) / `lg`.
 
-For navigation that looks like a button (e.g., "View all →"), wrap a `<Link>` with `<Button asChild>` (or pass `href` if we extend the component). Never paste `bg-indigo-600 text-white …` inline.
+For navigation that looks like a button (e.g., "View all →"), wrap a `<Link>` with `<Button asChild>` (or pass `href` if we extend the component). Never paste `bg-primary text-white …` inline.
 
 ---
 
 ## Inputs
 
-Always use `<Input>`, `<Select>`, or `<Textarea>` from this folder. They share the same palette (slate), border (`border-slate-300`), focus ring (`focus:ring-indigo-500/30 focus:border-indigo-500`), and disabled state.
+Always use `<Input>`, `<Select>`, or `<Textarea>` from this folder. They share the same palette (slate), border (`border-slate-300`), focus ring (`focus:ring-primary/30 focus:border-primary`), and disabled state.
 
 Required fields show a red asterisk automatically when `required` is set — don't bake `*` into the label text.
+
+**Every control needs an accessible name.** `Input`/`Select`/`Textarea` link their `<label>` for you (using `useId`, so ids never collide). If you must use a raw `<input>`/`<select>`, give the label `htmlFor` and the control a matching `id` — or an `aria-label` when there is no visible label (filters, inline editors). Placeholders are not labels. A component rendered in a list needs `useId()` for its ids.
 
 ---
 
@@ -123,7 +125,7 @@ Use `<Badge>` for static labels. Use `<StatusBadge>` (Phase 1.4 primitive) for a
 
 ## Tables
 
-Use the `<DataTable>` primitive (Phase 1.5). It enforces:
+Use the `<DataTable>` primitive (Phase 1.5). It supports sortable headers (`sortable` on a column + `sort`/`onSort` on the table; server-sorted lists like `LeadsTable` drive `sort_by`/`sort_dir` URL params instead) and `hideOn` to drop secondary columns on small screens. Tables with more than ~5 columns must hide the secondary ones below `md`. It enforces:
 
 - Header: `bg-slate-50 border-b border-slate-200`, `<th>` `px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide`
 - Row: `border-b border-slate-100 hover:bg-slate-50`
@@ -134,7 +136,7 @@ Use the `<DataTable>` primitive (Phase 1.5). It enforces:
 
 ## Empty states
 
-Use `<EmptyState>` (Phase 1.2). Centered, `py-12`, icon size 40, optional CTA.
+Use `<EmptyState>` (Phase 1.2). Centered, `py-12`, icon size 40, optional CTA. Never write a bare "No X found" line: say what to do next (`description` / `action`).
 
 ---
 
@@ -166,6 +168,19 @@ Use `<PageHeader>` (Phase 1.1) for every top-level page:
 
 ---
 
+## Feedback, confirmation and errors
+
+- **Confirm destructive actions** with `useConfirm()` (`ConfirmDialog.tsx`): `if (!(await confirm({ title, message }))) return`. Never `window.confirm`/`alert`/`prompt`; use `usePrompt()` when you need a line of text.
+- **Report results** with `useToast()` (`Toast.tsx`): `toast.success('Lead deleted')`, `toast.error(result.error ?? '…')`. Keep inline `<Alert>`s for form validation that the user must fix in place.
+- All three are mounted once by `UIProvider` in the root layout.
+- **Modals** always use `<Modal>` (focus trap, Escape, scroll lock, focus restore). Side drawers must set `role="dialog" aria-modal` and close on Escape.
+- **Routes** need a `loading.tsx` (use `PageSkeleton`); route groups have an `error.tsx`; the app has `not-found.tsx` and `global-error.tsx`.
+- **People** photos use `<Avatar name src />` (falls back to initials, including on a broken image).
+
+`npm run lint:ui` enforces the palette, radius, font-size, native-dialog and hand-rolled-modal rules above.
+
+---
+
 ## Don'ts
 
 - Don't roll a card / button / input / modal from scratch.
@@ -173,5 +188,7 @@ Use `<PageHeader>` (Phase 1.1) for every top-level page:
 - Don't introduce a new radius (`rounded`, `rounded-2xl`).
 - Don't downgrade a page H1 to `text-xl` because the form is short.
 - Don't use icon size 13/15/17/19 just because it "fits better."
+- Don't use text smaller than `text-xs` (12px).
+- Don't use `confirm()`/`alert()`/`prompt()`.
 - Don't paste status colors inline.
 - Don't paste `₹` template literals — use `formatCurrency`.

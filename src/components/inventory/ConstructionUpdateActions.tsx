@@ -4,6 +4,8 @@ import { startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toggleConstructionUpdatePublished, deleteConstructionUpdate } from '@/lib/portal/actions'
 import { Eye, EyeOff, Trash2 } from 'lucide-react'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
+import { useToast } from '@/components/ui/Toast'
 
 interface Props {
   updateId: string
@@ -21,10 +23,13 @@ export default function ConstructionUpdateActions({ updateId, projectId, isPubli
     })
   }
 
-  function handleDelete() {
-    if (!confirm('Delete this update?')) return
+  const askConfirm = useConfirm()
+  const toast = useToast()
+  async function handleDelete() {
+    if (!(await askConfirm({ title: 'Delete update', message: 'Delete this construction update?' }))) return
     startTransition(async () => {
       await deleteConstructionUpdate(updateId, projectId)
+      toast.success('Update deleted')
       router.refresh()
     })
   }

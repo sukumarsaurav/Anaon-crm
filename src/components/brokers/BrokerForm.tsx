@@ -41,10 +41,11 @@ export default function BrokerForm({ broker }: Props) {
     opts?: { type?: string; required?: boolean; placeholder?: string; min?: string; step?: string }
   ) => (
     <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1">
+      <label htmlFor={`broker-${name}`} className="block text-sm font-medium text-slate-700 mb-1">
         {label}{opts?.required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       <input
+        id={`broker-${name}`}
         name={name}
         type={opts?.type ?? 'text'}
         required={opts?.required}
@@ -104,7 +105,7 @@ export default function BrokerForm({ broker }: Props) {
       {/* Notes */}
       <div className="bg-white border border-slate-200 rounded-xl p-5">
         <h3 className="font-semibold text-slate-900 mb-3">Internal Notes</h3>
-        <textarea
+        <textarea aria-label="Any internal notes about this broker..."
           name="notes"
           rows={2}
           defaultValue={broker?.notes ?? ''}

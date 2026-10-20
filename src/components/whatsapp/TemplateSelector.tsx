@@ -5,6 +5,7 @@ import { X } from 'lucide-react'
 import { sendTemplateToConversation } from '@/lib/whatsapp/actions'
 import { renderTemplate } from '@/lib/whatsapp/template-render'
 import type { WaTemplate } from '@/types/whatsapp'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Props {
   templates: WaTemplate[]
@@ -41,25 +42,25 @@ export default function TemplateSelector({ templates, conversationId, onClose }:
     : null
 
   return (
-    <div className="border-b border-gray-200 bg-gray-50 p-4 space-y-3">
+    <div className="border-b border-slate-200 bg-slate-50 p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700">Select Template</h3>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
+        <h3 className="text-sm font-semibold text-slate-700">Select Template</h3>
+        <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={16} /></button>
       </div>
 
       {!selected ? (
         <div className="space-y-1 max-h-48 overflow-y-auto">
           {templates.length === 0 && (
-            <p className="text-sm text-gray-400 text-center py-4">No approved templates</p>
+            <EmptyState title="No approved templates" className="py-4" />
           )}
           {templates.map((t) => (
             <button
               key={t.id}
               onClick={() => handleSelect(t)}
-              className="w-full text-left px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition-colors"
+              className="w-full text-left px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition-colors"
             >
-              <div className="font-medium text-gray-800">{t.display_name}</div>
-              <div className="text-xs text-gray-500 truncate mt-0.5">{t.body}</div>
+              <div className="font-medium text-slate-800">{t.display_name}</div>
+              <div className="text-xs text-slate-500 truncate mt-0.5">{t.body}</div>
             </button>
           ))}
         </div>
@@ -72,19 +73,19 @@ export default function TemplateSelector({ templates, conversationId, onClose }:
             ← Back to templates
           </button>
 
-          <div className="font-medium text-sm text-gray-800">{selected.display_name}</div>
+          <div className="font-medium text-sm text-slate-800">{selected.display_name}</div>
 
           {selected.variable_names.length > 0 && (
             <div className="space-y-2">
               {selected.variable_names.map((name) => (
                 <div key={name}>
-                  <label className="text-xs text-gray-600 mb-1 block">{`{{${name}}}`}</label>
-                  <input
+                  <label htmlFor={`templateselector-field-${name}`} className="text-xs text-slate-600 mb-1 block">{`{{${name}}}`}</label>
+                  <input id={`templateselector-field-${name}`}
                     type="text"
                     value={values[name] ?? ''}
                     onChange={(e) => setValues((v) => ({ ...v, [name]: e.target.value }))}
                     placeholder={`Enter ${name}`}
-                    className="w-full text-sm px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full text-sm px-2 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
               ))}
@@ -92,7 +93,7 @@ export default function TemplateSelector({ templates, conversationId, onClose }:
           )}
 
           {preview && (
-            <div className="bg-white border border-gray-200 rounded-lg p-3 text-sm text-gray-700 whitespace-pre-wrap">
+            <div className="bg-white border border-slate-200 rounded-lg p-3 text-sm text-slate-700 whitespace-pre-wrap">
               {preview}
             </div>
           )}

@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:smoke": "node tests/smoke/smoke.mjs",
-    "test:db": "node tests/sql/select-sweep.mjs && node tests/sql/write-columns-sweep.mjs"
+    "test:db": "node tests/sql/select-sweep.mjs && node tests/sql/write-columns-sweep.mjs",
+    "lint:ui": "node scripts/check-ui-rules.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

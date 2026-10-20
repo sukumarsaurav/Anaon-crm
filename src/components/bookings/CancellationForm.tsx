@@ -37,10 +37,10 @@ export default function CancellationForm({ bookingId, totalValue }: Props) {
       <h3 className="font-semibold text-slate-900">Cancellation Details</h3>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">
+        <label htmlFor="cancellationform-reason" className="block text-sm font-medium text-slate-700 mb-1">
           Reason for Cancellation <span className="text-red-500">*</span>
         </label>
-        <textarea
+        <textarea id="cancellationform-reason"
           name="reason"
           required
           rows={3}
@@ -50,10 +50,10 @@ export default function CancellationForm({ bookingId, totalValue }: Props) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">
+        <label htmlFor="cancellationform-cancellation-charges" className="block text-sm font-medium text-slate-700 mb-1">
           Cancellation Charges (₹)
         </label>
-        <input
+        <input id="cancellationform-cancellation-charges"
           type="number"
           name="cancellation_charges"
           min={0}

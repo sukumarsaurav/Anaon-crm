@@ -9,6 +9,8 @@ import Select from '@/components/ui/Select'
 import { createAlbum, toggleAlbum, deleteAlbum } from '@/lib/albums/actions'
 import type { AlbumListItem } from '@/lib/albums/queries'
 import { cn } from '@/lib/utils'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
+import { useToast } from '@/components/ui/Toast'
 
 interface Props {
   albums: AlbumListItem[]
@@ -23,6 +25,8 @@ export default function AlbumsManager({ albums, projects, appUrl }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const askConfirm = useConfirm()
+  const toast = useToast()
 
   useEffect(() => {
     if (!appUrl) setOrigin(window.location.origin)
@@ -61,7 +65,7 @@ export default function AlbumsManager({ albums, projects, appUrl }: Props) {
       </div>
 
       {albums.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
           <p className="font-semibold text-slate-900">No albums yet</p>
           <p className="text-sm text-slate-500 mt-1">
             Create a branded, shareable property album to send clients over WhatsApp — and see when they open it.
@@ -114,7 +118,14 @@ export default function AlbumsManager({ albums, projects, appUrl }: Props) {
                 <Power size={15} />
               </button>
               <button
-                onClick={() => { if (confirm('Delete this album?')) startTransition(() => { void deleteAlbum(a.id) }) }}
+                onClick={async () => {
+                  if (await askConfirm({ title: 'Delete album', message: 'Delete this album? Its shared link will stop working.' })) {
+                    startTransition(async () => {
+                      await deleteAlbum(a.id)
+                      toast.success('Album deleted')
+                    })
+                  }
+                }}
                 disabled={isPending}
                 className="shrink-0 p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
                 title="Delete"
@@ -160,8 +171,8 @@ export default function AlbumsManager({ albums, projects, appUrl }: Props) {
             />
             <Input label="Client name (optional)" name="client_name" placeholder="Personalizes the page" />
             <div>
-              <label className="text-sm font-medium text-slate-700">Intro message (optional)</label>
-              <textarea
+              <label htmlFor="albumsmanager-message" className="text-sm font-medium text-slate-700">Intro message (optional)</label>
+              <textarea id="albumsmanager-message"
                 name="message"
                 rows={2}
                 placeholder="A short note shown at the top of the album…"

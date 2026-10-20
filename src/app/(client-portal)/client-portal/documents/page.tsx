@@ -14,6 +14,7 @@ const DOC_STATUS_CONFIG: Record<string, { label: string; color: string; bg: stri
 }
 import { ExternalLink, FileText, Upload } from 'lucide-react'
 import type { DocType, DocStatus } from '@/types/clients'
+import EmptyState from '@/components/ui/EmptyState'
 
 export default async function ClientPortalDocumentsPage() {
   const session = await getPortalSession()
@@ -72,7 +73,7 @@ export default async function ClientPortalDocumentsPage() {
           <h3 className="font-semibold text-slate-900 text-sm">Your Submitted Documents</h3>
         </div>
         {clientDocs.length === 0 ? (
-          <p className="p-6 text-center text-sm text-slate-400">No documents submitted yet</p>
+          <EmptyState title="No documents submitted yet" className="py-6" />
         ) : (
           <div className="divide-y divide-slate-100">
             {clientDocs.map((doc) => {

@@ -210,7 +210,8 @@ export async function markConversationRead(conversationId: string) {
     unread_count: 0,
     updated_at: new Date().toISOString(),
   }).eq('id', conversationId)
-  revalidatePath('/whatsapp/inbox')
+  // No revalidatePath: the inbox list hears this change over realtime, and re-rendering
+  // the whole inbox just to clear a badge made every chat open slower.
 }
 
 export async function takeBotControl(conversationId: string, enableBot: boolean) {

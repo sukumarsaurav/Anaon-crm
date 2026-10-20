@@ -7,7 +7,11 @@ import {
   PAYMENT_STATUS_CONFIG, PAYMENT_MODE_LABELS,
 } from '@/types/clients'
 import type { Payment, PaymentSummary } from '@/types/clients'
-import { CheckCircle2, Plus, X } from 'lucide-react'
+import { CheckCircle2, Plus } from 'lucide-react'
+import Modal from '@/components/ui/Modal'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
+import { useToast } from '@/components/ui/Toast'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Props {
   bookingId: string
@@ -35,29 +39,24 @@ function RecordPaymentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
-        <div className="flex items-center justify-between p-5 border-b border-slate-200">
-          <h3 className="font-bold text-slate-900">Record Payment</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
-        </div>
-        <form onSubmit={handleSubmit} className="p-5 space-y-3">
+    <Modal open onClose={onClose} title="Record Payment" size="sm">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Amount Paid (₹) *</label>
-              <input name="amount_paid" type="number" min="0" step="1" required
+              <label htmlFor="paymentschedule-amount-paid" className="block text-xs font-medium text-slate-600 mb-1">Amount Paid (₹) *</label>
+              <input id="paymentschedule-amount-paid" name="amount_paid" type="number" min="0" step="1" required
                 defaultValue={payment.amount_due}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Payment Date *</label>
-              <input name="paid_date" type="date" required
+              <label htmlFor="paymentschedule-paid-date" className="block text-xs font-medium text-slate-600 mb-1">Payment Date *</label>
+              <input id="paymentschedule-paid-date" name="paid_date" type="date" required
                 defaultValue={new Date().toISOString().split('T')[0]}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Mode</label>
-              <select name="mode"
+              <label htmlFor="paymentschedule-mode" className="block text-xs font-medium text-slate-600 mb-1">Mode</label>
+              <select id="paymentschedule-mode" name="mode"
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                 <option value="">— Select —</option>
                 {Object.entries(PAYMENT_MODE_LABELS).map(([v, label]) => (
@@ -66,28 +65,28 @@ function RecordPaymentModal({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Transaction / UTR</label>
-              <input name="transaction_id" placeholder="UTR123456"
+              <label htmlFor="paymentschedule-transaction-id" className="block text-xs font-medium text-slate-600 mb-1">Transaction / UTR</label>
+              <input id="paymentschedule-transaction-id" name="transaction_id" placeholder="UTR123456"
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Cheque No.</label>
-              <input name="cheque_number" placeholder="123456"
+              <label htmlFor="paymentschedule-cheque-number" className="block text-xs font-medium text-slate-600 mb-1">Cheque No.</label>
+              <input id="paymentschedule-cheque-number" name="cheque_number" placeholder="123456"
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Bank</label>
-              <input name="bank_name" placeholder="Bank name"
+              <label htmlFor="paymentschedule-bank-name" className="block text-xs font-medium text-slate-600 mb-1">Bank</label>
+              <input id="paymentschedule-bank-name" name="bank_name" placeholder="Bank name"
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Reference</label>
-              <input name="payment_reference" placeholder="Any reference"
+              <label htmlFor="paymentschedule-payment-reference" className="block text-xs font-medium text-slate-600 mb-1">Reference</label>
+              <input id="paymentschedule-payment-reference" name="payment_reference" placeholder="Any reference"
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
-              <input name="notes"
+              <label htmlFor="paymentschedule-notes" className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
+              <input id="paymentschedule-notes" name="notes"
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
           </div>
@@ -103,8 +102,7 @@ function RecordPaymentModal({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   )
 }
 
@@ -127,9 +125,14 @@ export default function PaymentSchedule({ bookingId, clientId, payments, summary
     })
   }
 
-  function handleWaive(paymentId: string) {
-    if (!confirm('Waive this installment?')) return
-    startTransition(async () => { await waivePayment(paymentId) })
+  const askConfirm = useConfirm()
+  const toast = useToast()
+  async function handleWaive(paymentId: string) {
+    if (!(await askConfirm({ title: 'Waive installment', message: 'Waive this installment? The amount will no longer be due.', confirmLabel: 'Waive' }))) return
+    startTransition(async () => {
+      await waivePayment(paymentId)
+      toast.success('Installment waived')
+    })
   }
 
   return (
@@ -157,18 +160,18 @@ export default function PaymentSchedule({ bookingId, clientId, payments, summary
               <h4 className="text-sm font-semibold text-slate-700">Add Installment</h4>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Amount (₹) *</label>
-                  <input name="amount_due" type="number" min="1" required
+                  <label htmlFor="paymentschedule-amount-due" className="block text-xs font-medium text-slate-600 mb-1">Amount (₹) *</label>
+                  <input id="paymentschedule-amount-due" name="amount_due" type="number" min="1" required
                     className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Due Date *</label>
-                  <input name="due_date" type="date" required
+                  <label htmlFor="paymentschedule-due-date" className="block text-xs font-medium text-slate-600 mb-1">Due Date *</label>
+                  <input id="paymentschedule-due-date" name="due_date" type="date" required
                     className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Description</label>
-                  <input name="description" placeholder="Down payment"
+                  <label htmlFor="paymentschedule-description" className="block text-xs font-medium text-slate-600 mb-1">Description</label>
+                  <input id="paymentschedule-description" name="description" placeholder="Down payment"
                     className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
               </div>
@@ -249,7 +252,7 @@ export default function PaymentSchedule({ bookingId, clientId, payments, summary
           )
         })}
         {payments.length === 0 && (
-          <p className="text-sm text-slate-400 text-center py-6">No installments scheduled yet</p>
+          <EmptyState title="No installments scheduled yet" className="py-6" />
         )}
       </div>
 

@@ -100,15 +100,15 @@ export default async function ProjectRERAPage({ params }: Props) {
               <form action={uploadDoc}>
                 <input type="hidden" name="project_id" value={projectId} />
                 <div className="space-y-2">
-                  <input name="name" placeholder="Document name" required
+                  <input aria-label="Document name" name="name" placeholder="Document name" required
                     className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500" />
-                  <select name="category" required
+                  <select aria-label="Document category" name="category" required
                     className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500">
                     {RERA_CHECKLIST_ITEMS.map(item => (
                       <option key={item.key} value={item.key}>{item.label}</option>
                     ))}
                   </select>
-                  <input type="url" name="file_url" placeholder="File URL (uploaded to storage)" required
+                  <input aria-label="File URL (uploaded to storage)" type="url" name="file_url" placeholder="File URL (uploaded to storage)" required
                     className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500" />
                   <button type="submit"
                     className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white text-xs font-medium rounded-lg hover:bg-primary-700">
@@ -135,13 +135,13 @@ export default async function ProjectRERAPage({ params }: Props) {
         <div>
           <h2 className="font-semibold text-slate-900 mb-3">Uploaded Documents</h2>
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto"><table className="w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-100">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600">Name</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600">Category</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600 hidden sm:table-cell">Uploaded</th>
-                  <th className="px-4 py-3"></th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-slate-600">Name</th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-slate-600">Category</th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-slate-600 hidden sm:table-cell">Uploaded</th>
+                  <th scope="col" className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -161,7 +161,7 @@ export default async function ProjectRERAPage({ params }: Props) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           </div>
         </div>
       )}

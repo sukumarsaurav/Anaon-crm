@@ -28,12 +28,12 @@ export default function DateRangeFilter() {
   return (
     <form onSubmit={handleChange} className="flex items-center gap-2 flex-wrap">
       <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
-        <label className="text-xs text-slate-500 shrink-0">From</label>
-        <input name="from" type="date" defaultValue={from}
+        <label htmlFor="daterangefilter-from" className="text-xs text-slate-500 shrink-0">From</label>
+        <input id="daterangefilter-from" name="from" type="date" defaultValue={from}
           className="text-sm text-slate-700 focus:outline-none" />
         <span className="text-slate-300">→</span>
-        <label className="text-xs text-slate-500 shrink-0">To</label>
-        <input name="to" type="date" defaultValue={to}
+        <label htmlFor="daterangefilter-to" className="text-xs text-slate-500 shrink-0">To</label>
+        <input id="daterangefilter-to" name="to" type="date" defaultValue={to}
           className="text-sm text-slate-700 focus:outline-none" />
       </div>
       <button type="submit"

@@ -107,7 +107,7 @@ function LeadKanbanCard({ lead }: { lead: Lead }) {
       {/* Assigned */}
       {lead.assigned_profile && (
         <div className="flex items-center gap-1.5 mb-2.5 pl-9">
-          <div className="w-4 h-4 bg-slate-200 rounded-full flex items-center justify-center text-[10px] font-medium text-slate-600">
+          <div className="w-4 h-4 bg-slate-200 rounded-full flex items-center justify-center text-xs font-medium text-slate-600">
             {getInitials(lead.assigned_profile.full_name)}
           </div>
           <span className="text-xs text-slate-500 truncate">{lead.assigned_profile.full_name}</span>

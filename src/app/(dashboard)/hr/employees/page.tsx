@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { getEmployees } from '@/lib/hr/queries'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { ArrowLeft, User, Phone, Mail, Building2 } from 'lucide-react'
+import Avatar from '@/components/ui/Avatar'
 
 export default async function EmployeesPage() {
   const employees = await getEmployees()
@@ -32,13 +33,7 @@ export default async function EmployeesPage() {
             {employees.map(emp => (
               <Link key={emp.id} href={`/hr/employees/${emp.id}`}
                 className="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors">
-                <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-                  {emp.photo_url ? (
-                    <img src={emp.photo_url} alt={emp.full_name} className="w-10 h-10 rounded-full object-cover" />
-                  ) : (
-                    <User size={18} className="text-primary-600" />
-                  )}
-                </div>
+                <Avatar name={emp.full_name} src={emp.photo_url} className="size-10" />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-slate-900 text-sm">{emp.full_name}</p>
                   <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap mt-0.5">

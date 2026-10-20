@@ -74,14 +74,14 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
       <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
         <h3 className="font-semibold text-slate-900">Basic Info</h3>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Name <span className="text-red-500">*</span></label>
-          <input name="name" required defaultValue={automation?.name ?? ''}
+          <label htmlFor="automationbuilder-name" className="block text-sm font-medium text-slate-700 mb-1">Name <span className="text-red-500">*</span></label>
+          <input id="automationbuilder-name" name="name" required defaultValue={automation?.name ?? ''}
             placeholder="e.g. Welcome New Facebook Lead"
             className={inputCls} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
-          <input name="description" defaultValue={automation?.description ?? ''}
+          <label htmlFor="automationbuilder-description" className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+          <input id="automationbuilder-description" name="description" defaultValue={automation?.description ?? ''}
             placeholder="What does this automation do?"
             className={inputCls} />
         </div>
@@ -99,7 +99,7 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
           <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center">1</span>
           <h3 className="font-semibold text-slate-900">Trigger — When should this fire?</h3>
         </div>
-        <select value={trigger} onChange={e => setTrigger(e.target.value as TriggerEvent)} className={selectCls}>
+        <select aria-label="Trigger" value={trigger} onChange={e => setTrigger(e.target.value as TriggerEvent)} className={selectCls}>
           {Object.entries(GROUPED_TRIGGERS).map(([cat, opts]) => (
             <optgroup key={cat} label={cat}>
               {opts.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -125,11 +125,11 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
         )}
         {conditions.map((cond, i) => (
           <div key={i} className="flex items-center gap-2 flex-wrap">
-            <select value={cond.field} onChange={e => updateCondition(i, { field: e.target.value })}
+            <select aria-label="Condition field" value={cond.field} onChange={e => updateCondition(i, { field: e.target.value })}
               className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none flex-1 min-w-32">
               {CONDITION_FIELDS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
             </select>
-            <select value={cond.operator} onChange={e => updateCondition(i, { operator: e.target.value as AutomationCondition['operator'] })}
+            <select aria-label="Condition operator" value={cond.operator} onChange={e => updateCondition(i, { operator: e.target.value as AutomationCondition['operator'] })}
               className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none">
               <option value="equals">equals</option>
               <option value="not_equals">not equals</option>
@@ -138,13 +138,13 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
               <option value="less_than">less than</option>
             </select>
             {cond.field === 'stage' ? (
-              <select value={cond.value} onChange={e => updateCondition(i, { value: e.target.value })}
+              <select aria-label="Condition value" value={cond.value} onChange={e => updateCondition(i, { value: e.target.value })}
                 className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none flex-1 min-w-32">
                 <option value="">Select stage</option>
                 {LEAD_STAGES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
               </select>
             ) : (
-              <input value={cond.value} onChange={e => updateCondition(i, { value: e.target.value })}
+              <input aria-label="value" value={cond.value} onChange={e => updateCondition(i, { value: e.target.value })}
                 placeholder="value" className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none flex-1 min-w-32" />
             )}
             <button type="button" onClick={() => removeCondition(i)}
@@ -162,10 +162,10 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
           <h3 className="font-semibold text-slate-900">Delay (optional)</h3>
         </div>
         <div className="flex items-center gap-3">
-          <input type="number" value={delayValue} onChange={e => setDelayValue(parseInt(e.target.value) || 0)}
+          <input aria-label="Delay amount" type="number" value={delayValue} onChange={e => setDelayValue(parseInt(e.target.value) || 0)}
             min="0" max="365"
             className="w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
-          <select value={delayUnit} onChange={e => setDelayUnit(e.target.value as any)}
+          <select aria-label="Delay unit" value={delayUnit} onChange={e => setDelayUnit(e.target.value as any)}
             className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
             <option value="minutes">Minutes</option>
             <option value="hours">Hours</option>
@@ -182,8 +182,8 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
           <h3 className="font-semibold text-slate-900">Action — What to do?</h3>
         </div>
         <div>
-          <label className="block text-xs text-slate-600 mb-1">Action Type</label>
-          <select value={action} onChange={e => { const a = e.target.value as ActionType; setAction(a); setPayload(a === 'send_whatsapp' ? { recipient: 'lead' } : {}) }} className={selectCls}>
+          <label htmlFor="automationbuilder-action-type" className="block text-xs text-slate-600 mb-1">Action Type</label>
+          <select id="automationbuilder-action-type" value={action} onChange={e => { const a = e.target.value as ActionType; setAction(a); setPayload(a === 'send_whatsapp' ? { recipient: 'lead' } : {}) }} className={selectCls}>
             {ACTION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </div>
@@ -192,20 +192,20 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
         {action === 'send_whatsapp' && (
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-slate-600 mb-1">WhatsApp Template (approved)</label>
+              <label htmlFor="automationbuilder-whatsapp-template" className="block text-xs text-slate-600 mb-1">WhatsApp Template (approved)</label>
               {whatsappTemplates.length > 0 ? (
-                <select value={payload.template_name ?? ''} onChange={e => setPayload(p => ({ ...p, template_name: e.target.value }))} className={selectCls}>
+                <select id="automationbuilder-whatsapp-template" value={payload.template_name ?? ''} onChange={e => setPayload(p => ({ ...p, template_name: e.target.value }))} className={selectCls}>
                   <option value="">Select template</option>
                   {whatsappTemplates.map(t => <option key={t.name} value={t.name}>{t.name}{t.category ? ` (${t.category})` : ''}</option>)}
                 </select>
               ) : (
-                <input value={payload.template_name ?? ''} onChange={e => setPayload(p => ({ ...p, template_name: e.target.value }))}
+                <input aria-label="e.g. welcome_lead" value={payload.template_name ?? ''} onChange={e => setPayload(p => ({ ...p, template_name: e.target.value }))}
                   placeholder="e.g. welcome_lead" className={inputCls} />
               )}
             </div>
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Recipient</label>
-              <select value={payload.recipient ?? 'lead'} onChange={e => setPayload(p => ({ ...p, recipient: e.target.value as any }))} className={selectCls}>
+              <label htmlFor="automationbuilder-recipient" className="block text-xs text-slate-600 mb-1">Recipient</label>
+              <select id="automationbuilder-recipient" value={payload.recipient ?? 'lead'} onChange={e => setPayload(p => ({ ...p, recipient: e.target.value as any }))} className={selectCls}>
                 <option value="lead">Lead</option>
                 <option value="client">Client</option>
               </select>
@@ -219,18 +219,18 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
         {action === 'send_notification' && (
           <div className="space-y-3">
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Title</label>
-              <input value={payload.notification_title ?? ''} onChange={e => setPayload(p => ({ ...p, notification_title: e.target.value }))}
+              <label htmlFor="automationbuilder-title" className="block text-xs text-slate-600 mb-1">Title</label>
+              <input id="automationbuilder-title" value={payload.notification_title ?? ''} onChange={e => setPayload(p => ({ ...p, notification_title: e.target.value }))}
                 placeholder="e.g. New Lead Assigned" className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Message (use {'{{lead_name}}'}, {'{{client_name}}'})</label>
-              <textarea value={payload.notification_body ?? ''} onChange={e => setPayload(p => ({ ...p, notification_body: e.target.value }))}
+              <label htmlFor="automationbuilder-message-use" className="block text-xs text-slate-600 mb-1">Message (use {'{{lead_name}}'}, {'{{client_name}}'})</label>
+              <textarea id="automationbuilder-message-use" value={payload.notification_body ?? ''} onChange={e => setPayload(p => ({ ...p, notification_body: e.target.value }))}
                 rows={2} placeholder="e.g. You have a new lead: {{lead_name}}" className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Notify Roles</label>
-              <div className="flex gap-3 flex-wrap">
+              <span id="automationbuilder-notify-roles" className="block text-xs text-slate-600 mb-1">Notify Roles</span>
+              <div role="group" aria-labelledby="automationbuilder-notify-roles" className="flex gap-3 flex-wrap">
                 {['admin', 'manager', 'sales_advisor', 'hr'].map(role => (
                   <label key={role} className="flex items-center gap-1.5 text-sm text-slate-700">
                     <input type="checkbox" checked={(payload.notify_roles ?? []).includes(role)}
@@ -252,13 +252,13 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
         {action === 'create_followup' && (
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Follow-up Note</label>
-              <input value={payload.followup_note ?? ''} onChange={e => setPayload(p => ({ ...p, followup_note: e.target.value }))}
+              <label htmlFor="automationbuilder-follow-up-note" className="block text-xs text-slate-600 mb-1">Follow-up Note</label>
+              <input id="automationbuilder-follow-up-note" value={payload.followup_note ?? ''} onChange={e => setPayload(p => ({ ...p, followup_note: e.target.value }))}
                 placeholder="e.g. Auto follow-up after visit" className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Schedule After (hours)</label>
-              <input type="number" value={payload.followup_hours ?? 24} min="1"
+              <label htmlFor="automationbuilder-schedule-after-hours" className="block text-xs text-slate-600 mb-1">Schedule After (hours)</label>
+              <input id="automationbuilder-schedule-after-hours" type="number" value={payload.followup_hours ?? 24} min="1"
                 onChange={e => setPayload(p => ({ ...p, followup_hours: parseInt(e.target.value) }))}
                 className={inputCls} />
             </div>
@@ -267,8 +267,8 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
 
         {action === 'change_lead_stage' && (
           <div>
-            <label className="block text-xs text-slate-600 mb-1">New Stage</label>
-            <select value={payload.new_stage ?? ''} onChange={e => setPayload(p => ({ ...p, new_stage: e.target.value }))} className={selectCls}>
+            <label htmlFor="automationbuilder-new-stage" className="block text-xs text-slate-600 mb-1">New Stage</label>
+            <select id="automationbuilder-new-stage" value={payload.new_stage ?? ''} onChange={e => setPayload(p => ({ ...p, new_stage: e.target.value }))} className={selectCls}>
               <option value="">Select stage</option>
               {LEAD_STAGES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
             </select>
@@ -278,16 +278,16 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
         {action === 'assign_to_advisor' && (
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Assignment Mode</label>
-              <select value={payload.assignment_mode ?? 'round_robin'} onChange={e => setPayload(p => ({ ...p, assignment_mode: e.target.value as any }))} className={selectCls}>
+              <label htmlFor="automationbuilder-assignment-mode" className="block text-xs text-slate-600 mb-1">Assignment Mode</label>
+              <select id="automationbuilder-assignment-mode" value={payload.assignment_mode ?? 'round_robin'} onChange={e => setPayload(p => ({ ...p, assignment_mode: e.target.value as any }))} className={selectCls}>
                 <option value="round_robin">Round Robin</option>
                 <option value="specific">Specific Advisor</option>
               </select>
             </div>
             {payload.assignment_mode === 'specific' && (
               <div>
-                <label className="block text-xs text-slate-600 mb-1">Advisor</label>
-                <select value={payload.advisor_id ?? ''} onChange={e => setPayload(p => ({ ...p, advisor_id: e.target.value }))} className={selectCls}>
+                <label htmlFor="automationbuilder-advisor" className="block text-xs text-slate-600 mb-1">Advisor</label>
+                <select id="automationbuilder-advisor" value={payload.advisor_id ?? ''} onChange={e => setPayload(p => ({ ...p, advisor_id: e.target.value }))} className={selectCls}>
                   <option value="">Select advisor</option>
                   {advisors.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}
                 </select>
@@ -299,13 +299,13 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
         {action === 'send_email' && (
           <div className="space-y-3">
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Subject</label>
-              <input value={payload.email_subject ?? ''} onChange={e => setPayload(p => ({ ...p, email_subject: e.target.value }))}
+              <label htmlFor="automationbuilder-subject" className="block text-xs text-slate-600 mb-1">Subject</label>
+              <input id="automationbuilder-subject" value={payload.email_subject ?? ''} onChange={e => setPayload(p => ({ ...p, email_subject: e.target.value }))}
                 placeholder="e.g. Payment Reminder" className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Body</label>
-              <textarea value={payload.email_body ?? ''} onChange={e => setPayload(p => ({ ...p, email_body: e.target.value }))}
+              <label htmlFor="automationbuilder-body" className="block text-xs text-slate-600 mb-1">Body</label>
+              <textarea id="automationbuilder-body" value={payload.email_body ?? ''} onChange={e => setPayload(p => ({ ...p, email_body: e.target.value }))}
                 rows={4} placeholder="Email content..." className={inputCls} />
             </div>
           </div>

@@ -57,14 +57,14 @@ export default function ConstructionUpdateForm({ projectId }: Props) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-slate-700 mb-1">Title <span className="text-red-500">*</span></label>
-          <input name="title" required placeholder="e.g. Boundary wall 60% complete"
+          <label htmlFor="constructionupdateform-title" className="block text-sm font-medium text-slate-700 mb-1">Title <span className="text-red-500">*</span></label>
+          <input id="constructionupdateform-title" name="title" required placeholder="e.g. Boundary wall 60% complete"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Milestone</label>
-          <select name="milestone"
+          <label htmlFor="constructionupdateform-milestone" className="block text-sm font-medium text-slate-700 mb-1">Milestone</label>
+          <select id="constructionupdateform-milestone" name="milestone"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
             <option value="">Select milestone</option>
             {MILESTONES.map((m) => <option key={m} value={m}>{m}</option>)}
@@ -72,20 +72,20 @@ export default function ConstructionUpdateForm({ projectId }: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">% Complete <span className="text-red-500">*</span></label>
-          <input name="percentage_complete" type="number" required min="0" max="100" defaultValue="0"
+          <label htmlFor="constructionupdateform-percentage-complete" className="block text-sm font-medium text-slate-700 mb-1">% Complete <span className="text-red-500">*</span></label>
+          <input id="constructionupdateform-percentage-complete" name="percentage_complete" type="number" required min="0" max="100" defaultValue="0"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Update Date</label>
-          <input name="update_date" type="date" defaultValue={new Date().toISOString().split('T')[0]}
+          <label htmlFor="constructionupdateform-update-date" className="block text-sm font-medium text-slate-700 mb-1">Update Date</label>
+          <input id="constructionupdateform-update-date" name="update_date" type="date" defaultValue={new Date().toISOString().split('T')[0]}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Publish immediately?</label>
-          <select name="is_published"
+          <label htmlFor="constructionupdateform-is-published" className="block text-sm font-medium text-slate-700 mb-1">Publish immediately?</label>
+          <select id="constructionupdateform-is-published" name="is_published"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
             <option value="false">Save as draft</option>
             <option value="true">Publish to clients</option>
@@ -93,8 +93,8 @@ export default function ConstructionUpdateForm({ projectId }: Props) {
         </div>
 
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
-          <textarea name="description" rows={3} placeholder="Describe the work completed and next steps..."
+          <label htmlFor="constructionupdateform-description" className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+          <textarea id="constructionupdateform-description" name="description" rows={3} placeholder="Describe the work completed and next steps..."
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
       </div>

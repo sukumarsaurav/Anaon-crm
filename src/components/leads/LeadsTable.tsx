@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Phone, MessageSquare, ArrowUpDown, ChevronRight, Clock, Search } from 'lucide-react'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { Phone, MessageSquare, ArrowUp, ArrowDown, ArrowUpDown, ChevronRight, Clock, Search } from 'lucide-react'
 import type { Lead } from '@/types/leads'
 import StageBadge from './StageBadge'
 import TemperatureBadge from './TemperatureBadge'
@@ -21,6 +22,36 @@ interface LeadsTableProps {
 
 export default function LeadsTable({ leads, advisors }: LeadsTableProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const sortBy = searchParams.get('sort_by') || 'created_at'
+  const sortDir = searchParams.get('sort_dir') || 'desc'
+
+  // Server-side sort: clicking a header flips direction on the active column, otherwise sorts it.
+  const sortHeader = (key: string, defaultDir: 'asc' | 'desc', label: string) => {
+    const active = sortBy === key
+    const nextDir = active ? (sortDir === 'asc' ? 'desc' : 'asc') : defaultDir
+    const Icon = !active ? ArrowUpDown : sortDir === 'asc' ? ArrowUp : ArrowDown
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          const q = new URLSearchParams(searchParams.toString())
+          q.set('sort_by', key)
+          q.set('sort_dir', nextDir)
+          q.delete('page')
+          router.push(`${pathname}?${q.toString()}`)
+        }}
+        className={cn('flex items-center gap-1 hover:text-slate-900 focus-ring rounded', active && 'text-slate-900')}
+        aria-label={`Sort by ${label}`}
+      >
+        {label} <Icon size={12} aria-hidden="true" />
+      </button>
+    )
+  }
+  const ariaSort = (key: string) =>
+    sortBy === key ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined
 
   const toggleAll = () => {
     if (selected.size === leads.length) {
@@ -68,29 +99,28 @@ export default function LeadsTable({ leads, advisors }: LeadsTableProps) {
                 <th className="w-10 px-4 py-3">
                   <input
                     type="checkbox"
+                    aria-label="Select all leads"
                     checked={selected.size === leads.length && leads.length > 0}
                     onChange={toggleAll}
                     className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                   />
                 </th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
-                  <button className="flex items-center gap-1 hover:text-slate-900">
-                    Lead <ArrowUpDown size={12} />
-                  </button>
+                <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Lead</th>
+                <th scope="col" className="hidden lg:table-cell px-4 py-3 text-left font-semibold text-slate-600">Source</th>
+                <th scope="col" className="hidden md:table-cell px-4 py-3 text-left font-semibold text-slate-600">Project Interest</th>
+                <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-600">Stage</th>
+                <th scope="col" className="hidden sm:table-cell px-4 py-3 text-left font-semibold text-slate-600">Temp</th>
+                <th scope="col" aria-sort={ariaSort('score')} className="px-4 py-3 text-left font-semibold text-slate-600">
+                  {sortHeader('score', 'desc', 'Score')}
                 </th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">Source</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">Project Interest</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">Stage</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">Temp</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                  <button className="flex items-center gap-1 hover:text-slate-900">
-                    Score <ArrowUpDown size={12} />
-                  </button>
+                <th scope="col" className="hidden lg:table-cell px-4 py-3 text-left font-semibold text-slate-600">Assigned To</th>
+                <th scope="col" aria-sort={ariaSort('next_followup_at')} className="hidden sm:table-cell px-4 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
+                  {sortHeader('next_followup_at', 'asc', 'Next Follow-up')}
                 </th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">Assigned To</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">Next Follow-up</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">Added</th>
-                <th className="w-10 px-4 py-3" />
+                <th scope="col" aria-sort={ariaSort('created_at')} className="hidden xl:table-cell px-4 py-3 text-left font-semibold text-slate-600">
+                  {sortHeader('created_at', 'desc', 'Added')}
+                </th>
+                <th className="w-10 px-4 py-3"><span className="sr-only">Open</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -109,6 +139,7 @@ export default function LeadsTable({ leads, advisors }: LeadsTableProps) {
                     <td className="px-4 py-3.5">
                       <input
                         type="checkbox"
+                        aria-label={`Select ${lead.full_name}`}
                         checked={isSelected}
                         onChange={() => toggleOne(lead.id)}
                         className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
@@ -130,11 +161,12 @@ export default function LeadsTable({ leads, advisors }: LeadsTableProps) {
                           </Link>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-xs text-slate-500">{formatPhone(lead.phone)}</span>
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity">
                               <a
                                 href={`tel:${lead.phone}`}
                                 className="text-slate-400 hover:text-green-600 transition-colors"
                                 title="Call"
+                                aria-label={`Call ${lead.full_name}`}
                               >
                                 <Phone size={12} />
                               </a>
@@ -144,6 +176,7 @@ export default function LeadsTable({ leads, advisors }: LeadsTableProps) {
                                 rel="noopener noreferrer"
                                 className="text-slate-400 hover:text-green-600 transition-colors"
                                 title="WhatsApp"
+                                aria-label={`WhatsApp ${lead.full_name}`}
                               >
                                 <MessageSquare size={12} />
                               </a>
@@ -154,14 +187,14 @@ export default function LeadsTable({ leads, advisors }: LeadsTableProps) {
                     </td>
 
                     {/* Source */}
-                    <td className="px-4 py-3.5">
+                    <td className="hidden lg:table-cell px-4 py-3.5">
                       <span className="text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded-full">
                         {SOURCE_LABELS[lead.source]}
                       </span>
                     </td>
 
                     {/* Project */}
-                    <td className="px-4 py-3.5">
+                    <td className="hidden md:table-cell px-4 py-3.5">
                       <div>
                         {lead.project ? (
                           <span className="text-sm text-slate-700">{lead.project.name}</span>
@@ -192,7 +225,7 @@ export default function LeadsTable({ leads, advisors }: LeadsTableProps) {
                     </td>
 
                     {/* Temperature */}
-                    <td className="px-4 py-3.5">
+                    <td className="hidden sm:table-cell px-4 py-3.5">
                       <TemperatureBadge temperature={lead.temperature} showLabel={false} />
                     </td>
 
@@ -202,7 +235,7 @@ export default function LeadsTable({ leads, advisors }: LeadsTableProps) {
                     </td>
 
                     {/* Assigned */}
-                    <td className="px-4 py-3.5">
+                    <td className="hidden lg:table-cell px-4 py-3.5">
                       {lead.assigned_profile ? (
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 bg-slate-200 rounded-full flex items-center justify-center text-xs font-medium text-slate-600">
@@ -218,7 +251,7 @@ export default function LeadsTable({ leads, advisors }: LeadsTableProps) {
                     </td>
 
                     {/* Next follow-up */}
-                    <td className="px-4 py-3.5">
+                    <td className="hidden sm:table-cell px-4 py-3.5">
                       {lead.next_followup_at ? (
                         <span className={cn('flex items-center gap-1 text-xs', overdue ? 'text-red-600 font-medium' : 'text-slate-500')}>
                           {overdue && <Clock size={11} />}
@@ -230,13 +263,13 @@ export default function LeadsTable({ leads, advisors }: LeadsTableProps) {
                     </td>
 
                     {/* Created */}
-                    <td className="px-4 py-3.5">
+                    <td className="hidden xl:table-cell px-4 py-3.5">
                       <RelativeTime date={lead.created_at} className="text-xs text-slate-400" />
                     </td>
 
                     {/* Arrow */}
                     <td className="px-4 py-3.5">
-                      <Link href={`/leads/${lead.id}`}>
+                      <Link href={`/leads/${lead.id}`} aria-label={`Open ${lead.full_name}`}>
                         <ChevronRight
                           size={16}
                           className="text-slate-300 group-hover:text-primary-500 transition-colors"

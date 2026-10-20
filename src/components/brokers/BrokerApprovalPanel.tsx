@@ -3,6 +3,7 @@
 import { useState, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { approveBroker, rejectBroker, deactivateBroker, grantBrokerPortalAccess } from '@/lib/brokers/actions'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
 
 interface Props {
   brokerId: string
@@ -50,8 +51,9 @@ export default function BrokerApprovalPanel({ brokerId, status, hasPortalAccess 
     })
   }
 
+  const askConfirm = useConfirm()
   async function handleDeactivate() {
-    if (!confirm('Deactivate this broker?')) return
+    if (!(await askConfirm({ title: 'Deactivate broker', message: 'Deactivate this broker? They will lose access to the broker portal.', confirmLabel: 'Deactivate' }))) return
     setLoading(true)
     startTransition(async () => {
       await deactivateBroker(brokerId)
@@ -77,7 +79,7 @@ export default function BrokerApprovalPanel({ brokerId, status, hasPortalAccess 
           </div>
         ) : (
           <div className="space-y-3">
-            <textarea
+            <textarea aria-label="Reason for rejection..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={2}

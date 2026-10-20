@@ -15,6 +15,7 @@ import { COMMISSION_STATUS_CONFIG } from '@/types/bookings'
 import { LEAD_REG_STATUS_CONFIG } from '@/types/brokers'
 import type { BrokerStatus } from '@/types/brokers'
 import type { CommissionStatus } from '@/types/bookings'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -154,7 +155,7 @@ export default async function BrokerDetailPage({ params }: PageProps) {
               <span className="text-xs text-slate-400">{leads.length} total</span>
             </div>
             {leads.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-4">No leads registered yet</p>
+              <EmptyState title="No leads registered yet" className="py-4" />
             ) : (
               <div className="space-y-2">
                 {leads.slice(0, 10).map((l) => {
@@ -193,17 +194,17 @@ export default async function BrokerDetailPage({ params }: PageProps) {
               </div>
             </div>
             {commissions.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-4">No commissions yet</p>
+              <EmptyState title="No commissions yet" className="py-4" />
             ) : (
               <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-xs text-slate-500 border-b border-slate-100">
-                    <th className="pb-2 text-left">Booking</th>
-                    <th className="pb-2 text-right">Value</th>
-                    <th className="pb-2 text-right">Commission</th>
-                    <th className="pb-2 text-left pl-4">Status</th>
-                    <th className="pb-2 text-left">UTR</th>
+                    <th scope="col" className="pb-2 text-left">Booking</th>
+                    <th scope="col" className="pb-2 text-right">Value</th>
+                    <th scope="col" className="pb-2 text-right">Commission</th>
+                    <th scope="col" className="pb-2 text-left pl-4">Status</th>
+                    <th scope="col" className="pb-2 text-left">UTR</th>
                   </tr>
                 </thead>
                 <tbody>

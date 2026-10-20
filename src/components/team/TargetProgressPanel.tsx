@@ -1,5 +1,6 @@
 import { formatCurrency } from '@/lib/utils'
 import type { TeamTarget, MonthlyKPI } from '@/types/team'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Props {
   target: TeamTarget | null
@@ -61,7 +62,7 @@ export default function TargetProgressPanel({ target, kpi }: Props) {
       </div>
 
       {!target ? (
-        <p className="text-sm text-slate-400 text-center py-4">No target set for this month</p>
+        <EmptyState title="No target set for this month" className="py-4" />
       ) : (
         <>
           <ProgressBar

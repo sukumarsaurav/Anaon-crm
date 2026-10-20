@@ -4,10 +4,12 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Button from '@/components/ui/Button'
 import { sendBroadcast, resumeBroadcast, cancelBroadcast } from '@/lib/whatsapp/actions'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
 
 export default function BroadcastControls({ id, status, queued }: { id: string; status: string; queued: number }) {
   const router = useRouter()
   const [pending, start] = useTransition()
+  const askConfirm = useConfirm()
   const [msg, setMsg] = useState<string | null>(null)
 
   const run = (fn: () => Promise<{ success: boolean; error?: string } & Record<string, unknown>>) =>
@@ -34,7 +36,9 @@ export default function BroadcastControls({ id, status, queued }: { id: string; 
         </Button>
       )}
       {['draft', 'scheduled', 'sending'].includes(status) && (
-        <Button variant="ghost" disabled={pending} onClick={() => confirm('Cancel this broadcast? Queued messages will not be sent.') && run(() => cancelBroadcast(id))}>
+        <Button variant="ghost" disabled={pending} onClick={async () => {
+          if (await askConfirm({ title: 'Cancel broadcast', message: 'Cancel this broadcast? Queued messages will not be sent.', confirmLabel: 'Cancel broadcast' })) run(() => cancelBroadcast(id))
+        }}>
           Cancel
         </Button>
       )}

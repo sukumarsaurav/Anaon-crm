@@ -9,6 +9,7 @@ import PaymentExtensionForm from '@/components/client-portal/PaymentExtensionFor
 import PayNowButton from '@/components/client-portal/PayNowButton'
 import type { PaymentStatus } from '@/types/clients'
 import { CheckCircle, Clock, AlertCircle } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 export default async function ClientPortalPaymentsPage() {
   const session = await getPortalSession()
@@ -61,7 +62,7 @@ export default async function ClientPortalPaymentsPage() {
           <h3 className="font-semibold text-slate-900 text-sm">All Installments</h3>
         </div>
         {payments.length === 0 ? (
-          <p className="p-6 text-center text-sm text-slate-400">No payment schedule found. Contact ANON INDIA.</p>
+          <EmptyState title="No payment schedule found" description="Contact ANON INDIA." className="py-6" />
         ) : (
           <div className="divide-y divide-slate-100">
             {payments.map((p) => {

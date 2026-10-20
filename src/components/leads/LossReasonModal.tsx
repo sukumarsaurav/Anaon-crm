@@ -76,7 +76,7 @@ export default function LossReasonModal({ leadId, open, onClose }: LossReasonMod
           ))}
         </div>
         {reason === 'Other' && (
-          <textarea
+          <textarea aria-label="Describe the reason…"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Describe the reason…"

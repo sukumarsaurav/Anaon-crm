@@ -100,7 +100,7 @@ export default async function ClientPortalConstructionPage() {
                       <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
                         {update.photos.map((url, idx) => (
                           <a key={idx} href={url} target="_blank" rel="noopener noreferrer">
-                            <img src={url} alt={`Photo ${idx + 1}`}
+                            <img src={url} alt={`Photo ${idx + 1}`} loading="lazy" decoding="async"
                               className="h-16 w-16 object-cover rounded-lg border border-slate-200 shrink-0" />
                           </a>
                         ))}

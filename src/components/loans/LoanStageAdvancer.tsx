@@ -87,24 +87,24 @@ export default function LoanStageAdvancer({ loan, banks, dsas }: Props) {
           {targetStage === 'bank_selected' && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Bank</label>
-                <select name="bank_tieup_id" defaultValue={loan.bank_tieup_id ?? ''}
+                <label htmlFor="loanstageadvancer-bank-tieup-id" className="block text-xs font-medium text-slate-600 mb-1">Bank</label>
+                <select id="loanstageadvancer-bank-tieup-id" name="bank_tieup_id" defaultValue={loan.bank_tieup_id ?? ''}
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                   <option value="">Select bank</option>
                   {banks.map(b => <option key={b.id} value={b.id}>{b.bank_name} — {b.loan_product_name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">DSA (optional)</label>
-                <select name="dsa_id" defaultValue={loan.dsa_id ?? ''}
+                <label htmlFor="loanstageadvancer-dsa-id" className="block text-xs font-medium text-slate-600 mb-1">DSA (optional)</label>
+                <select id="loanstageadvancer-dsa-id" name="dsa_id" defaultValue={loan.dsa_id ?? ''}
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                   <option value="">Direct / no DSA</option>
                   {dsas.map(d => <option key={d.id} value={d.id}>{d.name}{d.firm_name ? ` (${d.firm_name})` : ''}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">RM Contacted Date</label>
-                <input type="date" name="rm_contacted_date"
+                <label htmlFor="loanstageadvancer-rm-contacted-date" className="block text-xs font-medium text-slate-600 mb-1">RM Contacted Date</label>
+                <input id="loanstageadvancer-rm-contacted-date" type="date" name="rm_contacted_date"
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
             </div>
@@ -114,18 +114,18 @@ export default function LoanStageAdvancer({ loan, banks, dsas }: Props) {
           {targetStage === 'application_submitted' && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Loan Amount Applied (₹)</label>
-                <input type="number" name="loan_amount_applied" defaultValue={loan.loan_amount_applied ?? ''}
+                <label htmlFor="loanstageadvancer-loan-amount-applied" className="block text-xs font-medium text-slate-600 mb-1">Loan Amount Applied (₹)</label>
+                <input id="loanstageadvancer-loan-amount-applied" type="number" name="loan_amount_applied" defaultValue={loan.loan_amount_applied ?? ''}
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Application Date</label>
-                <input type="date" name="application_date"
+                <label htmlFor="loanstageadvancer-application-date" className="block text-xs font-medium text-slate-600 mb-1">Application Date</label>
+                <input id="loanstageadvancer-application-date" type="date" name="application_date"
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Processing Fee Paid (₹)</label>
-                <input type="number" name="processing_fee_paid"
+                <label htmlFor="loanstageadvancer-processing-fee-paid" className="block text-xs font-medium text-slate-600 mb-1">Processing Fee Paid (₹)</label>
+                <input id="loanstageadvancer-processing-fee-paid" type="number" name="processing_fee_paid"
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
             </div>
@@ -135,23 +135,23 @@ export default function LoanStageAdvancer({ loan, banks, dsas }: Props) {
           {targetStage === 'sanction_received' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Sanctioned Amount (₹) <span className="text-red-500">*</span></label>
-                <input type="number" name="sanctioned_amount" required
+                <label htmlFor="loanstageadvancer-sanctioned-amount" className="block text-xs font-medium text-slate-600 mb-1">Sanctioned Amount (₹) <span className="text-red-500">*</span></label>
+                <input id="loanstageadvancer-sanctioned-amount" type="number" name="sanctioned_amount" required
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Interest Rate (%)</label>
-                <input type="number" step="0.01" name="sanctioned_interest_rate"
+                <label htmlFor="loanstageadvancer-sanctioned-interest-rate" className="block text-xs font-medium text-slate-600 mb-1">Interest Rate (%)</label>
+                <input id="loanstageadvancer-sanctioned-interest-rate" type="number" step="0.01" name="sanctioned_interest_rate"
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Tenure (months)</label>
-                <input type="number" name="sanctioned_tenure_months"
+                <label htmlFor="loanstageadvancer-sanctioned-tenure-months" className="block text-xs font-medium text-slate-600 mb-1">Tenure (months)</label>
+                <input id="loanstageadvancer-sanctioned-tenure-months" type="number" name="sanctioned_tenure_months"
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Sanction Date</label>
-                <input type="date" name="sanction_date"
+                <label htmlFor="loanstageadvancer-sanction-date" className="block text-xs font-medium text-slate-600 mb-1">Sanction Date</label>
+                <input id="loanstageadvancer-sanction-date" type="date" name="sanction_date"
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
             </div>
@@ -161,18 +161,18 @@ export default function LoanStageAdvancer({ loan, banks, dsas }: Props) {
           {targetStage === 'rejected' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Rejection Date</label>
-                <input type="date" name="rejection_date" defaultValue={new Date().toISOString().split('T')[0]}
+                <label htmlFor="loanstageadvancer-rejection-date" className="block text-xs font-medium text-slate-600 mb-1">Rejection Date</label>
+                <input id="loanstageadvancer-rejection-date" type="date" name="rejection_date" defaultValue={new Date().toISOString().split('T')[0]}
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Alternate Bank Tried</label>
-                <input name="alternate_bank_tried" placeholder="Bank name..."
+                <label htmlFor="loanstageadvancer-alternate-bank-tried" className="block text-xs font-medium text-slate-600 mb-1">Alternate Bank Tried</label>
+                <input id="loanstageadvancer-alternate-bank-tried" name="alternate_bank_tried" placeholder="Bank name..."
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-slate-600 mb-1">Rejection Reason</label>
-                <textarea name="rejection_reason" rows={2} placeholder="Low CIBIL score / insufficient income..."
+                <label htmlFor="loanstageadvancer-rejection-reason" className="block text-xs font-medium text-slate-600 mb-1">Rejection Reason</label>
+                <textarea id="loanstageadvancer-rejection-reason" name="rejection_reason" rows={2} placeholder="Low CIBIL score / insufficient income..."
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
               </div>
             </div>

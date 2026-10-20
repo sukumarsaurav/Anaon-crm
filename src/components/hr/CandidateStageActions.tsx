@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, startTransition } from 'react'
+import { useState, startTransition, useId } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateCandidateStage, scheduleInterview, submitInterviewFeedback, makeOffer } from '@/lib/hr/actions'
 import type { CandidateStage } from '@/types/hr'
@@ -13,6 +13,7 @@ interface Props {
 }
 
 export default function CandidateStageActions({ candidateId, stage, interviewers }: Props) {
+  const uid = useId()
   const router = useRouter()
   const [panel, setPanel] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -110,13 +111,13 @@ export default function CandidateStageActions({ candidateId, stage, interviewers
           <p className="text-xs font-semibold text-slate-700">Schedule Interview</p>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <label className="block text-xs text-slate-600 mb-1">Date & Time</label>
-              <input name="interview_date" type="datetime-local" required min={today}
+              <label htmlFor={`${uid}-interview-date`} className="block text-xs text-slate-600 mb-1">Date & Time</label>
+              <input id={`${uid}-interview-date`} name="interview_date" type="datetime-local" required min={today}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
             </div>
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Mode</label>
-              <select name="interview_mode" required
+              <label htmlFor={`${uid}-interview-mode`} className="block text-xs text-slate-600 mb-1">Mode</label>
+              <select id={`${uid}-interview-mode`} name="interview_mode" required
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
                 <option value="in_person">In Person</option>
                 <option value="video">Video Call</option>
@@ -124,8 +125,8 @@ export default function CandidateStageActions({ candidateId, stage, interviewers
               </select>
             </div>
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Interviewer</label>
-              <select name="interviewer_id"
+              <label htmlFor={`${uid}-interviewer-id`} className="block text-xs text-slate-600 mb-1">Interviewer</label>
+              <select id={`${uid}-interviewer-id`} name="interviewer_id"
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
                 <option value="">Assign later</option>
                 {interviewers.map(i => (
@@ -149,21 +150,21 @@ export default function CandidateStageActions({ candidateId, stage, interviewers
         <form onSubmit={handleFeedback} className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
           <p className="text-xs font-semibold text-slate-700">Interview Feedback</p>
           <div>
-            <label className="block text-xs text-slate-600 mb-1">Rating (1-5)</label>
-            <select name="interview_rating" required
+            <label htmlFor={`${uid}-interview-rating`} className="block text-xs text-slate-600 mb-1">Rating (1-5)</label>
+            <select id={`${uid}-interview-rating`} name="interview_rating" required
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
               {[5,4,3,2,1].map(r => <option key={r} value={r}>{r} — {['','Poor','Below Avg','Average','Good','Excellent'][r]}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs text-slate-600 mb-1">Feedback</label>
-            <textarea name="interview_feedback" rows={3} required
+            <label htmlFor={`${uid}-interview-feedback`} className="block text-xs text-slate-600 mb-1">Feedback</label>
+            <textarea id={`${uid}-interview-feedback`} name="interview_feedback" rows={3} required
               placeholder="Skills assessment, strengths, concerns..."
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           <div>
-            <label className="block text-xs text-slate-600 mb-1">Recommendation</label>
-            <select name="recommendation"
+            <label htmlFor={`${uid}-recommendation`} className="block text-xs text-slate-600 mb-1">Recommendation</label>
+            <select id={`${uid}-recommendation`} name="recommendation"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
               <option value="yes">Recommend for Offer</option>
               <option value="no">Do Not Recommend</option>
@@ -186,13 +187,13 @@ export default function CandidateStageActions({ candidateId, stage, interviewers
           <p className="text-xs font-semibold text-slate-700">Offer Details</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Offer CTC (₹/year)</label>
-              <input name="offer_ctc" type="number" min="0" required placeholder="600000"
+              <label htmlFor={`${uid}-offer-ctc`} className="block text-xs text-slate-600 mb-1">Offer CTC (₹/year)</label>
+              <input id={`${uid}-offer-ctc`} name="offer_ctc" type="number" min="0" required placeholder="600000"
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
             </div>
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Offer Date</label>
-              <input name="offer_date" type="date" required defaultValue={today}
+              <label htmlFor={`${uid}-offer-date`} className="block text-xs text-slate-600 mb-1">Offer Date</label>
+              <input id={`${uid}-offer-date`} name="offer_date" type="date" required defaultValue={today}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
             </div>
           </div>
@@ -221,8 +222,8 @@ export default function CandidateStageActions({ candidateId, stage, interviewers
         }} className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
           <p className="text-xs font-semibold text-red-700">Confirm Rejection</p>
           <div>
-            <label className="block text-xs text-slate-600 mb-1">Reason</label>
-            <input name="rejection_reason" placeholder="e.g. Skills mismatch, high CTC expectation"
+            <label htmlFor={`${uid}-rejection-reason`} className="block text-xs text-slate-600 mb-1">Reason</label>
+            <input id={`${uid}-rejection-reason`} name="rejection_reason" placeholder="e.g. Skills mismatch, high CTC expectation"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300" />
           </div>
           <div className="flex gap-2">

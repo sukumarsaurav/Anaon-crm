@@ -118,17 +118,17 @@ export default async function MobileAdminPage() {
 
       {/* Agent table */}
       <Card padding="none" className="overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:bg-slate-50 [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:bg-white">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Agent</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Status</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Check In</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Check Out</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Site Visits</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Leads</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Location</th>
+                <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Agent</th>
+                <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Status</th>
+                <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Check In</th>
+                <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Check Out</th>
+                <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Site Visits</th>
+                <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Leads</th>
+                <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Location</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

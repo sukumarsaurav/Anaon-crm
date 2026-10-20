@@ -51,26 +51,26 @@ export function BankTieupFormButton({ bank }: Props) {
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Bank / NBFC Name <span className="text-red-500">*</span></label>
-            <input name="bank_name" required defaultValue={bank?.bank_name ?? ''} placeholder="Bank name"
+            <label htmlFor="banktieupform-bank-name" className="block text-xs font-medium text-slate-600 mb-1">Bank / NBFC Name <span className="text-red-500">*</span></label>
+            <input id="banktieupform-bank-name" name="bank_name" required defaultValue={bank?.bank_name ?? ''} placeholder="Bank name"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Loan Product Name <span className="text-red-500">*</span></label>
-            <input name="loan_product_name" required defaultValue={bank?.loan_product_name ?? ''} placeholder="Home Loan / NRI Loan"
+            <label htmlFor="banktieupform-loan-product-name" className="block text-xs font-medium text-slate-600 mb-1">Loan Product Name <span className="text-red-500">*</span></label>
+            <input id="banktieupform-loan-product-name" name="loan_product_name" required defaultValue={bank?.loan_product_name ?? ''} placeholder="Home Loan / NRI Loan"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Max Loan % of Value</label>
-            <input type="number" step="0.01" name="max_loan_pct" defaultValue={bank?.max_loan_pct ?? ''} placeholder="75"
+            <label htmlFor="banktieupform-max-loan-pct" className="block text-xs font-medium text-slate-600 mb-1">Max Loan % of Value</label>
+            <input id="banktieupform-max-loan-pct" type="number" step="0.01" name="max_loan_pct" defaultValue={bank?.max_loan_pct ?? ''} placeholder="75"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Interest Rate (%)</label>
+            <label htmlFor="banktieupform-interest-rate" className="block text-xs font-medium text-slate-600 mb-1">Interest Rate (%)</label>
             <div className="flex gap-2">
-              <input type="number" step="0.01" name="interest_rate" defaultValue={bank?.interest_rate ?? ''} placeholder="8.5"
+              <input id="banktieupform-interest-rate" type="number" step="0.01" name="interest_rate" defaultValue={bank?.interest_rate ?? ''} placeholder="8.5"
                 className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
-              <select name="interest_type" defaultValue={bank?.interest_type ?? 'floating'}
+              <select aria-label="Interest type" name="interest_type" defaultValue={bank?.interest_type ?? 'floating'}
                 className="border border-slate-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                 <option value="floating">Floating</option>
                 <option value="fixed">Fixed</option>
@@ -78,33 +78,33 @@ export function BankTieupFormButton({ bank }: Props) {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Processing Fee (₹)</label>
-            <input type="number" name="processing_fee" defaultValue={bank?.processing_fee ?? ''} placeholder="10000"
+            <label htmlFor="banktieupform-processing-fee" className="block text-xs font-medium text-slate-600 mb-1">Processing Fee (₹)</label>
+            <input id="banktieupform-processing-fee" type="number" name="processing_fee" defaultValue={bank?.processing_fee ?? ''} placeholder="10000"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">TAT (days for sanction)</label>
-            <input type="number" name="turnaround_days" defaultValue={bank?.turnaround_days ?? ''} placeholder="21"
+            <label htmlFor="banktieupform-turnaround-days" className="block text-xs font-medium text-slate-600 mb-1">TAT (days for sanction)</label>
+            <input id="banktieupform-turnaround-days" type="number" name="turnaround_days" defaultValue={bank?.turnaround_days ?? ''} placeholder="21"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">RM Name</label>
-            <input name="rm_name" defaultValue={bank?.rm_name ?? ''} placeholder="Relationship manager name"
+            <label htmlFor="banktieupform-rm-name" className="block text-xs font-medium text-slate-600 mb-1">RM Name</label>
+            <input id="banktieupform-rm-name" name="rm_name" defaultValue={bank?.rm_name ?? ''} placeholder="Relationship manager name"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">RM Phone</label>
-            <input type="tel" name="rm_phone" defaultValue={bank?.rm_phone ?? ''} placeholder="+91 98765 43210"
+            <label htmlFor="banktieupform-rm-phone" className="block text-xs font-medium text-slate-600 mb-1">RM Phone</label>
+            <input id="banktieupform-rm-phone" type="tel" name="rm_phone" defaultValue={bank?.rm_phone ?? ''} placeholder="+91 98765 43210"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-slate-600 mb-1">RM Email</label>
-            <input type="email" name="rm_email" defaultValue={bank?.rm_email ?? ''} placeholder="rm@bank.com"
+            <label htmlFor="banktieupform-rm-email" className="block text-xs font-medium text-slate-600 mb-1">RM Email</label>
+            <input id="banktieupform-rm-email" type="email" name="rm_email" defaultValue={bank?.rm_email ?? ''} placeholder="rm@bank.com"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
-            <textarea name="notes" rows={2} defaultValue={bank?.notes ?? ''} placeholder="Special conditions, tie-up terms..."
+            <label htmlFor="banktieupform-notes" className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
+            <textarea id="banktieupform-notes" name="notes" rows={2} defaultValue={bank?.notes ?? ''} placeholder="Special conditions, tie-up terms..."
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
           </div>
         </div>

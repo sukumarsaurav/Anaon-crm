@@ -124,8 +124,8 @@ export default function SiteVisitsCard({
             options={advisors.map((a) => ({ value: a.id, label: a.full_name }))}
           />
           <div>
-            <label className="text-sm font-medium text-slate-700">Pre-visit details (shared with client)</label>
-            <textarea
+            <label htmlFor="sitevisitscard-advisor-notes" className="text-sm font-medium text-slate-700">Pre-visit details (shared with client)</label>
+            <textarea id="sitevisitscard-advisor-notes"
               name="advisor_notes"
               rows={2}
               placeholder="Meeting point, directions, what to bring…"
@@ -159,8 +159,8 @@ export default function SiteVisitsCard({
               ]}
             />
             <div>
-              <label className="text-sm font-medium text-slate-700">Client feedback</label>
-              <textarea
+              <label htmlFor="sitevisitscard-client-feedback" className="text-sm font-medium text-slate-700">Client feedback</label>
+              <textarea id="sitevisitscard-client-feedback"
                 name="client_feedback"
                 rows={2}
                 placeholder="What did the client think? Concerns, interest level…"

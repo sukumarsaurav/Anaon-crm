@@ -43,13 +43,13 @@ export default function LegalTemplateForm() {
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Template Name <span className="text-red-500">*</span></label>
-            <input name="name" required placeholder="e.g. Standard Booking Form v2"
+            <label htmlFor="legaltemplateform-name" className="block text-xs font-medium text-slate-600 mb-1">Template Name <span className="text-red-500">*</span></label>
+            <input id="legaltemplateform-name" name="name" required placeholder="e.g. Standard Booking Form v2"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Type <span className="text-red-500">*</span></label>
-            <select name="type" required
+            <label htmlFor="legaltemplateform-type" className="block text-xs font-medium text-slate-600 mb-1">Type <span className="text-red-500">*</span></label>
+            <select id="legaltemplateform-type" name="type" required
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
               {LEGAL_DOCUMENT_TYPES.map(t => (
                 <option key={t} value={t}>{LEGAL_DOCUMENT_TYPE_LABELS[t]}</option>
@@ -58,19 +58,19 @@ export default function LegalTemplateForm() {
           </div>
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Description</label>
-          <textarea name="description" rows={2} placeholder="Brief description of this template..."
+          <label htmlFor="legaltemplateform-description" className="block text-xs font-medium text-slate-600 mb-1">Description</label>
+          <textarea id="legaltemplateform-description" name="description" rows={2} placeholder="Brief description of this template..."
             className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">File URL</label>
-            <input type="url" name="file_url" placeholder="https://..."
+            <label htmlFor="legaltemplateform-file-url" className="block text-xs font-medium text-slate-600 mb-1">File URL</label>
+            <input id="legaltemplateform-file-url" type="url" name="file_url" placeholder="https://..."
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Version</label>
-            <input name="version" defaultValue="1.0" placeholder="1.0"
+            <label htmlFor="legaltemplateform-version" className="block text-xs font-medium text-slate-600 mb-1">Version</label>
+            <input id="legaltemplateform-version" name="version" defaultValue="1.0" placeholder="1.0"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
         </div>

@@ -4,6 +4,7 @@ import { safeEqual } from '@/lib/security/secrets'
 import { ingestLead, INVALID_PHONE } from '@/lib/leads/ingest'
 import {
   mirrorMessage,
+  attachLeadToConversation,
   mirrorStatus,
   mirrorOptOut,
   mirrorTemplateStatus,
@@ -133,22 +134,27 @@ export async function POST(req: NextRequest) {
   if (event === 'whatsapp.message.received') {
     const payload = body as AgencyXMessageEvent
     const { contact, message } = payload
-    const result = await ingestLead({
-      source: 'whatsapp',
-      full_name: contact?.name,
-      phone: contact?.phone,
-      requirement: message?.type === 'text' ? message.text : null,
-      utm_source: 'whatsapp',
-      // Every message of an ongoing chat arrives here; only the first creates anything.
-      onDuplicate: 'ignore',
-    })
+    // Lead creation (dedupe, assignment, scoring, notify) is the slow part and the message
+    // doesn't depend on it, so both run together: the chat reaches the inbox as soon as it
+    // is saved, and the thread is linked to its lead afterwards. A real failure of either
+    // still answers 500, and both are idempotent, so AgencyX's retry recovers it.
+    const [result, mirrored] = await Promise.all([
+      ingestLead({
+        source: 'whatsapp',
+        full_name: contact?.name,
+        phone: contact?.phone,
+        requirement: message?.type === 'text' ? message.text : null,
+        utm_source: 'whatsapp',
+        // Every message of an ongoing chat arrives here; only the first creates anything.
+        onDuplicate: 'ignore',
+      }),
+      mirrorMessage(payload, 'inbound', null),
+    ])
     // A non-Indian number gets no lead but its chat is still worth keeping, so only a
     // real ingest failure stops here.
     if (!result.ok && result.error !== INVALID_PHONE) return failure(result.error)
-
-    if (!(await mirrorMessage(payload, 'inbound', result.id ?? null))) {
-      return NextResponse.json({ error: 'Message could not be saved' }, { status: 500 })
-    }
+    if (!mirrored) return NextResponse.json({ error: 'Message could not be saved' }, { status: 500 })
+    if (result.id) await attachLeadToConversation(contact?.wa_id, result.id)
     // The file's link expires in a week; copy it once AgencyX has its 200 (10 s budget).
     if (message?.media?.url) after(() => persistWhatsAppMedia(message.id))
     return NextResponse.json({ ok: true, lead_id: result.id ?? null, duplicate: result.duplicate ?? false })

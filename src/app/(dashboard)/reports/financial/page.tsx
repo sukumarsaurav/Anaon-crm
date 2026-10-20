@@ -6,6 +6,7 @@ import { getCollectionReport, getOutstandingReport, getBrokerCommissions } from 
 import DateRangeFilter from '@/components/reports/DateRangeFilter'
 import ExportButton from '@/components/reports/ExportButton'
 import { formatDate, formatCurrency } from '@/lib/utils'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface PageProps {
   searchParams: Promise<{ from?: string; to?: string }>
@@ -55,17 +56,17 @@ export default async function FinancialReportsPage({ searchParams }: PageProps) 
           <ExportButton reportType="collections" from={from} to={to} label="CSV" />
         </div>
         {collections.payments.length === 0 ? (
-          <p className="text-sm text-slate-400 p-6 text-center">No payments collected in this range.</p>
+          <EmptyState title="No payments collected in this range" className="py-6" />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-                  <th className="px-4 py-2.5 text-left">Date</th>
-                  <th className="px-4 py-2.5 text-left">Client</th>
-                  <th className="px-4 py-2.5 text-left">Project</th>
-                  <th className="px-4 py-2.5 text-left">Mode</th>
-                  <th className="px-4 py-2.5 text-right">Amount</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Date</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Client</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Project</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Mode</th>
+                  <th scope="col" className="px-4 py-2.5 text-right">Amount</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -102,17 +103,17 @@ export default async function FinancialReportsPage({ searchParams }: PageProps) 
           <ExportButton reportType="outstanding" label="CSV" />
         </div>
         {outstanding.payments.length === 0 ? (
-          <p className="text-sm text-slate-400 p-6 text-center">No outstanding payments.</p>
+          <EmptyState title="No outstanding payments" className="py-6" />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-                  <th className="px-4 py-2.5 text-left">Client</th>
-                  <th className="px-4 py-2.5 text-left">Project</th>
-                  <th className="px-4 py-2.5 text-left">Due Date</th>
-                  <th className="px-4 py-2.5 text-right">Amount Due</th>
-                  <th className="px-4 py-2.5 text-right">Days Overdue</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Client</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Project</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Due Date</th>
+                  <th scope="col" className="px-4 py-2.5 text-right">Amount Due</th>
+                  <th scope="col" className="px-4 py-2.5 text-right">Days Overdue</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -150,17 +151,17 @@ export default async function FinancialReportsPage({ searchParams }: PageProps) 
           <ExportButton reportType="broker_commissions" from={from} to={to} label="CSV" />
         </div>
         {brokerData.commissions.length === 0 ? (
-          <p className="text-sm text-slate-400 p-6 text-center">No broker commissions.</p>
+          <EmptyState title="No broker commissions" className="py-6" />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-                  <th className="px-4 py-2.5 text-left">Broker</th>
-                  <th className="px-4 py-2.5 text-left">Booking</th>
-                  <th className="px-4 py-2.5 text-left">Project</th>
-                  <th className="px-4 py-2.5 text-right">Amount</th>
-                  <th className="px-4 py-2.5 text-right">Status</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Broker</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Booking</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Project</th>
+                  <th scope="col" className="px-4 py-2.5 text-right">Amount</th>
+                  <th scope="col" className="px-4 py-2.5 text-right">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

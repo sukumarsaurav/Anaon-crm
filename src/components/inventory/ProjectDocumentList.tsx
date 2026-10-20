@@ -6,6 +6,7 @@ import { DOCUMENT_CATEGORY_LABELS } from '@/types/inventory'
 import type { ProjectDocument } from '@/types/inventory'
 import { formatDate } from '@/lib/utils'
 import { FileText, ExternalLink, Plus } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Props {
   projectId: string
@@ -50,13 +51,13 @@ export default function ProjectDocumentList({ projectId, documents, canManage }:
         <form onSubmit={handleSubmit} className="mb-4 p-4 bg-primary-50 rounded-xl space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Document Name *</label>
-              <input name="name" required placeholder="RERA Certificate 2024"
+              <label htmlFor="projectdocumentlist-name" className="block text-xs font-medium text-slate-600 mb-1">Document Name *</label>
+              <input id="projectdocumentlist-name" name="name" required placeholder="RERA Certificate 2024"
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Category *</label>
-              <select name="category" required
+              <label htmlFor="projectdocumentlist-category" className="block text-xs font-medium text-slate-600 mb-1">Category *</label>
+              <select id="projectdocumentlist-category" name="category" required
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                 {Object.entries(DOCUMENT_CATEGORY_LABELS).map(([v, label]) => (
                   <option key={v} value={v}>{label}</option>
@@ -64,16 +65,16 @@ export default function ProjectDocumentList({ projectId, documents, canManage }:
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Visibility</label>
-              <select name="is_public"
+              <label htmlFor="projectdocumentlist-is-public" className="block text-xs font-medium text-slate-600 mb-1">Visibility</label>
+              <select id="projectdocumentlist-is-public" name="is_public"
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                 <option value="false">Internal only</option>
                 <option value="true">Public (visible to all)</option>
               </select>
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">File URL *</label>
-              <input name="file_url" required type="url" placeholder="https://..."
+              <label htmlFor="projectdocumentlist-file-url" className="block text-xs font-medium text-slate-600 mb-1">File URL *</label>
+              <input id="projectdocumentlist-file-url" name="file_url" required type="url" placeholder="https://..."
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
           </div>
@@ -92,7 +93,7 @@ export default function ProjectDocumentList({ projectId, documents, canManage }:
       )}
 
       {documents.length === 0 ? (
-        <p className="text-sm text-slate-400 text-center py-4">No documents uploaded</p>
+        <EmptyState title="No documents uploaded" className="py-4" />
       ) : (
         <div className="space-y-2">
           {documents.map((doc) => (

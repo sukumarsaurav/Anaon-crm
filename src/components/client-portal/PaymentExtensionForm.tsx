@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, startTransition } from 'react'
+import { useState, startTransition, useId } from 'react'
 import { requestPaymentExtension } from '@/lib/portal/actions'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { ChevronDown } from 'lucide-react'
@@ -14,6 +14,7 @@ interface Props {
 }
 
 export default function PaymentExtensionForm({ paymentId, bookingId, clientId, amountDue, dueDate }: Props) {
+  const uid = useId()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
@@ -60,13 +61,13 @@ export default function PaymentExtensionForm({ paymentId, bookingId, clientId, a
             Requesting extension for: <strong>{formatCurrency(amountDue)}</strong> due {formatDate(dueDate)}
           </p>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Requested new date <span className="text-red-500">*</span></label>
-            <input type="date" name="requested_date" required min={dueDate}
+            <label htmlFor={`${uid}-requested-date`} className="block text-xs font-medium text-slate-600 mb-1">Requested new date <span className="text-red-500">*</span></label>
+            <input id={`${uid}-requested-date`} type="date" name="requested_date" required min={dueDate}
               className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Reason <span className="text-red-500">*</span></label>
-            <textarea name="reason" required rows={2} placeholder="Briefly explain why you need an extension..."
+            <label htmlFor={`${uid}-reason`} className="block text-xs font-medium text-slate-600 mb-1">Reason <span className="text-red-500">*</span></label>
+            <textarea id={`${uid}-reason`} name="reason" required rows={2} placeholder="Briefly explain why you need an extension..."
               className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           {error && <p className="text-xs text-red-600">{error}</p>}

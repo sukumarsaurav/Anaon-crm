@@ -2,6 +2,9 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { useConfirm } from './ConfirmDialog'
+import { usePrompt } from './PromptDialog'
+import { useToast } from './Toast'
 
 type Result = { success: boolean; error?: string }
 
@@ -20,7 +23,7 @@ interface Props {
 const TONES = {
   default: 'border-slate-300 text-slate-700 hover:bg-slate-50',
   danger: 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100',
-  success: 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100',
+  success: 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100',
 }
 
 /** One-click server action with confirm/prompt and an inline error. */
@@ -29,20 +32,29 @@ export default function ActionButton({ label, action, confirm, promptLabel, tone
   const [pending, start] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
-  function run() {
+  const askConfirm = useConfirm()
+  const askPrompt = usePrompt()
+  const toast = useToast()
+
+  async function run() {
     let input: string | undefined
     if (promptLabel) {
-      const answer = window.prompt(promptLabel)
-      if (!answer?.trim()) return
-      input = answer.trim()
-    } else if (confirm && !window.confirm(confirm)) {
+      const answer = await askPrompt(promptLabel, { title: label })
+      if (!answer) return
+      input = answer
+    } else if (confirm && !(await askConfirm({ title: label, message: confirm, confirmLabel: label, tone: tone === 'danger' ? 'danger' : 'primary' }))) {
       return
     }
     setError(null)
     start(async () => {
       const res = await action(input)
-      if (res.success) router.refresh()
-      else setError(res.error ?? 'Failed')
+      if (res.success) {
+        toast.success(`${label}: done`)
+        router.refresh()
+      } else {
+        setError(res.error ?? 'Failed')
+        toast.error(res.error ?? `${label} failed`)
+      }
     })
   }
 

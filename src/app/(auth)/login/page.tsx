@@ -55,7 +55,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-primary-950 to-gray-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-primary-950 to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -78,11 +78,13 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-primary-200 block mb-1.5">Email address</label>
+              <label htmlFor="login-email" className="text-sm font-medium text-primary-200 block mb-1.5">Email address</label>
               <div className="relative">
                 <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-300" />
                 <input
+                  id="login-email"
                   name="email"
+                  autoComplete="email"
                   type="email"
                   required
                   placeholder="you@anonIndia.com"
@@ -92,11 +94,13 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-primary-200 block mb-1.5">Password</label>
+              <label htmlFor="login-password" className="text-sm font-medium text-primary-200 block mb-1.5">Password</label>
               <div className="relative">
                 <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-300" />
                 <input
+                  id="login-password"
                   name="password"
+                  autoComplete="current-password"
                   type={showPassword ? 'text' : 'password'}
                   required
                   placeholder="••••••••"
@@ -105,6 +109,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-300 hover:text-white"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}

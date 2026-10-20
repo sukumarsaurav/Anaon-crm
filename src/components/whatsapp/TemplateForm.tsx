@@ -7,7 +7,7 @@ import { namedVariables, sampleValueFor } from '@/lib/whatsapp/template-render'
 import { validateTemplateButtons } from '@/lib/whatsapp/template-buttons'
 import type { WaTemplateButton } from '@/types/whatsapp'
 
-const INPUT = 'px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500'
+const INPUT = 'px-2 py-1.5 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500'
 
 export default function TemplateForm({ canSubmit }: { canSubmit: boolean }) {
   const router = useRouter()
@@ -55,48 +55,48 @@ export default function TemplateForm({ canSubmit }: { canSubmit: boolean }) {
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Template Name (API)</label>
-          <input
+          <label htmlFor="templateform-name" className="block text-sm font-medium text-slate-700 mb-1">Template Name (API)</label>
+          <input id="templateform-name"
             name="name"
             required
             placeholder="welcome_message"
             pattern="[a-z0-9_]+"
             title="Lowercase letters, numbers, and underscores only"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
           />
-          <p className="text-xs text-gray-400 mt-1">Lowercase, underscores only</p>
+          <p className="text-xs text-slate-400 mt-1">Lowercase, underscores only</p>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Display Name</label>
-          <input
+          <label htmlFor="templateform-display-name" className="block text-sm font-medium text-slate-700 mb-1">Display Name</label>
+          <input id="templateform-display-name"
             name="display_name"
             required
             placeholder="Welcome Message"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-          <select
+          <label htmlFor="templateform-category" className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+          <select id="templateform-category"
             name="category"
             required
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
           >
             <option value="marketing">Marketing</option>
             <option value="utility">Utility</option>
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Language</label>
-          <select
+          <label htmlFor="templateform-language" className="block text-sm font-medium text-slate-700 mb-1">Language</label>
+          <select id="templateform-language"
             name="language"
             defaultValue="en"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
           >
             <option value="en">English</option>
             <option value="en_US">English (US)</option>
@@ -106,22 +106,22 @@ export default function TemplateForm({ canSubmit }: { canSubmit: boolean }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Header (optional)</label>
-        <input
+        <label htmlFor="templateform-header-text" className="block text-sm font-medium text-slate-700 mb-1">Header (optional)</label>
+        <input id="templateform-header-text"
           name="header_text"
           maxLength={60}
           placeholder="New launch in Jaipur"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
         />
-        <p className="text-xs text-gray-400 mt-1">Plain text, up to 60 characters, no variables</p>
+        <p className="text-xs text-slate-400 mt-1">Plain text, up to 60 characters, no variables</p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="templateform-body" className="block text-sm font-medium text-slate-700 mb-1">
           Message Body
-          <span className="text-gray-400 font-normal ml-1">(use {`{{variable_name}}`} for variables)</span>
+          <span className="text-slate-400 font-normal ml-1">(use {`{{variable_name}}`} for variables)</span>
         </label>
-        <textarea
+        <textarea id="templateform-body"
           name="body"
           required
           rows={5}
@@ -129,7 +129,7 @@ export default function TemplateForm({ canSubmit }: { canSubmit: boolean }) {
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="Hi {{name}}, thank you for your interest in ANON INDIA properties!"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
         />
         {/^\s*\{\{/.test(body) || /\}\}\s*$/.test(body) ? (
           <p className="text-xs text-amber-600 mt-1">WhatsApp rejects a message that starts or ends with a variable — add text around it.</p>
@@ -138,18 +138,18 @@ export default function TemplateForm({ canSubmit }: { canSubmit: boolean }) {
 
       {variables.length > 0 && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Sample values</label>
-          <p className="text-xs text-gray-400 mb-2">
+          <p className="block text-sm font-medium text-slate-700 mb-1">Sample values</p>
+          <p className="text-xs text-slate-400 mb-2">
             WhatsApp&apos;s reviewers see these in place of each variable. Realistic samples get approved faster.
           </p>
           <div className="grid grid-cols-2 gap-2">
             {variables.map((v) => (
-              <label key={v} className="flex items-center gap-2 text-xs text-gray-600">
+              <label key={v} className="flex items-center gap-2 text-xs text-slate-600">
                 <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full shrink-0">{`{{${v}}}`}</span>
                 <input
                   name={`example_${v}`}
                   defaultValue={sampleValueFor(v)}
-                  className="flex-1 min-w-0 px-2 py-1 border border-gray-300 rounded-md text-sm"
+                  className="flex-1 min-w-0 px-2 py-1 border border-slate-300 rounded-md text-sm"
                 />
               </label>
             ))}
@@ -158,25 +158,25 @@ export default function TemplateForm({ canSubmit }: { canSubmit: boolean }) {
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Footer (optional)</label>
-        <input
+        <label htmlFor="templateform-footer" className="block text-sm font-medium text-slate-700 mb-1">Footer (optional)</label>
+        <input id="templateform-footer"
           name="footer"
           maxLength={60}
           placeholder="ANON INDIA Real Estate"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Buttons (optional)</label>
+        <p className="block text-sm font-medium text-slate-700 mb-1">Buttons (optional)</p>
         {buttons.length > 0 && (
           <div className="space-y-2 mb-2">
             {buttons.map((b, i) => (
               <div key={i} className="flex flex-wrap items-center gap-2">
-                <span className="text-xs w-20 shrink-0 text-gray-500">
+                <span className="text-xs w-20 shrink-0 text-slate-500">
                   {b.type === 'URL' ? 'Website' : b.type === 'PHONE_NUMBER' ? 'Call' : 'Quick reply'}
                 </span>
-                <input
+                <input aria-label="Button label"
                   value={b.text}
                   maxLength={25}
                   placeholder="Button label"
@@ -184,7 +184,7 @@ export default function TemplateForm({ canSubmit }: { canSubmit: boolean }) {
                   className={`${INPUT} w-40`}
                 />
                 {b.type === 'URL' && (
-                  <input
+                  <input aria-label="https://anonindia.com/projects"
                     value={b.url ?? ''}
                     placeholder="https://anonindia.com/projects"
                     onChange={(e) => setButton(i, { url: e.target.value })}
@@ -192,7 +192,7 @@ export default function TemplateForm({ canSubmit }: { canSubmit: boolean }) {
                   />
                 )}
                 {b.type === 'PHONE_NUMBER' && (
-                  <input
+                  <input aria-label="+919876543210"
                     value={b.phone_number ?? ''}
                     placeholder="+919876543210"
                     onChange={(e) => setButton(i, { phone_number: e.target.value })}
@@ -211,13 +211,13 @@ export default function TemplateForm({ canSubmit }: { canSubmit: boolean }) {
           </div>
         )}
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => addButton({ type: 'QUICK_REPLY', text: '' })} className="text-xs px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700">
+          <button type="button" onClick={() => addButton({ type: 'QUICK_REPLY', text: '' })} className="text-xs px-3 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700">
             + Quick reply
           </button>
-          <button type="button" onClick={() => addButton({ type: 'URL', text: 'View project', url: '' })} className="text-xs px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700">
+          <button type="button" onClick={() => addButton({ type: 'URL', text: 'View project', url: '' })} className="text-xs px-3 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700">
             + Website link
           </button>
-          <button type="button" onClick={() => addButton({ type: 'PHONE_NUMBER', text: 'Call us', phone_number: '' })} className="text-xs px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700">
+          <button type="button" onClick={() => addButton({ type: 'PHONE_NUMBER', text: 'Call us', phone_number: '' })} className="text-xs px-3 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700">
             + Call button
           </button>
           {category === 'marketing' && !buttons.some((b) => b.text.trim().toLowerCase() === 'stop promotions') && (
@@ -226,18 +226,18 @@ export default function TemplateForm({ canSubmit }: { canSubmit: boolean }) {
             </button>
           )}
         </div>
-        <p className="text-xs text-gray-400 mt-1">
+        <p className="text-xs text-slate-400 mt-1">
           Up to 10 buttons: at most 2 website links and 1 call button. A &ldquo;Stop promotions&rdquo; button opts the customer out of marketing when tapped.
         </p>
         {buttonError && <p className="text-xs text-amber-600 mt-1">{buttonError}</p>}
       </div>
 
       {canSubmit ? (
-        <label className="flex items-start gap-2 text-sm text-gray-700">
+        <label className="flex items-start gap-2 text-sm text-slate-700">
           <input type="checkbox" checked={submitNow} onChange={(e) => setSubmitNow(e.target.checked)} className="mt-0.5" />
           <span>
             Submit to WhatsApp for approval now
-            <span className="block text-xs text-gray-400">Sent to Meta through AgencyX. Review usually takes minutes to a few hours; the verdict appears on the templates page as soon as WhatsApp gives it.</span>
+            <span className="block text-xs text-slate-400">Sent to Meta through AgencyX. Review usually takes minutes to a few hours; the verdict appears on the templates page as soon as WhatsApp gives it.</span>
           </span>
         </label>
       ) : (
@@ -259,7 +259,7 @@ export default function TemplateForm({ canSubmit }: { canSubmit: boolean }) {
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-6 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200"
+          className="px-6 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-200"
         >
           Cancel
         </button>

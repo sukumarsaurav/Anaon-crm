@@ -159,7 +159,7 @@ export default function ActivityTimeline({ activities, leadId }: ActivityTimelin
                       {/* Performed by */}
                       {activity.performer && (
                         <div className="mt-2.5 flex items-center gap-1.5">
-                          <div className="w-5 h-5 bg-slate-200 rounded-full flex items-center justify-center text-[10px] font-medium text-slate-600">
+                          <div className="w-5 h-5 bg-slate-200 rounded-full flex items-center justify-center text-xs font-medium text-slate-600">
                             {getInitials(activity.performer.full_name)}
                           </div>
                           <span className="text-xs text-slate-400">{activity.performer.full_name}</span>

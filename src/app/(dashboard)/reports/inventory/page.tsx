@@ -5,6 +5,7 @@ import { ArrowLeft, Clock, AlertTriangle } from 'lucide-react'
 import { getInventoryAvailability, getPlotAgeing, getSoftHoldReport } from '@/lib/reports/queries'
 import ExportButton from '@/components/reports/ExportButton'
 import { formatDate } from '@/lib/utils'
+import EmptyState from '@/components/ui/EmptyState'
 
 export default async function InventoryReportsPage() {
   const [availability, plotAgeing, softHolds] = await Promise.all([
@@ -58,20 +59,20 @@ export default async function InventoryReportsPage() {
           <ExportButton reportType="inventory" label="CSV" />
         </div>
         {availability.length === 0 ? (
-          <p className="text-sm text-slate-400 p-6 text-center">No projects found.</p>
+          <EmptyState title="No projects found" className="py-6" />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:bg-slate-50 [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:bg-white">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-                  <th className="px-4 py-2.5 text-left">Project</th>
-                  <th className="px-4 py-2.5 text-left">City</th>
-                  <th className="px-4 py-2.5 text-right">Total</th>
-                  <th className="px-4 py-2.5 text-right">Available</th>
-                  <th className="px-4 py-2.5 text-right">Held</th>
-                  <th className="px-4 py-2.5 text-right">Booked</th>
-                  <th className="px-4 py-2.5 text-right">Sold</th>
-                  <th className="px-4 py-2.5 text-right">Sold %</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Project</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">City</th>
+                  <th scope="col" className="px-4 py-2.5 text-right">Total</th>
+                  <th scope="col" className="px-4 py-2.5 text-right">Available</th>
+                  <th scope="col" className="px-4 py-2.5 text-right">Held</th>
+                  <th scope="col" className="px-4 py-2.5 text-right">Booked</th>
+                  <th scope="col" className="px-4 py-2.5 text-right">Sold</th>
+                  <th scope="col" className="px-4 py-2.5 text-right">Sold %</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -125,9 +126,9 @@ export default async function InventoryReportsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-slate-500 uppercase tracking-wide border-b border-slate-100">
-                  <th className="pb-2 text-left">Plot</th>
-                  <th className="pb-2 text-left">Project</th>
-                  <th className="pb-2 text-right">Days Available</th>
+                  <th scope="col" className="pb-2 text-left">Plot</th>
+                  <th scope="col" className="pb-2 text-left">Project</th>
+                  <th scope="col" className="pb-2 text-right">Days Available</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -154,7 +155,7 @@ export default async function InventoryReportsPage() {
           <h2 className="font-semibold text-slate-900 text-sm">Active Soft Holds ({softHolds.length})</h2>
         </div>
         {softHolds.length === 0 ? (
-          <p className="text-sm text-slate-400 p-6 text-center">No active soft holds.</p>
+          <EmptyState title="No active soft holds" className="py-6" />
         ) : (
           <div className="divide-y divide-slate-100">
             {(softHolds as any[]).map(h => (

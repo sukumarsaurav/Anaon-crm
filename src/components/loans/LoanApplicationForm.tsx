@@ -41,53 +41,53 @@ export default function LoanApplicationForm({ clients, bookings, banks, dsas, de
     <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className={label}>Client <span className="text-red-500">*</span></label>
-          <select name="client_id" required value={clientId} onChange={(e) => setClientId(e.target.value)} className={input}>
+          <label htmlFor="loanapplicationform-client-id" className={label}>Client <span className="text-red-500">*</span></label>
+          <select id="loanapplicationform-client-id" name="client_id" required value={clientId} onChange={(e) => setClientId(e.target.value)} className={input}>
             <option value="">Select client…</option>
             {clients.map((c) => <option key={c.id} value={c.id}>{c.full_name} · {c.phone}</option>)}
           </select>
         </div>
         <div>
-          <label className={label}>Booking</label>
-          <select name="booking_id" defaultValue={defaultBookingId ?? ''} className={input} disabled={!clientId}>
+          <label htmlFor="loanapplicationform-booking-id" className={label}>Booking</label>
+          <select id="loanapplicationform-booking-id" name="booking_id" defaultValue={defaultBookingId ?? ''} className={input} disabled={!clientId}>
             <option value="">No booking linked</option>
             {clientBookings.map((b) => <option key={b.id} value={b.id}>{b.booking_number}</option>)}
           </select>
         </div>
         <div>
-          <label className={label}>Bank / product</label>
-          <select name="bank_tieup_id" className={input}>
+          <label htmlFor="loanapplicationform-bank-tieup-id" className={label}>Bank / product</label>
+          <select id="loanapplicationform-bank-tieup-id" name="bank_tieup_id" className={input}>
             <option value="">Decide later</option>
             {banks.map((b) => <option key={b.id} value={b.id}>{b.label}</option>)}
           </select>
         </div>
         <div>
-          <label className={label}>DSA</label>
-          <select name="dsa_id" className={input}>
+          <label htmlFor="loanapplicationform-dsa-id" className={label}>DSA</label>
+          <select id="loanapplicationform-dsa-id" name="dsa_id" className={input}>
             <option value="">None</option>
             {dsas.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
           </select>
         </div>
         <div>
-          <label className={label}>Loan amount applied (₹)</label>
-          <input name="loan_amount_applied" type="number" min="0" step="1" className={input} />
+          <label htmlFor="loanapplicationform-loan-amount-applied" className={label}>Loan amount applied (₹)</label>
+          <input id="loanapplicationform-loan-amount-applied" name="loan_amount_applied" type="number" min="0" step="1" className={input} />
         </div>
         <div>
-          <label className={label}>Monthly income (₹)</label>
-          <input name="monthly_income" type="number" min="0" step="1" className={input} />
+          <label htmlFor="loanapplicationform-monthly-income" className={label}>Monthly income (₹)</label>
+          <input id="loanapplicationform-monthly-income" name="monthly_income" type="number" min="0" step="1" className={input} />
         </div>
         <div>
-          <label className={label}>Existing EMIs (₹/month)</label>
-          <input name="existing_emis" type="number" min="0" step="1" className={input} />
+          <label htmlFor="loanapplicationform-existing-emis" className={label}>Existing EMIs (₹/month)</label>
+          <input id="loanapplicationform-existing-emis" name="existing_emis" type="number" min="0" step="1" className={input} />
         </div>
         <div>
-          <label className={label}>Credit score</label>
-          <input name="credit_score" type="number" min="300" max="900" className={input} />
+          <label htmlFor="loanapplicationform-credit-score" className={label}>Credit score</label>
+          <input id="loanapplicationform-credit-score" name="credit_score" type="number" min="300" max="900" className={input} />
         </div>
       </div>
       <div>
-        <label className={label}>Notes</label>
-        <textarea name="notes" rows={3} className={input} />
+        <label htmlFor="loanapplicationform-notes" className={label}>Notes</label>
+        <textarea id="loanapplicationform-notes" name="notes" rows={3} className={input} />
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="flex gap-3">

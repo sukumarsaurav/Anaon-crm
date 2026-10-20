@@ -45,13 +45,13 @@ export default function PayrollRunActions({ existingMonths }: Props) {
           <p className="font-semibold text-slate-900 text-sm">New Payroll Run</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Year</label>
-              <input name="year" type="number" required defaultValue={defaultYear} min={2020} max={2099}
+              <label htmlFor="payrollrunactions-year" className="block text-xs text-slate-600 mb-1">Year</label>
+              <input id="payrollrunactions-year" name="year" type="number" required defaultValue={defaultYear} min={2020} max={2099}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
             </div>
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Month</label>
-              <select name="month" required defaultValue={defaultMonth}
+              <label htmlFor="payrollrunactions-month" className="block text-xs text-slate-600 mb-1">Month</label>
+              <select id="payrollrunactions-month" name="month" required defaultValue={defaultMonth}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
                 {MONTH_NAMES.slice(1).map((m, i) => (
                   <option key={i+1} value={i+1}>{m}</option>
@@ -59,8 +59,8 @@ export default function PayrollRunActions({ existingMonths }: Props) {
               </select>
             </div>
             <div className="col-span-2">
-              <label className="block text-xs text-slate-600 mb-1">Notes</label>
-              <input name="notes" placeholder="e.g. Includes Diwali bonus"
+              <label htmlFor="payrollrunactions-notes" className="block text-xs text-slate-600 mb-1">Notes</label>
+              <input id="payrollrunactions-notes" name="notes" placeholder="e.g. Includes Diwali bonus"
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
             </div>
           </div>

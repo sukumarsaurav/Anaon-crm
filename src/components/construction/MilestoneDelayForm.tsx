@@ -42,16 +42,16 @@ export default function MilestoneDelayForm({ milestone, projectId, onClose }: Pr
       </p>
 
       <div>
-        <label className="block text-xs font-medium text-red-700 mb-1">Reason for Delay <span className="text-red-500">*</span></label>
-        <textarea name="delay_reason" required rows={3}
+        <label htmlFor="milestonedelayform-delay-reason" className="block text-xs font-medium text-red-700 mb-1">Reason for Delay <span className="text-red-500">*</span></label>
+        <textarea id="milestonedelayform-delay-reason" name="delay_reason" required rows={3}
           defaultValue={milestone.delay_reason ?? ''}
           placeholder="e.g. Contractor delay, monsoon weather, material shortage..."
           className="w-full text-sm rounded-lg border border-red-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-red-300" />
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-red-700 mb-1">Revised Expected Date</label>
-        <input type="date" name="revised_expected_date"
+        <label htmlFor="milestonedelayform-revised-expected-date" className="block text-xs font-medium text-red-700 mb-1">Revised Expected Date</label>
+        <input id="milestonedelayform-revised-expected-date" type="date" name="revised_expected_date"
           defaultValue={milestone.revised_expected_date ?? ''}
           className="w-full text-sm rounded-lg border border-red-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-red-300" />
       </div>

@@ -4,6 +4,7 @@ import { useState, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2 } from 'lucide-react'
 import { addIPToWhitelist, toggleIPWhitelistEntry, toggleIPWhitelistGlobal } from '@/lib/security/actions'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Entry {
   id: string
@@ -62,7 +63,7 @@ export default function IPWhitelistManager({ entries, enabled }: Props) {
       {/* Entry list */}
       <div className="space-y-2">
         {entries.length === 0 && (
-          <p className="text-sm text-slate-400 text-center py-4">No IP addresses whitelisted yet</p>
+          <EmptyState title="No IP addresses whitelisted yet" className="py-4" />
         )}
         {entries.map(e => (
           <div key={e.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-lg">
@@ -94,14 +95,14 @@ export default function IPWhitelistManager({ entries, enabled }: Props) {
         </button>
       ) : (
         <form action={addIPToWhitelist} onSubmit={() => setShowAdd(false)} className="flex gap-2">
-          <input
+          <input aria-label="192.168.1.1"
             name="ip_address"
             required
             placeholder="192.168.1.1"
             pattern="^(\d{1,3}\.){3}\d{1,3}$"
             className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
-          <input
+          <input aria-label="Office / Home"
             name="label"
             placeholder="Office / Home"
             className="w-36 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"

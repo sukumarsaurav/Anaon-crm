@@ -21,20 +21,20 @@ export default function ROITable({ rows }: Props) {
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:bg-slate-50 [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:bg-white">
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-            <th className="px-4 py-3 text-left">Source</th>
-            <th className="px-4 py-3 text-right">Leads</th>
-            <th className="px-4 py-3 text-right">Site Visits</th>
-            <th className="px-4 py-3 text-right">Bookings</th>
-            <th className="px-4 py-3 text-right">Revenue</th>
-            <th className="px-4 py-3 text-right">Ad Spend</th>
-            <th className="px-4 py-3 text-right">CPL</th>
-            <th className="px-4 py-3 text-right">ROAS</th>
-            <th className="px-4 py-3 text-right">Lead→Visit</th>
-            <th className="px-4 py-3 text-right">Visit→Booking</th>
+            <th scope="col" className="px-4 py-3 text-left">Source</th>
+            <th scope="col" className="px-4 py-3 text-right">Leads</th>
+            <th scope="col" className="px-4 py-3 text-right">Site Visits</th>
+            <th scope="col" className="px-4 py-3 text-right">Bookings</th>
+            <th scope="col" className="px-4 py-3 text-right">Revenue</th>
+            <th scope="col" className="px-4 py-3 text-right">Ad Spend</th>
+            <th scope="col" className="px-4 py-3 text-right">CPL</th>
+            <th scope="col" className="px-4 py-3 text-right">ROAS</th>
+            <th scope="col" className="px-4 py-3 text-right">Lead→Visit</th>
+            <th scope="col" className="px-4 py-3 text-right">Visit→Booking</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">

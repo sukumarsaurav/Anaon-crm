@@ -55,7 +55,7 @@ export default async function MemberPerformancePage({ params, searchParams }: Pr
         subtitle={new Date(year, month - 1).toLocaleString('default', { month: 'long', year: 'numeric' })}
         actions={
           <form method="GET" className="flex items-center gap-2">
-            <select
+            <select aria-label="Month"
               name="month"
               defaultValue={month}
               className="text-sm border border-slate-300 rounded-lg px-2 py-1.5 focus:outline-none"
@@ -66,7 +66,7 @@ export default async function MemberPerformancePage({ params, searchParams }: Pr
                 </option>
               ))}
             </select>
-            <input
+            <input aria-label="Year"
               name="year"
               type="number"
               defaultValue={year}
@@ -86,17 +86,17 @@ export default async function MemberPerformancePage({ params, searchParams }: Pr
       {/* 6-month history table */}
       <Card padding="md">
         <h3 className="font-semibold text-slate-900 mb-4">6-Month History</h3>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:bg-slate-50 [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:bg-white">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
-                <th className="pb-2 font-medium">Month</th>
-                <th className="pb-2 font-medium text-right">Calls</th>
-                <th className="pb-2 font-medium text-right">F/ups</th>
-                <th className="pb-2 font-medium text-right">Visits</th>
-                <th className="pb-2 font-medium text-right">Bookings</th>
-                <th className="pb-2 font-medium text-right">Revenue</th>
-                <th className="pb-2 font-medium text-right">Target %</th>
+                <th scope="col" className="pb-2 font-medium">Month</th>
+                <th scope="col" className="pb-2 font-medium text-right">Calls</th>
+                <th scope="col" className="pb-2 font-medium text-right">F/ups</th>
+                <th scope="col" className="pb-2 font-medium text-right">Visits</th>
+                <th scope="col" className="pb-2 font-medium text-right">Bookings</th>
+                <th scope="col" className="pb-2 font-medium text-right">Revenue</th>
+                <th scope="col" className="pb-2 font-medium text-right">Target %</th>
               </tr>
             </thead>
             <tbody>

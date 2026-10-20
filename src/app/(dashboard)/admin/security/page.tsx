@@ -88,11 +88,11 @@ export default async function AdminSecurityPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">User</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Role</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Failed Logins</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Status</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Last Login</th>
+                <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">User</th>
+                <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Role</th>
+                <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Failed Logins</th>
+                <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Status</th>
+                <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Last Login</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">

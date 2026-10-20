@@ -5,6 +5,7 @@ import { getTeamMembers, getMonthlyTarget } from '@/lib/team/queries'
 import SetTargetModal from '@/components/team/SetTargetModal'
 import type { TeamMember, TeamTarget } from '@/types/team'
 import { formatCurrency } from '@/lib/utils'
+import EmptyState from '@/components/ui/EmptyState'
 
 export default function TargetsPage() {
   const now = new Date()
@@ -40,7 +41,7 @@ export default function TargetsPage() {
           <p className="text-sm text-slate-500 mt-1">{monthLabel}</p>
         </div>
         <div className="flex items-center gap-2">
-          <select
+          <select aria-label="Month"
             value={month}
             onChange={(e) => setMonth(parseInt(e.target.value))}
             className="text-sm border border-slate-300 rounded-lg px-2 py-1.5"
@@ -51,7 +52,7 @@ export default function TargetsPage() {
               </option>
             ))}
           </select>
-          <input
+          <input aria-label="Year"
             type="number"
             value={year}
             onChange={(e) => setYear(parseInt(e.target.value))}
@@ -61,21 +62,21 @@ export default function TargetsPage() {
       </div>
 
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full text-sm">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-slate-700">Advisor</th>
-              <th className="text-right px-4 py-3 font-medium text-slate-700">Revenue Target</th>
-              <th className="text-right px-4 py-3 font-medium text-slate-700">Bookings</th>
-              <th className="text-right px-4 py-3 font-medium text-slate-700">Site Visits</th>
-              <th className="text-right px-4 py-3 font-medium text-slate-700">Calls</th>
-              <th className="px-4 py-3"></th>
+              <th scope="col" className="text-left px-4 py-3 font-medium text-slate-700">Advisor</th>
+              <th scope="col" className="text-right px-4 py-3 font-medium text-slate-700">Revenue Target</th>
+              <th scope="col" className="text-right px-4 py-3 font-medium text-slate-700">Bookings</th>
+              <th scope="col" className="text-right px-4 py-3 font-medium text-slate-700">Site Visits</th>
+              <th scope="col" className="text-right px-4 py-3 font-medium text-slate-700">Calls</th>
+              <th scope="col" className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody>
             {members.length === 0 && (
               <tr>
-                <td colSpan={6} className="text-center py-12 text-slate-400">No advisors found</td>
+                <td colSpan={6} className="p-0"><EmptyState title="No advisors found" description="Add team members first, then set their monthly targets." className="py-8" /></td>
               </tr>
             )}
             {members.map((m) => {
@@ -110,7 +111,7 @@ export default function TargetsPage() {
               )
             })}
           </tbody>
-        </table>
+        </table></div>
       </div>
 
       {selected && (

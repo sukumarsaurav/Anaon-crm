@@ -61,36 +61,36 @@ export default function BroadcastForm({ templates }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Broadcast Name</label>
-        <input
+        <label htmlFor="broadcastform-name" className="block text-sm font-medium text-slate-700 mb-1">Broadcast Name</label>
+        <input id="broadcastform-name"
           name="name"
           required
           placeholder="May 2025 Follow-up Campaign"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Template</label>
-        <select
+        <label htmlFor="broadcastform-template-id" className="block text-sm font-medium text-slate-700 mb-1">Template</label>
+        <select id="broadcastform-template-id"
           name="template_id"
           required
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
         >
           <option value="">Select a template...</option>
           {approvedTemplates.map((t) => (
             <option key={t.id} value={t.id}>{t.display_name} ({t.category})</option>
           ))}
         </select>
-        <p className="text-xs text-gray-400 mt-1">Marketing templates skip contacts who replied STOP; utility templates reach everyone.</p>
+        <p className="text-xs text-slate-400 mt-1">Marketing templates skip contacts who replied STOP; utility templates reach everyone.</p>
         {approvedTemplates.length === 0 && (
           <p className="text-xs text-amber-600 mt-1">No approved templates available. Create and get templates approved first.</p>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Audience — Lead Stage</label>
-        <div className="flex flex-wrap gap-2">
+        <span id="broadcast-stage-label" className="block text-sm font-medium text-slate-700 mb-2">Audience — Lead Stage</span>
+        <div role="group" aria-labelledby="broadcast-stage-label" className="flex flex-wrap gap-2">
           {STAGES.map((stage) => (
             <button
               key={stage}
@@ -99,36 +99,36 @@ export default function BroadcastForm({ templates }: Props) {
               className={`text-xs px-3 py-1.5 rounded-full font-medium capitalize transition-colors ${
                 selectedStages.includes(stage)
                   ? 'bg-green-500 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
               {STAGE_CONFIG[stage]?.label ?? stage.replace(/_/g, ' ')}
             </button>
           ))}
         </div>
-        <p className="text-xs text-gray-400 mt-1">
+        <p className="text-xs text-slate-400 mt-1">
           {selectedStages.length === 0 ? 'No filter — all leads will receive this' : `${selectedStages.length} stage(s) selected`}
         </p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Audience — City (optional)</label>
-        <input
+        <label htmlFor="broadcastform-city" className="block text-sm font-medium text-slate-700 mb-1">Audience — City (optional)</label>
+        <input id="broadcastform-city"
           name="city"
           placeholder="Jaipur"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
         />
-        <p className="text-xs text-gray-400 mt-1">Leads who opted out (replied STOP) are skipped automatically.</p>
+        <p className="text-xs text-slate-400 mt-1">Leads who opted out (replied STOP) are skipped automatically.</p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Schedule (optional)</label>
-        <input
+        <label htmlFor="broadcastform-scheduled-at" className="block text-sm font-medium text-slate-700 mb-1">Schedule (optional)</label>
+        <input id="broadcastform-scheduled-at"
           name="scheduled_at"
           type="datetime-local"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
         />
-        <p className="text-xs text-gray-400 mt-1">Set a time and press Save to schedule it; leave empty to save a draft.</p>
+        <p className="text-xs text-slate-400 mt-1">Set a time and press Save to schedule it; leave empty to save a draft.</p>
       </div>
 
       {error && (
@@ -140,7 +140,7 @@ export default function BroadcastForm({ templates }: Props) {
           type="submit"
           onClick={() => setSendNow(false)}
           disabled={isPending}
-          className="px-6 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 disabled:opacity-40"
+          className="px-6 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-200 disabled:opacity-40"
         >
           Save
         </button>
@@ -155,7 +155,7 @@ export default function BroadcastForm({ templates }: Props) {
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-6 py-2 text-gray-600 text-sm hover:text-gray-800"
+          className="px-6 py-2 text-slate-600 text-sm hover:text-slate-800"
         >
           Cancel
         </button>

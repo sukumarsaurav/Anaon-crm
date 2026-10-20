@@ -90,7 +90,7 @@ export default function TeamTree({ data }: { data: TeamsData }) {
   return (
     <>
       {roots.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
           <p className="font-semibold text-slate-900">No teams yet</p>
           <p className="text-sm text-slate-500 mt-1">An admin can create the first team to start the chain.</p>
         </div>
@@ -109,7 +109,7 @@ function MemberChip({ m, leader }: { m: MemberRow; leader?: boolean }) {
   return (
     <span className={cn('inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full border text-xs',
       leader ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-slate-200 bg-slate-50 text-slate-600')}>
-      <span className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[9px] font-semibold text-slate-500 overflow-hidden">
+      <span className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-xs font-semibold text-slate-500 overflow-hidden">
         {m.photo_url ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={m.photo_url} alt="" className="w-full h-full object-cover" /> : getInitials(m.full_name)}
       </span>
       {m.full_name}

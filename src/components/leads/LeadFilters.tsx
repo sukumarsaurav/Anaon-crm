@@ -95,7 +95,7 @@ export default function LeadFilters() {
         {/* Search */}
         <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 w-64">
           <Search size={15} className="text-slate-400 shrink-0" />
-          <input
+          <input aria-label="Search name, phone..."
             type="text"
             value={search}
             onChange={(e) => setParam('search', e.target.value || null)}
@@ -150,7 +150,7 @@ export default function LeadFilters() {
         </div>
 
         {/* Sort */}
-        <select
+        <select aria-label="Sort leads by"
           value={`${searchParams.get('sort_by') || 'created_at'}:${searchParams.get('sort_dir') || 'desc'}`}
           onChange={(e) => {
             const [by, dir] = e.target.value.split(':')

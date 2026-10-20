@@ -82,18 +82,18 @@ export default function DisbursementManager({ loanId, disbursements, milestones 
                   <form onSubmit={e => { e.preventDefault(); handleMark(d.id, 'received', new FormData(e.currentTarget)) }}
                     className="mt-2 pt-2 border-t border-slate-100 grid grid-cols-3 gap-2">
                     <div>
-                      <label className="block text-xs text-slate-500 mb-1">Actual Amount (₹)</label>
-                      <input type="number" name="actual_amount" defaultValue={d.expected_amount} required
+                      <label htmlFor="disbursementmanager-actual-amount" className="block text-xs text-slate-500 mb-1">Actual Amount (₹)</label>
+                      <input id="disbursementmanager-actual-amount" type="number" name="actual_amount" defaultValue={d.expected_amount} required
                         className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary-500" />
                     </div>
                     <div>
-                      <label className="block text-xs text-slate-500 mb-1">Date Received</label>
-                      <input type="date" name="actual_date" defaultValue={new Date().toISOString().split('T')[0]} required
+                      <label htmlFor="disbursementmanager-actual-date" className="block text-xs text-slate-500 mb-1">Date Received</label>
+                      <input id="disbursementmanager-actual-date" type="date" name="actual_date" defaultValue={new Date().toISOString().split('T')[0]} required
                         className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary-500" />
                     </div>
                     <div>
-                      <label className="block text-xs text-slate-500 mb-1">Bank Ref / UTR</label>
-                      <input name="bank_reference" placeholder="UTR123..."
+                      <label htmlFor="disbursementmanager-bank-reference" className="block text-xs text-slate-500 mb-1">Bank Ref / UTR</label>
+                      <input id="disbursementmanager-bank-reference" name="bank_reference" placeholder="UTR123..."
                         className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary-500" />
                     </div>
                     <div className="col-span-3 flex gap-2">
@@ -122,18 +122,18 @@ export default function DisbursementManager({ loanId, disbursements, milestones 
           <p className="text-xs font-semibold text-slate-700">New Disbursement Tranche</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-slate-500 mb-1">Expected Amount (₹) <span className="text-red-500">*</span></label>
-              <input type="number" name="expected_amount" required
+              <label htmlFor="disbursementmanager-expected-amount" className="block text-xs text-slate-500 mb-1">Expected Amount (₹) <span className="text-red-500">*</span></label>
+              <input id="disbursementmanager-expected-amount" type="number" name="expected_amount" required
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1">Expected Date</label>
-              <input type="date" name="expected_date"
+              <label htmlFor="disbursementmanager-expected-date" className="block text-xs text-slate-500 mb-1">Expected Date</label>
+              <input id="disbursementmanager-expected-date" type="date" name="expected_date"
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1">Linked Milestone</label>
-              <select name="milestone_id"
+              <label htmlFor="disbursementmanager-milestone-id" className="block text-xs text-slate-500 mb-1">Linked Milestone</label>
+              <select id="disbursementmanager-milestone-id" name="milestone_id"
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                 <option value="">None</option>
                 {milestones.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}

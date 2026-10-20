@@ -28,7 +28,7 @@ export default function DeletionRequestActions({ id, currentStatus }: Props) {
   return (
     <div className="space-y-2">
       {showNotes && (
-        <textarea
+        <textarea aria-label="Admin notes (optional)"
           value={notes}
           onChange={e => setNotes(e.target.value)}
           placeholder="Admin notes (optional)"

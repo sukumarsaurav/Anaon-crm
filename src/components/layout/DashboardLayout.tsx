@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import { cn } from '@/lib/utils'
@@ -14,7 +14,20 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const toggleDesktop = useCallback(() => setCollapsed((c) => !c), [])
+  // Restore the saved sidebar state after mount (reading it during render would mismatch SSR).
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (localStorage.getItem('anon-sidebar-collapsed') === '1') setCollapsed(true)
+    } catch { /* storage unavailable */ }
+  }, [])
+
+  const toggleDesktop = useCallback(() => {
+    setCollapsed((c) => {
+      try { localStorage.setItem('anon-sidebar-collapsed', c ? '0' : '1') } catch { /* ignore */ }
+      return !c
+    })
+  }, [])
   const toggleMobile = useCallback(() => setMobileOpen((o) => !o), [])
   const closeMobile = useCallback(() => setMobileOpen(false), [])
 

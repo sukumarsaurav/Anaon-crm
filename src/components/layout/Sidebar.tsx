@@ -13,13 +13,27 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useProfile } from './ProfileProvider'
+import { useNavBadges } from './useNavBadges'
 
-const navGroups = [
+type Role = 'admin' | 'manager' | 'sales_advisor' | 'telecaller'
+const MANAGERS: Role[] = ['admin', 'manager']
+
+interface NavItem {
+  label: string
+  href: string
+  icon: React.ComponentType<{ size?: number; className?: string }>
+  /** Roles that see this item. Omit for everyone. UI only: the server still enforces access. */
+  roles?: Role[]
+  badge?: 'whatsappUnread' | 'overdueLeads'
+}
+interface NavGroup { label: string; items: NavItem[] }
+
+const navGroups: NavGroup[] = [
   {
     label: 'Core CRM',
     items: [
       { label: 'Dashboard', href: '/', icon: LayoutDashboard },
-      { label: 'Leads', href: '/leads', icon: Users },
+      { label: 'Leads', href: '/leads', icon: Users, badge: 'overdueLeads' },
       { label: 'Clients', href: '/clients', icon: UserCheck },
       { label: 'Bookings', href: '/bookings', icon: BookOpen },
     ],
@@ -30,14 +44,14 @@ const navGroups = [
       { label: 'Inventory', href: '/inventory', icon: Building2 },
       { label: 'Albums', href: '/albums', icon: Images },
       { label: 'Construction', href: '/construction', icon: HardHat },
-      { label: 'Brokers', href: '/brokers', icon: Handshake },
+      { label: 'Brokers', href: '/brokers', icon: Handshake, roles: MANAGERS },
     ],
   },
   {
     label: 'Engage',
     items: [
-      { label: 'WhatsApp', href: '/whatsapp/inbox', icon: MessageSquare },
-      { label: 'Marketing', href: '/marketing', icon: Megaphone },
+      { label: 'WhatsApp', href: '/whatsapp/inbox', icon: MessageSquare, badge: 'whatsappUnread' },
+      { label: 'Marketing', href: '/marketing', icon: Megaphone, roles: MANAGERS },
     ],
   },
   {
@@ -51,17 +65,17 @@ const navGroups = [
     label: 'Operations',
     items: [
       { label: 'Team', href: '/team', icon: UsersRound },
-      { label: 'HR', href: '/hr', icon: Briefcase },
-      { label: 'Automation', href: '/automation', icon: Zap },
-      { label: 'Legal', href: '/legal', icon: Scale },
+      { label: 'HR', href: '/hr', icon: Briefcase, roles: MANAGERS },
+      { label: 'Automation', href: '/automation', icon: Zap, roles: MANAGERS },
+      { label: 'Legal', href: '/legal', icon: Scale, roles: MANAGERS },
     ],
   },
   {
     label: 'Platform',
     items: [
-      { label: 'Mobile', href: '/mobile', icon: Smartphone },
-      { label: 'Security', href: '/admin/security', icon: ShieldCheck },
-      { label: 'Audit Log', href: '/audit-logs', icon: ClipboardList },
+      { label: 'Mobile', href: '/mobile', icon: Smartphone, roles: MANAGERS },
+      { label: 'Security', href: '/admin/security', icon: ShieldCheck, roles: MANAGERS },
+      { label: 'Audit Log', href: '/audit-logs', icon: ClipboardList, roles: MANAGERS },
     ],
   },
 ]
@@ -79,6 +93,23 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const pathname = usePathname()
   const profile = useProfile()
   const supabase = useMemo(() => createClient(), [])
+  const badges = useNavBadges()
+
+  const visibleGroups = useMemo(
+    () =>
+      navGroups
+        .map((g) => ({ ...g, items: g.items.filter((i) => !i.roles || i.roles.includes(profile.role as Role)) }))
+        .filter((g) => g.items.length > 0),
+    [profile.role],
+  )
+
+  // Escape closes the mobile drawer.
+  useEffect(() => {
+    if (!mobileOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onMobileClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [mobileOpen, onMobileClose])
 
   // Per-group collapse state, persisted to localStorage.
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
@@ -141,7 +172,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           </div>
           <div className="shrink-0">
             <p className="text-slate-900 font-bold text-sm leading-none tracking-wide">ANON INDIA</p>
-            <p className="text-slate-500 text-[11px] mt-1 font-medium">Admin Dashboard</p>
+            <p className="text-slate-500 text-xs mt-1 font-medium">Admin Dashboard</p>
           </div>
         </div>
 
@@ -173,7 +204,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
-        {navGroups.map((group) => {
+        {visibleGroups.map((group) => {
           const expanded = openGroups[group.label] !== false
           return (
             <div key={group.label}>
@@ -181,7 +212,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                 <button
                   onClick={() => toggleGroup(group.label)}
                   aria-expanded={expanded}
-                  className="w-full flex items-center justify-between px-3 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-600 transition-colors focus-ring rounded"
+                  className="w-full flex items-center justify-between px-3 mb-1.5 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-slate-600 transition-colors focus-ring rounded"
                 >
                   {group.label}
                   <ChevronDown
@@ -192,8 +223,9 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
               )}
               {(expanded || collapsed) && (
                 <div className="space-y-0.5">
-                  {group.items.map(({ label, href, icon: Icon }) => {
+                  {group.items.map(({ label, href, icon: Icon, badge }) => {
                     const active = isActive(href)
+                    const count = badge ? badges[badge] : 0
                     return (
                       <Link
                         key={href}
@@ -218,6 +250,18 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                         <span className={cn('truncate transition-all duration-300', collapsed ? 'lg:hidden' : '')}>
                           {label}
                         </span>
+                        {count > 0 && (
+                          <span
+                            className={cn(
+                              'ml-auto min-w-5 h-5 px-1.5 rounded-full text-xs font-bold flex items-center justify-center',
+                              badge === 'overdueLeads' ? 'bg-red-100 text-red-700' : 'bg-primary text-white',
+                              collapsed && 'lg:absolute lg:top-0.5 lg:right-0.5 lg:min-w-2 lg:h-2 lg:p-0 lg:text-[0px]',
+                            )}
+                            aria-label={badge === 'overdueLeads' ? `${count} overdue` : `${count} unread`}
+                          >
+                            {count > 99 ? '99+' : count}
+                          </span>
+                        )}
                       </Link>
                     )
                   })}
@@ -231,10 +275,16 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
       {/* Profile card */}
       <div className="border-t border-slate-200 p-2 shrink-0 relative">
         {/* Drop-up menu */}
-        {profileMenuOpen && !collapsed && (
+        {profileMenuOpen && (
           <>
             <div className="fixed inset-0 z-0" onClick={() => setProfileMenuOpen(false)} aria-hidden="true" />
-            <div className="absolute bottom-full left-2 right-2 mb-2 z-10 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden py-1">
+            <div
+              role="menu"
+              className={cn(
+                'absolute bottom-full left-2 right-2 mb-2 z-10 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden py-1',
+                collapsed && 'lg:left-full lg:right-auto lg:ml-2 lg:bottom-2 lg:mb-0 lg:w-44',
+              )}
+            >
               <Link
                 href="/settings"
                 onClick={() => {
@@ -258,8 +308,10 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         )}
 
         <button
-          onClick={() => (collapsed ? handleSignOut() : setProfileMenuOpen((o) => !o))}
-          title={collapsed ? 'Account' : undefined}
+          onClick={() => setProfileMenuOpen((o) => !o)}
+          aria-haspopup="menu"
+          aria-expanded={profileMenuOpen}
+          title={collapsed ? `${profile.fullName} — account` : undefined}
           className={cn(
             'w-full flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-slate-100 transition-colors focus-ring',
             collapsed && 'lg:justify-center',

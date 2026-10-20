@@ -71,7 +71,7 @@ export default function FollowUpModal({ leadId, open, onClose }: FollowUpModalPr
 
         {/* Custom */}
         <form onSubmit={handleCustom} className="space-y-3">
-          <input
+          <input aria-label="Follow-up date and time"
             type="datetime-local"
             name="followup_at"
             defaultValue={format(addHours(new Date(), 24), "yyyy-MM-dd'T'HH:mm")}

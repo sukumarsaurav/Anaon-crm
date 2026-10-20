@@ -119,15 +119,15 @@ export default async function LegalPage() {
           </div>
         ) : (
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto"><table className="w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-100">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600">Project</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600">RERA No.</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600">Expiry</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600 hidden sm:table-cell">Docs</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600">Score</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600">Status</th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-slate-600">Project</th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-slate-600">RERA No.</th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-slate-600">Expiry</th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-slate-600 hidden sm:table-cell">Docs</th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-slate-600">Score</th>
+                  <th scope="col" className="text-left px-4 py-3 font-medium text-slate-600">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -173,7 +173,7 @@ export default async function LegalPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           </div>
         )}
       </div>

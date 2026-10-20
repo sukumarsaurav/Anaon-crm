@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { X } from 'lucide-react'
 import { applyLeave } from '@/lib/team/actions'
 import { LEAVE_TYPE_LABELS } from '@/types/team'
+import Modal from '@/components/ui/Modal'
 
 interface Props {
   onClose: () => void
@@ -28,17 +28,12 @@ export default function LeaveApplyForm({ onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between p-5 border-b border-slate-200">
-          <h2 className="font-semibold text-slate-900">Apply for Leave</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
-        </div>
+    <Modal open onClose={onClose} title="Apply for Leave" size="sm">
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Leave Type</label>
-            <select
+            <label htmlFor="leaveapplyform-leave-type" className="block text-xs font-medium text-slate-600 mb-1">Leave Type</label>
+            <select id="leaveapplyform-leave-type"
               name="leave_type"
               required
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -51,8 +46,8 @@ export default function LeaveApplyForm({ onClose }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">From Date</label>
-              <input
+              <label htmlFor="leaveapplyform-from-date" className="block text-xs font-medium text-slate-600 mb-1">From Date</label>
+              <input id="leaveapplyform-from-date"
                 name="from_date"
                 type="date"
                 required
@@ -61,8 +56,8 @@ export default function LeaveApplyForm({ onClose }: Props) {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">To Date</label>
-              <input
+              <label htmlFor="leaveapplyform-to-date" className="block text-xs font-medium text-slate-600 mb-1">To Date</label>
+              <input id="leaveapplyform-to-date"
                 name="to_date"
                 type="date"
                 required
@@ -73,8 +68,8 @@ export default function LeaveApplyForm({ onClose }: Props) {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Reason (optional)</label>
-            <textarea
+            <label htmlFor="leaveapplyform-reason" className="block text-xs font-medium text-slate-600 mb-1">Reason (optional)</label>
+            <textarea id="leaveapplyform-reason"
               name="reason"
               rows={3}
               placeholder="Brief reason for leave..."
@@ -97,7 +92,6 @@ export default function LeaveApplyForm({ onClose }: Props) {
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   )
 }

@@ -24,7 +24,7 @@ export default function OverdueLeadsTable({ leads, advisors }: OverdueLeadsTable
 
   if (leads.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-slate-200">
+      <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-xl border border-slate-200">
         <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mb-3">
           <AlertTriangle className="text-emerald-500" size={22} />
         </div>
@@ -36,7 +36,7 @@ export default function OverdueLeadsTable({ leads, advisors }: OverdueLeadsTable
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-xs font-medium text-slate-500 border-b border-slate-100 bg-slate-50">

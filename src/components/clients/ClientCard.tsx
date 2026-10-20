@@ -2,6 +2,7 @@ import { Card } from '@/components/ui/Card'
 import { Phone, Mail, Building2 } from 'lucide-react'
 import KycStatusBadge from './KycStatusBadge'
 import type { Client } from '@/types/clients'
+import Avatar from '@/components/ui/Avatar'
 
 interface Props {
   client: Client
@@ -16,11 +17,7 @@ export default function ClientCard({ client, bookingCount }: Props) {
     <Card href={`/clients/${client.id}`} padding="sm">
       <div className="flex items-start gap-3">
         {/* Avatar */}
-        <div className="w-11 h-11 rounded-full bg-primary-100 flex items-center justify-center shrink-0 text-primary-700 font-bold text-sm">
-          {client.photo_url
-            ? <img src={client.photo_url} alt={client.full_name} className="w-full h-full rounded-full object-cover" />
-            : initials}
-        </div>
+        <Avatar name={client.full_name} src={client.photo_url} className="size-11" textClassName="text-sm font-bold" />
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">

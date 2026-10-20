@@ -139,7 +139,7 @@ export default function AddActivityModal({ leadId, open, onClose }: AddActivityM
 
           {scheduleFollowup && (
             <div className="mt-3">
-              <input
+              <input aria-label="Follow-up date and time"
                 type="datetime-local"
                 name="followup_at"
                 defaultValue={defaultFollowupTime}

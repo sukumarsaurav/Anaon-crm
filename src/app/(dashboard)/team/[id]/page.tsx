@@ -16,6 +16,8 @@ import CheckInWidget from '@/components/team/CheckInWidget'
 import LeaveRequestCard from '@/components/team/LeaveRequestCard'
 import { Card } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import EmptyState from '@/components/ui/EmptyState'
+import Avatar from '@/components/ui/Avatar'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,11 +60,7 @@ export default async function MemberProfilePage({ params }: Props) {
       {/* Profile header */}
       <Card padding="lg">
         <div className="flex items-start gap-5 flex-wrap">
-          <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-xl flex-shrink-0">
-            {member.photo_url ? (
-              <img src={member.photo_url} alt={member.full_name} className="w-16 h-16 rounded-full object-cover" />
-            ) : initials}
-          </div>
+          <Avatar name={member.full_name} src={member.photo_url} className="size-16" textClassName="text-xl font-bold" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-slate-900">{member.full_name}</h1>
@@ -142,7 +140,7 @@ export default async function MemberProfilePage({ params }: Props) {
           )}
         </div>
         {leaveRequests.length === 0 ? (
-          <p className="text-sm text-slate-400 text-center py-6">No leave requests</p>
+          <EmptyState title="No leave requests" className="py-6" />
         ) : (
           <div className="space-y-3">
             {leaveRequests.slice(0, 5).map((req) => (

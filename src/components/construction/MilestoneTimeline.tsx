@@ -12,6 +12,8 @@ import {
   CheckCircle2, Clock, AlertTriangle, Circle,
   ChevronDown, ChevronUp, Pencil, AlertCircle, Trash2, IndianRupee
 } from 'lucide-react'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
+import { useToast } from '@/components/ui/Toast'
 
 interface Props {
   milestones: ConstructionMilestone[]
@@ -37,10 +39,13 @@ export default function MilestoneTimeline({ milestones, projectId }: Props) {
     setDelayForm(null)
   }
 
-  function handleDelete(m: ConstructionMilestone) {
-    if (!confirm(`Delete milestone "${m.name}"?`)) return
+  const askConfirm = useConfirm()
+  const toast = useToast()
+  async function handleDelete(m: ConstructionMilestone) {
+    if (!(await askConfirm({ title: 'Delete milestone', message: `Delete milestone "${m.name}"?` }))) return
     startTransition(async () => {
       await deleteMilestone(m.id, projectId)
+      toast.success('Milestone deleted')
       router.refresh()
     })
   }
@@ -162,7 +167,7 @@ export default function MilestoneTimeline({ milestones, projectId }: Props) {
                         <div className="flex gap-2 mb-3 overflow-x-auto">
                           {m.photos.map((url, i) => (
                             <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                              <img src={url} alt={`Photo ${i + 1}`}
+                              <img src={url} alt={`Photo ${i + 1}`} loading="lazy" decoding="async"
                                 className="h-16 w-16 object-cover rounded-lg border border-slate-200 shrink-0" />
                             </a>
                           ))}

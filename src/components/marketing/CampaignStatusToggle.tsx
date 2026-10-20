@@ -28,7 +28,7 @@ export default function CampaignStatusToggle({ campaignId, status }: Props) {
   }
 
   return (
-    <select
+    <select aria-label="Campaign status"
       defaultValue={status}
       onChange={handleChange}
       className={`text-xs rounded-full px-2 py-0.5 border font-medium focus:outline-none ${

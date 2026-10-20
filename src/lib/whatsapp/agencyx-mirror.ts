@@ -264,6 +264,29 @@ export async function mirrorMessage(
   return true
 }
 
+/**
+ * Links a thread to its lead after the fact. The inbound webhook saves the message and
+ * creates the lead at the same time (so the message shows up without waiting for lead
+ * scoring/assignment), which means the thread is created before the lead id is known.
+ * Same rule as upsertConversation: a lead someone linked by hand is never overwritten, and
+ * the thread inherits the lead's owner and branch so it is visible to them.
+ */
+export async function attachLeadToConversation(rawWaId: string | null | undefined, leadId: string): Promise<void> {
+  const waId = rawWaId?.replace(/\D/g, '')
+  if (!waId) return
+  const supabase = createServiceClient()
+  const { data: conv } = await supabase
+    .from('whatsapp_conversations').select('id, lead_id').eq('wa_id', waId).maybeSingle()
+  if (!conv || conv.lead_id) return
+  const { data: lead } = await supabase.from('leads').select('assigned_to, branch_id').eq('id', leadId).maybeSingle()
+  const { error } = await supabase.from('whatsapp_conversations').update({
+    lead_id: leadId,
+    ...(lead?.assigned_to ? { assigned_to: lead.assigned_to } : {}),
+    ...(lead?.branch_id ? { branch_id: lead.branch_id } : {}),
+  }).eq('id', conv.id).is('lead_id', null)
+  if (error) console.error('[agencyx] attaching lead to conversation failed', error)
+}
+
 export async function mirrorStatus(event: AgencyXStatusEvent): Promise<boolean> {
   const id = event.message?.id
   const status = event.message?.status

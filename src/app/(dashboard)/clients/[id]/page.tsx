@@ -21,6 +21,7 @@ import { Card } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
 import { Edit, Phone, Mail, MapPin, Briefcase, User } from 'lucide-react'
+import Avatar from '@/components/ui/Avatar'
 
 interface PageProps {
   params:      Promise<{ id: string }>
@@ -75,11 +76,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
         backHref="/clients"
         title={
           <span className="flex items-center gap-3 flex-wrap">
-            <span className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-base shrink-0">
-              {client.photo_url
-                ? <img src={client.photo_url} alt={client.full_name} className="w-full h-full rounded-full object-cover" />
-                : initials}
-            </span>
+            <Avatar name={client.full_name} src={client.photo_url} className="size-12" textClassName="text-base font-bold" />
             <span>{client.full_name}</span>
             <KycStatusBadge status={client.kyc_status} />
           </span>

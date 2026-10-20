@@ -75,18 +75,18 @@ export default async function PayrollPage() {
                   Payslips — {MONTH_NAMES[latestRun.month]} {latestRun.year}
                 </h2>
               </div>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:bg-slate-50 [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:bg-white">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-                      <th className="px-4 py-2.5 text-left">Employee</th>
-                      <th className="px-4 py-2.5 text-right">Present</th>
-                      <th className="px-4 py-2.5 text-right">LOP</th>
-                      <th className="px-4 py-2.5 text-right">Gross</th>
-                      <th className="px-4 py-2.5 text-right">PF</th>
-                      <th className="px-4 py-2.5 text-right">Prof Tax</th>
-                      <th className="px-4 py-2.5 text-right">Incentives</th>
-                      <th className="px-4 py-2.5 text-right">Net Pay</th>
+                      <th scope="col" className="px-4 py-2.5 text-left">Employee</th>
+                      <th scope="col" className="px-4 py-2.5 text-right">Present</th>
+                      <th scope="col" className="px-4 py-2.5 text-right">LOP</th>
+                      <th scope="col" className="px-4 py-2.5 text-right">Gross</th>
+                      <th scope="col" className="px-4 py-2.5 text-right">PF</th>
+                      <th scope="col" className="px-4 py-2.5 text-right">Prof Tax</th>
+                      <th scope="col" className="px-4 py-2.5 text-right">Incentives</th>
+                      <th scope="col" className="px-4 py-2.5 text-right">Net Pay</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">

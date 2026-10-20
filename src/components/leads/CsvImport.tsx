@@ -103,7 +103,7 @@ export default function CsvImport({ advisors }: { advisors: Advisor[] }) {
   return (
     <div className="space-y-6">
       {/* Upload */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6">
+      <div className="bg-white rounded-xl border border-slate-200 p-6">
         <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-xl py-10 cursor-pointer hover:border-primary-300 transition-colors">
           <Upload size={26} className="text-slate-400" />
           <span className="text-sm font-medium text-slate-700">Choose a CSV file</span>
@@ -122,7 +122,7 @@ export default function CsvImport({ advisors }: { advisors: Advisor[] }) {
       {data && !result && (
         <>
           {/* Mapping */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
             <h2 className="font-semibold text-slate-900 mb-4">Map columns</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {FIELDS.map((f) => (
@@ -138,7 +138,7 @@ export default function CsvImport({ advisors }: { advisors: Advisor[] }) {
           </div>
 
           {/* Assignment + preview */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
             <div className="max-w-xs">
               <Select label="Assign all to"
                 value={assignTo} onChange={(e) => setAssignTo(e.target.value)}
@@ -173,7 +173,7 @@ export default function CsvImport({ advisors }: { advisors: Advisor[] }) {
 
       {/* Result */}
       {result && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+        <div className="bg-white rounded-xl border border-slate-200 p-6">
           <div className="flex items-center gap-2 mb-4">
             <CheckCircle2 size={20} className="text-green-600" />
             <h2 className="font-semibold text-slate-900">Import complete</h2>

@@ -9,6 +9,7 @@ import type { BrokerStatus } from '@/types/brokers'
 import PageHeader from '@/components/ui/PageHeader'
 import Button from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface PageProps {
   searchParams: Promise<{ status?: string; search?: string; page?: string }>
@@ -90,27 +91,27 @@ export default async function BrokersPage({ searchParams }: PageProps) {
         </div>
         <form method="GET" className="flex-1 max-w-xs">
           {sp.status && <input type="hidden" name="status" value={sp.status} />}
-          <input name="search" defaultValue={sp.search} placeholder="Search brokers..."
+          <input aria-label="Search brokers..." name="search" defaultValue={sp.search} placeholder="Search brokers..."
             className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30" />
         </form>
       </div>
 
       {/* Table */}
       <Card padding="none" className="overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full text-sm">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Broker</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">City</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">RERA</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Commission %</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Status</th>
-              <th className="px-4 py-3" />
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500">Broker</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500">City</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500">RERA</th>
+              <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-slate-500">Commission %</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500">Status</th>
+              <th scope="col" className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {brokers.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-400">No brokers found</td></tr>
+              <tr><td colSpan={6} className="p-0"><EmptyState title="No brokers found" description="Clear the search, or register a broker to get started." className="py-8" /></td></tr>
             )}
             {brokers.map((b) => (
               <tr key={b.id} className="hover:bg-slate-50">
@@ -128,7 +129,7 @@ export default async function BrokersPage({ searchParams }: PageProps) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </Card>
 
       {/* Pagination */}

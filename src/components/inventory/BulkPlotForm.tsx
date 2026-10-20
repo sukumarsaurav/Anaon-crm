@@ -44,20 +44,20 @@ export default function BulkPlotForm({ projectId }: Props) {
     <form onSubmit={handleSubmit} className="space-y-5 max-w-lg">
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Prefix</label>
-          <input name="prefix" value={prefix} onChange={(e) => setPrefix(e.target.value)}
+          <label htmlFor="bulkplotform-prefix" className="block text-xs font-medium text-slate-600 mb-1">Prefix</label>
+          <input id="bulkplotform-prefix" name="prefix" value={prefix} onChange={(e) => setPrefix(e.target.value)}
             placeholder="A-"
             className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">From #</label>
-          <input name="from_number" type="number" min="1" value={from}
+          <label htmlFor="bulkplotform-from-number" className="block text-xs font-medium text-slate-600 mb-1">From #</label>
+          <input id="bulkplotform-from-number" name="from_number" type="number" min="1" value={from}
             onChange={(e) => setFrom(parseInt(e.target.value) || 1)}
             className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">To #</label>
-          <input name="to_number" type="number" min="1" value={to}
+          <label htmlFor="bulkplotform-to-number" className="block text-xs font-medium text-slate-600 mb-1">To #</label>
+          <input id="bulkplotform-to-number" name="to_number" type="number" min="1" value={to}
             onChange={(e) => setTo(parseInt(e.target.value) || 1)}
             className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
         </div>
@@ -69,20 +69,20 @@ export default function BulkPlotForm({ projectId }: Props) {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Size (sq yards)</label>
-          <input name="size_sqyd" type="number" step="0.01" value={sizeQyd}
+          <label htmlFor="bulkplotform-size-sqyd" className="block text-xs font-medium text-slate-600 mb-1">Size (sq yards)</label>
+          <input id="bulkplotform-size-sqyd" name="size_sqyd" type="number" step="0.01" value={sizeQyd}
             onChange={(e) => setSizeQyd(e.target.value)}
             className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Base Price (₹) *</label>
-          <input name="base_price" type="number" min="0" required value={basePrice || ''}
+          <label htmlFor="bulkplotform-base-price" className="block text-xs font-medium text-slate-600 mb-1">Base Price (₹) *</label>
+          <input id="bulkplotform-base-price" name="base_price" type="number" min="0" required value={basePrice || ''}
             onChange={(e) => setBasePrice(parseFloat(e.target.value) || 0)}
             className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Dev. Charges (₹)</label>
-          <input name="development_charges" type="number" min="0" value={devCharges || ''}
+          <label htmlFor="bulkplotform-development-charges" className="block text-xs font-medium text-slate-600 mb-1">Dev. Charges (₹)</label>
+          <input id="bulkplotform-development-charges" name="development_charges" type="number" min="0" value={devCharges || ''}
             onChange={(e) => setDevCharges(parseFloat(e.target.value) || 0)}
             className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
         </div>

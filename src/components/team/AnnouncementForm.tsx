@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { X, Pin } from 'lucide-react'
+import { Pin } from 'lucide-react'
 import { createAnnouncement } from '@/lib/team/actions'
+import Modal from '@/components/ui/Modal'
 
 interface Props {
   onClose: () => void
@@ -27,18 +28,13 @@ export default function AnnouncementForm({ onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
-        <div className="flex items-center justify-between p-5 border-b border-slate-200">
-          <h2 className="font-semibold text-slate-900">New Announcement</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
-        </div>
+    <Modal open onClose={onClose} title="New Announcement" size="md">
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Type</label>
-              <select
+              <label htmlFor="announcementform-type" className="block text-xs font-medium text-slate-600 mb-1">Type</label>
+              <select id="announcementform-type"
                 name="type"
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
@@ -57,8 +53,8 @@ export default function AnnouncementForm({ onClose }: Props) {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Title</label>
-            <input
+            <label htmlFor="announcementform-title" className="block text-xs font-medium text-slate-600 mb-1">Title</label>
+            <input id="announcementform-title"
               name="title"
               required
               placeholder="New Project Launch — Jaipur Highlands"
@@ -67,8 +63,8 @@ export default function AnnouncementForm({ onClose }: Props) {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Message</label>
-            <textarea
+            <label htmlFor="announcementform-body" className="block text-xs font-medium text-slate-600 mb-1">Message</label>
+            <textarea id="announcementform-body"
               name="body"
               required
               rows={4}
@@ -78,8 +74,8 @@ export default function AnnouncementForm({ onClose }: Props) {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Expires at (optional)</label>
-            <input
+            <label htmlFor="announcementform-expires-at" className="block text-xs font-medium text-slate-600 mb-1">Expires at (optional)</label>
+            <input id="announcementform-expires-at"
               name="expires_at"
               type="datetime-local"
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -101,7 +97,6 @@ export default function AnnouncementForm({ onClose }: Props) {
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   )
 }

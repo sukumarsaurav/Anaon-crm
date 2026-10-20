@@ -52,18 +52,18 @@ export default function MilestoneProgressForm({ milestone, projectId, onClose }:
       {/* Completion slider */}
       <div>
         <div className="flex justify-between text-xs text-slate-600 mb-1">
-          <label className="font-medium">Completion</label>
+          <label htmlFor="milestone-completion" className="font-medium">Completion</label>
           <span className="font-bold text-primary-600">{completion}%</span>
         </div>
-        <input type="range" min={0} max={100} step={5} value={completion}
+        <input id="milestone-completion" type="range" min={0} max={100} step={5} value={completion}
           onChange={(e) => handleCompletionChange(parseInt(e.target.value, 10))}
           className="w-full accent-primary-600" />
       </div>
 
       {/* Status */}
       <div>
-        <label className="block text-xs font-medium text-slate-600 mb-1">Status</label>
-        <select value={status} onChange={(e) => setStatus(e.target.value as MilestoneStatus)}
+        <label htmlFor="milestoneprogressform-status" className="block text-xs font-medium text-slate-600 mb-1">Status</label>
+        <select id="milestoneprogressform-status" value={status} onChange={(e) => setStatus(e.target.value as MilestoneStatus)}
           className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
           <option value="pending">Pending</option>
           <option value="in_progress">In Progress</option>
@@ -74,8 +74,8 @@ export default function MilestoneProgressForm({ milestone, projectId, onClose }:
       {/* Completion date (shown when marking complete) */}
       {status === 'completed' && (
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Completion Date</label>
-          <input type="date" name="completion_date"
+          <label htmlFor="milestoneprogressform-completion-date" className="block text-xs font-medium text-slate-600 mb-1">Completion Date</label>
+          <input id="milestoneprogressform-completion-date" type="date" name="completion_date"
             defaultValue={milestone.actual_completion_date ?? new Date().toISOString().split('T')[0]}
             className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
@@ -83,10 +83,10 @@ export default function MilestoneProgressForm({ milestone, projectId, onClose }:
 
       {/* Photo URLs */}
       <div>
-        <label className="block text-xs font-medium text-slate-600 mb-1">
+        <label htmlFor="milestoneprogressform-photo-bulk" className="block text-xs font-medium text-slate-600 mb-1">
           Photo URLs <span className="text-slate-400">(one per line)</span>
         </label>
-        <textarea name="photo_bulk" rows={2}
+        <textarea id="milestoneprogressform-photo-bulk" name="photo_bulk" rows={2}
           placeholder="https://storage.example.com/photo1.jpg&#10;https://storage.example.com/photo2.jpg"
           onChange={(e) => {
             const urls = e.target.value.split('\n').map((u) => u.trim()).filter(Boolean)
@@ -104,8 +104,8 @@ export default function MilestoneProgressForm({ milestone, projectId, onClose }:
 
       {/* Notes */}
       <div>
-        <label className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
-        <textarea name="notes" rows={2} defaultValue={milestone.notes ?? ''}
+        <label htmlFor="milestoneprogressform-notes" className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
+        <textarea id="milestoneprogressform-notes" name="notes" rows={2} defaultValue={milestone.notes ?? ''}
           placeholder="Describe work completed, next steps..."
           className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
       </div>

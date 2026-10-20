@@ -63,8 +63,9 @@ export default function PushRegistrar() {
       disabled={busy}
       className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-60"
       title="Get desktop alerts for new leads, reminders and payments"
+      aria-label="Enable alerts"
     >
-      <Bell size={13} /> {busy ? 'Enabling…' : 'Enable alerts'}
+      <Bell size={13} /> <span className="hidden sm:inline">{busy ? 'Enabling…' : 'Enable alerts'}</span>
     </button>
   )
 }

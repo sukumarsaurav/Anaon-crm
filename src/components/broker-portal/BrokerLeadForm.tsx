@@ -72,24 +72,24 @@ export default function BrokerLeadForm({ projects, onDone }: Props) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label htmlFor="brokerleadform-client-name" className="block text-sm font-medium text-slate-700 mb-1">
             Client Name <span className="text-red-500">*</span>
           </label>
-          <input name="client_name" required placeholder="Full name"
+          <input id="brokerleadform-client-name" name="client_name" required placeholder="Full name"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label htmlFor="brokerleadform-client-phone" className="block text-sm font-medium text-slate-700 mb-1">
             Phone Number <span className="text-red-500">*</span>
           </label>
-          <input name="client_phone" type="tel" required placeholder="+91 98765 43210"
+          <input id="brokerleadform-client-phone" name="client_phone" type="tel" required placeholder="+91 98765 43210"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Project Interest</label>
-        <select name="project_id"
+        <label htmlFor="brokerleadform-project-id" className="block text-sm font-medium text-slate-700 mb-1">Project Interest</label>
+        <select id="brokerleadform-project-id" name="project_id"
           className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
           <option value="">Not specified</option>
           {projects.map((p) => (
@@ -100,20 +100,20 @@ export default function BrokerLeadForm({ projects, onDone }: Props) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Budget Min (₹)</label>
-          <input name="budget_min" type="number" min="0" step="100000" placeholder="5000000"
+          <label htmlFor="brokerleadform-budget-min" className="block text-sm font-medium text-slate-700 mb-1">Budget Min (₹)</label>
+          <input id="brokerleadform-budget-min" name="budget_min" type="number" min="0" step="100000" placeholder="5000000"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Budget Max (₹)</label>
-          <input name="budget_max" type="number" min="0" step="100000" placeholder="10000000"
+          <label htmlFor="brokerleadform-budget-max" className="block text-sm font-medium text-slate-700 mb-1">Budget Max (₹)</label>
+          <input id="brokerleadform-budget-max" name="budget_max" type="number" min="0" step="100000" placeholder="10000000"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
-        <textarea name="notes" rows={2} placeholder="Any additional details about the client..."
+        <label htmlFor="brokerleadform-notes" className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+        <textarea id="brokerleadform-notes" name="notes" rows={2} placeholder="Any additional details about the client..."
           className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
       </div>
 

@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { formatDate } from '@/lib/utils'
 import { schedulePriceEscalation } from '@/lib/inventory/actions'
 import type { PriceEscalation } from '@/types/inventory'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Props {
   projectId: string
@@ -47,20 +48,20 @@ export default function PriceEscalationPanel({ projectId, escalations, canManage
         <form onSubmit={handleSubmit} className="mb-4 p-4 bg-primary-50 rounded-xl space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Escalation Date *</label>
-              <input name="escalation_date" type="date" required
+              <label htmlFor="priceescalationpanel-escalation-date" className="block text-xs font-medium text-slate-600 mb-1">Escalation Date *</label>
+              <input id="priceescalationpanel-escalation-date" name="escalation_date" type="date" required
                 min={new Date().toISOString().split('T')[0]}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">% Increase *</label>
-              <input name="percentage_increase" type="number" step="0.1" min="0.1" required
+              <label htmlFor="priceescalationpanel-percentage-increase" className="block text-xs font-medium text-slate-600 mb-1">% Increase *</label>
+              <input id="priceescalationpanel-percentage-increase" name="percentage_increase" type="number" step="0.1" min="0.1" required
                 placeholder="5"
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
-              <input name="notes" placeholder="Q2 2025 price revision"
+              <label htmlFor="priceescalationpanel-notes" className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
+              <input id="priceescalationpanel-notes" name="notes" placeholder="Q2 2025 price revision"
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
           </div>
@@ -79,7 +80,7 @@ export default function PriceEscalationPanel({ projectId, escalations, canManage
       )}
 
       {escalations.length === 0 ? (
-        <p className="text-sm text-slate-400 text-center py-4">No escalations scheduled</p>
+        <EmptyState title="No escalations scheduled" className="py-4" />
       ) : (
         <div className="space-y-2">
           {escalations.map((e) => (

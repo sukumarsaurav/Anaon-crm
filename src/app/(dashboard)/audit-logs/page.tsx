@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, Download } from 'lucide-react'
 import Link from 'next/link'
 import PageHeader from '@/components/ui/PageHeader'
 import Button from '@/components/ui/Button'
+import EmptyState from '@/components/ui/EmptyState'
 
 const ACTION_COLORS: Record<string, string> = {
   login:                  'bg-emerald-100 text-emerald-700',
@@ -99,19 +100,19 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
       {/* Filters */}
       <form method="GET" className="bg-white border border-slate-200 rounded-xl p-4">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <select name="user_id" defaultValue={sp.user_id ?? ''}
+          <select aria-label="User" name="user_id" defaultValue={sp.user_id ?? ''}
             className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 bg-white text-slate-900">
             <option value="">All Users</option>
             {users?.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
           </select>
-          <select name="action" defaultValue={sp.action ?? ''}
+          <select aria-label="Action" name="action" defaultValue={sp.action ?? ''}
             className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 bg-white text-slate-900">
             <option value="">All Actions</option>
             {ACTIONS.map(a => <option key={a} value={a}>{a.replace(/_/g, ' ')}</option>)}
           </select>
-          <input name="start_date" type="date" defaultValue={sp.start_date ?? ''}
+          <input aria-label="Start date" name="start_date" type="date" defaultValue={sp.start_date ?? ''}
             className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 text-slate-900" />
-          <input name="end_date" type="date" defaultValue={sp.end_date ?? ''}
+          <input aria-label="End date" name="end_date" type="date" defaultValue={sp.end_date ?? ''}
             className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 text-slate-900" />
           <div className="flex gap-2">
             <button type="submit"
@@ -132,12 +133,12 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Time</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">User</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Action</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Table</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">IP</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Details</th>
+                <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Time</th>
+                <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">User</th>
+                <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Action</th>
+                <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Table</th>
+                <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">IP</th>
+                <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -167,9 +168,7 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
               ))}
               {(logs ?? []).length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-slate-400 text-sm">
-                    No audit log entries match your filters
-                  </td>
+                  <td colSpan={6} className="p-0"><EmptyState title="No audit log entries match" description="Try a wider date range or clear the user and action filters." className="py-8" /></td>
                 </tr>
               )}
             </tbody>

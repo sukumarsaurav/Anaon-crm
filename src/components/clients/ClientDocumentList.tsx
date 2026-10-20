@@ -6,6 +6,7 @@ import { DOC_TYPE_LABELS } from '@/types/clients'
 import type { ClientDocument } from '@/types/clients'
 import { formatDate } from '@/lib/utils'
 import { FileText, ExternalLink, CheckCircle2, XCircle, Plus } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Props {
   clientId:  string
@@ -57,8 +58,8 @@ export default function ClientDocumentList({ clientId, documents, canManage }: P
         <form onSubmit={handleSubmit} className="mb-4 p-4 bg-primary-50 rounded-xl space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Document Type *</label>
-              <select name="document_type" required
+              <label htmlFor="clientdocumentlist-document-type" className="block text-xs font-medium text-slate-600 mb-1">Document Type *</label>
+              <select id="clientdocumentlist-document-type" name="document_type" required
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                 {Object.entries(DOC_TYPE_LABELS).map(([v, label]) => (
                   <option key={v} value={v}>{label}</option>
@@ -66,23 +67,23 @@ export default function ClientDocumentList({ clientId, documents, canManage }: P
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Label / Name</label>
-              <input name="name" placeholder="Aadhar Front & Back"
+              <label htmlFor="clientdocumentlist-name" className="block text-xs font-medium text-slate-600 mb-1">Label / Name</label>
+              <input id="clientdocumentlist-name" name="name" placeholder="Aadhar Front & Back"
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">File URL</label>
-              <input name="file_url" type="url" placeholder="https://..."
+              <label htmlFor="clientdocumentlist-file-url" className="block text-xs font-medium text-slate-600 mb-1">File URL</label>
+              <input id="clientdocumentlist-file-url" name="file_url" type="url" placeholder="https://..."
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Expiry Date</label>
-              <input name="expiry_date" type="date"
+              <label htmlFor="clientdocumentlist-expiry-date" className="block text-xs font-medium text-slate-600 mb-1">Expiry Date</label>
+              <input id="clientdocumentlist-expiry-date" name="expiry_date" type="date"
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
-              <input name="notes"
+              <label htmlFor="clientdocumentlist-notes" className="block text-xs font-medium text-slate-600 mb-1">Notes</label>
+              <input id="clientdocumentlist-notes" name="notes"
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
           </div>
@@ -101,7 +102,7 @@ export default function ClientDocumentList({ clientId, documents, canManage }: P
       )}
 
       {documents.length === 0 ? (
-        <p className="text-sm text-slate-400 text-center py-4">No documents uploaded</p>
+        <EmptyState title="No documents uploaded" className="py-4" />
       ) : (
         <div className="space-y-2">
           {documents.map((doc) => {

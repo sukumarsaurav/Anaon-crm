@@ -49,7 +49,7 @@ export default function LeaveReviewActions({ leaveId }: Props) {
       </div>
       {panel === 'reject' && (
         <form onSubmit={handleReject} className="bg-red-50 border border-red-200 rounded-xl p-3 space-y-2">
-          <input
+          <input aria-label="Reason for rejection (optional)"
             value={note}
             onChange={e => setNote(e.target.value)}
             placeholder="Reason for rejection (optional)"

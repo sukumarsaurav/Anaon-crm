@@ -42,32 +42,32 @@ export default function NewDeletionRequestForm() {
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Requester Type</label>
-            <select name="requester_type" required
+            <label htmlFor="newdeletionrequestform-requester-type" className="block text-xs font-medium text-slate-600 mb-1">Requester Type</label>
+            <select id="newdeletionrequestform-requester-type" name="requester_type" required
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
               <option value="lead">Lead (Prospect)</option>
               <option value="client">Client</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Full Name <span className="text-red-500">*</span></label>
-            <input name="requester_name" required placeholder="Full name of requester"
+            <label htmlFor="newdeletionrequestform-requester-name" className="block text-xs font-medium text-slate-600 mb-1">Full Name <span className="text-red-500">*</span></label>
+            <input id="newdeletionrequestform-requester-name" name="requester_name" required placeholder="Full name of requester"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Phone</label>
-            <input type="tel" name="requester_phone" placeholder="+91 98765 43210"
+            <label htmlFor="newdeletionrequestform-requester-phone" className="block text-xs font-medium text-slate-600 mb-1">Phone</label>
+            <input id="newdeletionrequestform-requester-phone" type="tel" name="requester_phone" placeholder="+91 98765 43210"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
-            <input type="email" name="requester_email" placeholder="email@example.com"
+            <label htmlFor="newdeletionrequestform-requester-email" className="block text-xs font-medium text-slate-600 mb-1">Email</label>
+            <input id="newdeletionrequestform-requester-email" type="email" name="requester_email" placeholder="email@example.com"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Reason for deletion</label>
-          <textarea name="reason" rows={2} placeholder="No longer interested / withdrawal of consent..."
+          <label htmlFor="newdeletionrequestform-reason" className="block text-xs font-medium text-slate-600 mb-1">Reason for deletion</label>
+          <textarea id="newdeletionrequestform-reason" name="reason" rows={2} placeholder="No longer interested / withdrawal of consent..."
             className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
         </div>
         {error && <p className="text-xs text-red-600">{error}</p>}

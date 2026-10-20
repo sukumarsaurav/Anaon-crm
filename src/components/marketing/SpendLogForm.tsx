@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, startTransition } from 'react'
+import { useState, startTransition, useId } from 'react'
 import { useRouter } from 'next/navigation'
 import { logCampaignSpend } from '@/lib/marketing/actions'
-import { PlusCircle, X } from 'lucide-react'
+import { PlusCircle } from 'lucide-react'
+import Modal from '@/components/ui/Modal'
 
 interface Props {
   campaignId: string
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function SpendLogForm({ campaignId, campaignName }: Props) {
+  const uid = useId()
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -45,41 +47,30 @@ export default function SpendLogForm({ campaignId, campaignName }: Props) {
         <PlusCircle size={13} /> Log spend
       </button>
 
-      {open && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
-            <div className="flex items-center justify-between p-5 border-b border-slate-200">
-              <div>
-                <h2 className="font-semibold text-slate-900">Log Spend</h2>
-                <p className="text-xs text-slate-500 mt-0.5">{campaignName}</p>
-              </div>
-              <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-600">
-                <X size={18} />
-              </button>
-            </div>
+      <Modal open={open} onClose={() => setOpen(false)} title={`Log spend · ${campaignName}`} size="sm">
 
-            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <input type="hidden" name="campaign_id" value={campaignId} />
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Date <span className="text-red-500">*</span></label>
-                  <input name="log_date" type="date" required defaultValue={today}
+                  <label htmlFor={`${uid}-log-date`} className="block text-sm font-medium text-slate-700 mb-1">Date <span className="text-red-500">*</span></label>
+                  <input id={`${uid}-log-date`} name="log_date" type="date" required defaultValue={today}
                     className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Spend (₹) <span className="text-red-500">*</span></label>
-                  <input name="spend" type="number" required min="0" step="0.01" placeholder="0"
+                  <label htmlFor={`${uid}-spend`} className="block text-sm font-medium text-slate-700 mb-1">Spend (₹) <span className="text-red-500">*</span></label>
+                  <input id={`${uid}-spend`} name="spend" type="number" required min="0" step="0.01" placeholder="0"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Impressions</label>
-                  <input name="impressions" type="number" min="0" placeholder="0"
+                  <label htmlFor={`${uid}-impressions`} className="block text-sm font-medium text-slate-700 mb-1">Impressions</label>
+                  <input id={`${uid}-impressions`} name="impressions" type="number" min="0" placeholder="0"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Clicks</label>
-                  <input name="clicks" type="number" min="0" placeholder="0"
+                  <label htmlFor={`${uid}-clicks`} className="block text-sm font-medium text-slate-700 mb-1">Clicks</label>
+                  <input id={`${uid}-clicks`} name="clicks" type="number" min="0" placeholder="0"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
                 </div>
               </div>
@@ -97,9 +88,7 @@ export default function SpendLogForm({ campaignId, campaignName }: Props) {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
     </>
   )
 }

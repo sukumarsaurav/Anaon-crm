@@ -39,7 +39,7 @@ function Attachment({ message, isOutbound }: { message: WaMessage; isOutbound: b
       target="_blank"
       rel="noopener noreferrer"
       className={`flex items-center gap-2 mb-1 px-2 py-1.5 rounded-lg text-xs underline-offset-2 hover:underline ${
-        isOutbound ? 'bg-white/20' : 'bg-gray-100'
+        isOutbound ? 'bg-white/20' : 'bg-slate-100'
       }`}
     >
       <Paperclip size={12} /> {message.media_filename ?? 'Attachment'}
@@ -59,7 +59,7 @@ export default function MessageBubble({ message }: Props) {
             ? isBot
               ? 'bg-blue-100 text-blue-900'
               : 'bg-green-500 text-white rounded-br-sm'
-            : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm shadow-sm'
+            : 'bg-white border border-slate-200 text-slate-900 rounded-bl-sm shadow-sm'
         }`}
       >
         {/* Template label */}
@@ -88,7 +88,7 @@ export default function MessageBubble({ message }: Props) {
         })()}
 
         {/* Footer */}
-        <div className={`flex items-center justify-end gap-1 mt-1 ${isOutbound ? 'text-white/60' : 'text-gray-400'}`}>
+        <div className={`flex items-center justify-end gap-1 mt-1 ${isOutbound ? 'text-white/60' : 'text-slate-400'}`}>
           <span className="text-xs">{formatDateTime(message.created_at)}</span>
           {isOutbound && (
             <span

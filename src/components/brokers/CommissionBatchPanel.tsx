@@ -6,6 +6,7 @@ import { formatCurrency } from '@/lib/utils'
 import type { BrokerCommissionRow } from '@/types/brokers'
 import { COMMISSION_STATUS_CONFIG } from '@/types/bookings'
 import type { CommissionStatus } from '@/types/bookings'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Props {
   commissions: BrokerCommissionRow[]
@@ -75,7 +76,7 @@ export default function CommissionBatchPanel({ commissions }: Props) {
           )}
           {selectedApproved.length > 0 && (
             <div className="flex items-center gap-2">
-              <input
+              <input aria-label="UTR number"
                 value={utr}
                 onChange={(e) => setUtr(e.target.value)}
                 placeholder="UTR number"
@@ -103,21 +104,21 @@ export default function CommissionBatchPanel({ commissions }: Props) {
 
       {/* Table */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:bg-slate-50 [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:bg-white"><table className="w-full text-sm">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
-              <th className="w-10 px-4 py-3" />
-              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Broker</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Booking</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Booking Value</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Commission</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">UTR</th>
+              <th scope="col" className="w-10 px-4 py-3" />
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500">Broker</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500">Booking</th>
+              <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-slate-500">Booking Value</th>
+              <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-slate-500">Commission</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500">Status</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500">UTR</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-slate-100">
             {commissions.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-400">No commissions found</td></tr>
+              <tr><td colSpan={7} className="p-0"><EmptyState title="No commissions found" description="Commissions appear here once broker leads convert to bookings." className="py-8" /></td></tr>
             )}
             {commissions.map((c) => {
               const cfg = COMMISSION_STATUS_CONFIG[c.status as CommissionStatus]
@@ -149,7 +150,7 @@ export default function CommissionBatchPanel({ commissions }: Props) {
               )
             })}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   )

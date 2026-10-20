@@ -2,10 +2,11 @@
 
 import { useTransition } from 'react'
 import Link from 'next/link'
-import { X, FileText, Unlock, PenLine } from 'lucide-react'
+import { FileText, Unlock, PenLine } from 'lucide-react'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import { softHoldPlot, releaseHold } from '@/lib/inventory/actions'
 import { PLOT_STATUS_CONFIG, PROJECT_TYPE_LABELS } from '@/types/inventory'
+import Drawer from '@/components/ui/Drawer'
 import PlotStatusBadge from './PlotStatusBadge'
 import type { Plot } from '@/types/inventory'
 
@@ -47,24 +48,56 @@ export default function PlotDetailPanel({ plot, canManage, onClose, onUpdate }: 
     })
   }
 
+  const actions = (
+    <div className="space-y-2">
+          <Link
+            href={`/inventory/${plot.project_id}/plots/${plot.id}/cost-sheet`}
+            target="_blank"
+            className="block w-full text-center py-2 text-sm bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 font-medium"
+          >
+            <FileText size={14} className="inline-block mr-1.5 -mt-0.5" />View Cost Sheet
+          </Link>
+
+          {plot.status === 'available' && (
+            <button
+              onClick={handleHold}
+              disabled={isPending}
+              className="w-full py-2 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-40 font-medium"
+            >
+              Place Soft Hold
+            </button>
+          )}
+
+          {plot.status === 'soft_hold' && (
+            <button
+              onClick={handleRelease}
+              disabled={isPending}
+              className="w-full py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-40 font-medium flex items-center justify-center gap-1.5"
+            >
+              <Unlock size={14} /> Release Hold
+            </button>
+          )}
+
+          {canManage && (
+            <Link
+              href={`/inventory/${plot.project_id}/plots/${plot.id}/edit`}
+              className="flex items-center justify-center gap-1.5 w-full py-2 text-sm border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium"
+            >
+              <PenLine size={14} /> Edit Plot
+            </Link>
+          )}
+    </div>
+  )
+
   return (
-    <div className="fixed inset-0 z-50 flex">
-      {/* Backdrop */}
-      <div className="flex-1 bg-black/40" onClick={onClose} />
-
-      {/* Panel */}
-      <div className="w-full max-w-sm bg-white shadow-2xl flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-200">
-          <div className="flex items-center gap-2">
-            <h2 className="font-bold text-slate-900 text-lg">Plot {plot.plot_number}</h2>
-            <PlotStatusBadge status={plot.status} />
-          </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1"><X size={18} /></button>
-        </div>
-
-        {/* Details */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <Drawer
+      open
+      onClose={onClose}
+      ariaLabel={`Plot ${plot.plot_number} details`}
+      title={<><span>Plot {plot.plot_number}</span><PlotStatusBadge status={plot.status} /></>}
+      footer={actions}
+    >
+      <div className="p-4 space-y-4">
           {/* Pricing */}
           <div className="bg-slate-50 rounded-xl p-3">
             <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Pricing</h3>
@@ -105,47 +138,6 @@ export default function PlotDetailPanel({ plot, canManage, onClose, onUpdate }: 
             </div>
           )}
         </div>
-
-        {/* Actions */}
-        <div className="p-4 border-t border-slate-200 space-y-2">
-          <Link
-            href={`/inventory/${plot.project_id}/plots/${plot.id}/cost-sheet`}
-            target="_blank"
-            className="block w-full text-center py-2 text-sm bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 font-medium"
-          >
-            <FileText size={14} className="inline-block mr-1.5 -mt-0.5" />View Cost Sheet
-          </Link>
-
-          {plot.status === 'available' && (
-            <button
-              onClick={handleHold}
-              disabled={isPending}
-              className="w-full py-2 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-40 font-medium"
-            >
-              Place Soft Hold
-            </button>
-          )}
-
-          {plot.status === 'soft_hold' && (
-            <button
-              onClick={handleRelease}
-              disabled={isPending}
-              className="w-full py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-40 font-medium flex items-center justify-center gap-1.5"
-            >
-              <Unlock size={14} /> Release Hold
-            </button>
-          )}
-
-          {canManage && (
-            <Link
-              href={`/inventory/${plot.project_id}/plots/${plot.id}/edit`}
-              className="flex items-center justify-center gap-1.5 w-full py-2 text-sm border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium"
-            >
-              <PenLine size={14} /> Edit Plot
-            </Link>
-          )}
-        </div>
-      </div>
-    </div>
+    </Drawer>
   )
 }

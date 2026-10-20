@@ -128,14 +128,14 @@ export default async function LoansPage() {
           />
         ) : (
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto"><table className="w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Client</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide hidden sm:table-cell">Bank</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Stage</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide hidden sm:table-cell">Amount</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide hidden md:table-cell">Updated</th>
+                  <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Client</th>
+                  <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide hidden sm:table-cell">Bank</th>
+                  <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Stage</th>
+                  <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide hidden sm:table-cell">Amount</th>
+                  <th scope="col" className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide hidden md:table-cell">Updated</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -166,7 +166,7 @@ export default async function LoansPage() {
                   )
                 })}
               </tbody>
-            </table>
+            </table></div>
           </div>
         )}
       </div>

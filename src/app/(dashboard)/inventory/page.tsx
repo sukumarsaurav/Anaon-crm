@@ -42,20 +42,20 @@ export default async function InventoryPage({ searchParams }: PageProps) {
       {/* Filters */}
       <Card padding="none" className="px-4 py-3">
         <form method="get" className="flex flex-wrap gap-3 w-full">
-          <input
+          <input aria-label="Search projects..."
             name="search"
             defaultValue={params.search}
             placeholder="Search projects..."
             className="flex-1 min-w-40 px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
-          <select name="status" defaultValue={params.status ?? ''}
+          <select aria-label="Status" name="status" defaultValue={params.status ?? ''}
             className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
             <option value="">All Statuses</option>
             {statuses.map(([v, cfg]) => (
               <option key={v} value={v}>{cfg.label}</option>
             ))}
           </select>
-          <select name="type" defaultValue={params.type ?? ''}
+          <select aria-label="Project type" name="type" defaultValue={params.type ?? ''}
             className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
             <option value="">All Types</option>
             {types.map(([v, label]) => (

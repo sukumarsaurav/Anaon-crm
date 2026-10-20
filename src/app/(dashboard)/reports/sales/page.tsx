@@ -6,6 +6,7 @@ import { getAdvisorScorecard, getBookingReport, getSiteVisitReport } from '@/lib
 import DateRangeFilter from '@/components/reports/DateRangeFilter'
 import ExportButton from '@/components/reports/ExportButton'
 import { formatDate, formatCurrency } from '@/lib/utils'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface PageProps {
   searchParams: Promise<{ from?: string; to?: string }>
@@ -46,18 +47,18 @@ export default async function SalesReportsPage({ searchParams }: PageProps) {
           <h2 className="font-semibold text-slate-900 text-sm">Advisor Scorecard</h2>
           <ExportButton reportType="advisor_scorecard" from={from} to={to} label="CSV" />
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:bg-slate-50 [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:bg-white">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide border-b border-slate-100">
-                <th className="px-4 py-2.5 text-left">Advisor</th>
-                <th className="px-4 py-2.5 text-right">Leads</th>
-                <th className="px-4 py-2.5 text-right">Calls</th>
-                <th className="px-4 py-2.5 text-right">Follow-ups</th>
-                <th className="px-4 py-2.5 text-right">Visits</th>
-                <th className="px-4 py-2.5 text-right">Bookings</th>
-                <th className="px-4 py-2.5 text-right">Revenue</th>
-                <th className="px-4 py-2.5 text-right">vs Target</th>
+                <th scope="col" className="px-4 py-2.5 text-left">Advisor</th>
+                <th scope="col" className="px-4 py-2.5 text-right">Leads</th>
+                <th scope="col" className="px-4 py-2.5 text-right">Calls</th>
+                <th scope="col" className="px-4 py-2.5 text-right">Follow-ups</th>
+                <th scope="col" className="px-4 py-2.5 text-right">Visits</th>
+                <th scope="col" className="px-4 py-2.5 text-right">Bookings</th>
+                <th scope="col" className="px-4 py-2.5 text-right">Revenue</th>
+                <th scope="col" className="px-4 py-2.5 text-right">vs Target</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -100,19 +101,19 @@ export default async function SalesReportsPage({ searchParams }: PageProps) {
           <ExportButton reportType="bookings" from={from} to={to} label="CSV" />
         </div>
         {bookings.length === 0 ? (
-          <p className="text-sm text-slate-400 p-6 text-center">No bookings in this range.</p>
+          <EmptyState title="No bookings in this range" className="py-6" />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:bg-slate-50 [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:bg-white">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-                  <th className="px-4 py-2.5 text-left">Date</th>
-                  <th className="px-4 py-2.5 text-left">Booking #</th>
-                  <th className="px-4 py-2.5 text-left">Client</th>
-                  <th className="px-4 py-2.5 text-left">Project</th>
-                  <th className="px-4 py-2.5 text-left">Plot</th>
-                  <th className="px-4 py-2.5 text-left">Advisor</th>
-                  <th className="px-4 py-2.5 text-right">Value</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Date</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Booking #</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Client</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Project</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Plot</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Advisor</th>
+                  <th scope="col" className="px-4 py-2.5 text-right">Value</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -150,17 +151,17 @@ export default async function SalesReportsPage({ searchParams }: PageProps) {
           <h2 className="font-semibold text-slate-900 text-sm">Site Visit Report ({visits.length})</h2>
         </div>
         {visits.length === 0 ? (
-          <p className="text-sm text-slate-400 p-6 text-center">No site visits in this range.</p>
+          <EmptyState title="No site visits in this range" className="py-6" />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-                  <th className="px-4 py-2.5 text-left">Date</th>
-                  <th className="px-4 py-2.5 text-left">Lead</th>
-                  <th className="px-4 py-2.5 text-left">Project</th>
-                  <th className="px-4 py-2.5 text-left">Advisor</th>
-                  <th className="px-4 py-2.5 text-left">Outcome</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Date</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Lead</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Project</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Advisor</th>
+                  <th scope="col" className="px-4 py-2.5 text-left">Outcome</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

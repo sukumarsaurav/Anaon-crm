@@ -49,32 +49,32 @@ export default function AddMilestoneForm({ projectId }: Props) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="sm:col-span-2">
-          <label className="block text-xs font-medium text-slate-600 mb-1">Name <span className="text-red-500">*</span></label>
-          <input name="name" required placeholder="e.g. Boundary wall completion"
+          <label htmlFor="addmilestoneform-name" className="block text-xs font-medium text-slate-600 mb-1">Name <span className="text-red-500">*</span></label>
+          <input id="addmilestoneform-name" name="name" required placeholder="e.g. Boundary wall completion"
             className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Payment % of Total Value</label>
-          <input name="payment_percentage" type="number" min={0} max={100} step={0.5} defaultValue={0}
+          <label htmlFor="addmilestoneform-payment-percentage" className="block text-xs font-medium text-slate-600 mb-1">Payment % of Total Value</label>
+          <input id="addmilestoneform-payment-percentage" name="payment_percentage" type="number" min={0} max={100} step={0.5} defaultValue={0}
             className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Expected Date</label>
-          <input name="expected_date" type="date"
+          <label htmlFor="addmilestoneform-expected-date" className="block text-xs font-medium text-slate-600 mb-1">Expected Date</label>
+          <input id="addmilestoneform-expected-date" name="expected_date" type="date"
             className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
 
         <div className="sm:col-span-2">
-          <label className="block text-xs font-medium text-slate-600 mb-1">Description</label>
-          <input name="description" placeholder="Brief description of the milestone"
+          <label htmlFor="addmilestoneform-description" className="block text-xs font-medium text-slate-600 mb-1">Description</label>
+          <input id="addmilestoneform-description" name="description" placeholder="Brief description of the milestone"
             className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
 
         <div className="sm:col-span-2">
-          <label className="block text-xs font-medium text-slate-600 mb-1">Payment Trigger</label>
-          <select name="is_payment_trigger"
+          <label htmlFor="addmilestoneform-is-payment-trigger" className="block text-xs font-medium text-slate-600 mb-1">Payment Trigger</label>
+          <select id="addmilestoneform-is-payment-trigger" name="is_payment_trigger"
             className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
             <option value="true">Yes — triggers demand letter on completion</option>
             <option value="false">No — informational only</option>

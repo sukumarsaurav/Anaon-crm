@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
+import UIProvider from "@/components/ui/UIProvider";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -30,7 +31,9 @@ export default function RootLayout({
       lang="en"
       className={`${manrope.variable} ${notoDevanagari.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <UIProvider>{children}</UIProvider>
+      </body>
     </html>
   );
 }

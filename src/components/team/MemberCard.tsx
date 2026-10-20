@@ -3,6 +3,7 @@ import { AlertTriangle } from 'lucide-react'
 import { formatCurrency, getInitials } from '@/lib/utils'
 import { ATTENDANCE_STATUS_CONFIG } from '@/types/team'
 import type { MemberPerformanceSummary } from '@/types/team'
+import Avatar from '@/components/ui/Avatar'
 
 interface Props {
   summary: MemberPerformanceSummary
@@ -34,11 +35,7 @@ export default function MemberCard({ summary, rank }: Props) {
             {rank}
           </div>
         )}
-        <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-sm flex-shrink-0">
-          {member.photo_url ? (
-            <img src={member.photo_url} alt={member.full_name} className="w-10 h-10 rounded-full object-cover" />
-          ) : initials}
-        </div>
+        <Avatar name={member.full_name} src={member.photo_url} className="size-10" />
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-slate-900 text-sm truncate">{member.full_name}</div>
           <div className="text-xs text-slate-500">{member.designation ?? member.role}</div>

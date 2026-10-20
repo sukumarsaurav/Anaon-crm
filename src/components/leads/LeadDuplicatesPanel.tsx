@@ -10,6 +10,7 @@ import StageBadge from './StageBadge'
 import RelativeTime from '@/components/ui/RelativeTime'
 import { mergeDuplicate } from '@/lib/leads/actions'
 import type { DuplicateCheck } from '@/types/leads'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
 
 interface Props {
   currentLeadId: string
@@ -20,11 +21,12 @@ export default function LeadDuplicatesPanel({ currentLeadId, duplicates }: Props
   const router = useRouter()
   const [mergingId, setMergingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const askConfirm = useConfirm()
 
   if (!duplicates.length) return null
 
   async function handleMerge(dupeId: string) {
-    if (!confirm('Merge this duplicate into the current lead? Its activities and site visits will move here, and the duplicate will be retired. This cannot be undone.')) return
+    if (!(await askConfirm({ title: 'Merge duplicate', message: 'Merge this duplicate into the current lead? Its activities and site visits will move here, and the duplicate will be retired. This cannot be undone.', confirmLabel: 'Merge' }))) return
     setMergingId(dupeId)
     setError(null)
     const res = await mergeDuplicate(currentLeadId, dupeId)
@@ -55,7 +57,7 @@ export default function LeadDuplicatesPanel({ currentLeadId, duplicates }: Props
               <div className="flex items-center gap-2">
                 <p className="text-sm font-medium text-slate-900 truncate">{d.full_name}</p>
                 <StageBadge stage={d.stage} size="sm" />
-                <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wide text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full">
                   <Copy size={10} /> {d.match_type}
                 </span>
               </div>

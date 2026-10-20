@@ -83,10 +83,10 @@ export default function AutoReplyRuleList({ rules: initialRules }: Props) {
     <div className="space-y-4">
       {/* Rules list */}
       {initialRules.length === 0 && !showForm && (
-        <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-          <MessageSquare size={32} className="mx-auto mb-3 text-gray-300" />
-          <p className="text-gray-500 font-medium">No auto-reply rules yet</p>
-          <p className="text-sm text-gray-400 mt-1">Add a rule to automatically respond to inbound messages</p>
+        <div className="text-center py-12 bg-white rounded-xl border border-slate-200">
+          <MessageSquare size={32} className="mx-auto mb-3 text-slate-300" />
+          <p className="text-slate-500 font-medium">No auto-reply rules yet</p>
+          <p className="text-sm text-slate-400 mt-1">Add a rule to automatically respond to inbound messages</p>
         </div>
       )}
 
@@ -94,21 +94,21 @@ export default function AutoReplyRuleList({ rules: initialRules }: Props) {
         const cfg = TRIGGER_CONFIG[rule.trigger_type]
         const Icon = cfg.icon
         return (
-          <div key={rule.id} className="bg-white border border-gray-200 rounded-xl p-4 flex items-start gap-4">
+          <div key={rule.id} className="bg-white border border-slate-200 rounded-xl p-4 flex items-start gap-4">
             <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${cfg.bg}`}>
               <Icon size={16} className={cfg.color} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="font-semibold text-gray-900">{rule.name}</span>
+                <span className="font-semibold text-slate-900">{rule.name}</span>
                 <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.color}`}>{cfg.label}</span>
-                <span className="text-xs text-gray-400">Priority {rule.priority}</span>
+                <span className="text-xs text-slate-400">Priority {rule.priority}</span>
               </div>
-              <p className="text-sm text-gray-600 line-clamp-2">{rule.response_text ?? '(template/interactive response)'}</p>
+              <p className="text-sm text-slate-600 line-clamp-2">{rule.response_text ?? '(template/interactive response)'}</p>
               {rule.trigger_type === 'keyword' && Array.isArray(rule.trigger_config.keywords) && (
                 <div className="flex flex-wrap gap-1 mt-1.5">
                   {(rule.trigger_config.keywords as string[]).map((kw) => (
-                    <span key={kw} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">{kw}</span>
+                    <span key={kw} className="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full">{kw}</span>
                   ))}
                 </div>
               )}
@@ -116,7 +116,7 @@ export default function AutoReplyRuleList({ rules: initialRules }: Props) {
             <button
               onClick={() => handleToggle(rule)}
               className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors ${
-                rule.is_active ? 'bg-green-500' : 'bg-gray-200'
+                rule.is_active ? 'bg-green-500' : 'bg-slate-200'
               }`}
               title={rule.is_active ? 'Disable' : 'Enable'}
             >
@@ -130,7 +130,7 @@ export default function AutoReplyRuleList({ rules: initialRules }: Props) {
       {!showForm && (
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 w-full px-4 py-3 border border-dashed border-gray-300 rounded-xl text-sm text-gray-500 hover:border-green-400 hover:text-green-600 transition-colors"
+          className="flex items-center gap-2 w-full px-4 py-3 border border-dashed border-slate-300 rounded-xl text-sm text-slate-500 hover:border-green-400 hover:text-green-600 transition-colors"
         >
           <Plus size={16} /> Add Auto-Reply Rule
         </button>
@@ -138,44 +138,44 @@ export default function AutoReplyRuleList({ rules: initialRules }: Props) {
 
       {/* Create form */}
       {showForm && (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-            <h3 className="font-semibold text-gray-900">New Auto-Reply Rule</h3>
-            <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+            <h3 className="font-semibold text-slate-900">New Auto-Reply Rule</h3>
+            <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
           </div>
           <form onSubmit={handleCreate} className="p-5 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rule Name <span className="text-red-500">*</span></label>
-                <input name="name" required placeholder="e.g. After-hours greeting"
-                  className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
+                <label htmlFor="autoreplyrulelist-name" className="block text-sm font-medium text-slate-700 mb-1">Rule Name <span className="text-red-500">*</span></label>
+                <input id="autoreplyrulelist-name" name="name" required placeholder="e.g. After-hours greeting"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Trigger <span className="text-red-500">*</span></label>
-                <select name="trigger_type" required
-                  className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
+                <label htmlFor="autoreplyrulelist-trigger-type" className="block text-sm font-medium text-slate-700 mb-1">Trigger <span className="text-red-500">*</span></label>
+                <select id="autoreplyrulelist-trigger-type" name="trigger_type" required
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
                   <option value="new_contact">New Contact</option>
                   <option value="office_hours">Office Hours</option>
                   <option value="keyword">Keyword Match</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                <input name="priority" type="number" defaultValue="10" min="1" max="100"
-                  className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
+                <label htmlFor="autoreplyrulelist-priority" className="block text-sm font-medium text-slate-700 mb-1">Priority</label>
+                <input id="autoreplyrulelist-priority" name="priority" type="number" defaultValue="10" min="1" max="100"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
               </div>
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Keywords <span className="text-xs text-gray-400">(comma-separated, for keyword trigger)</span>
+                <label htmlFor="autoreplyrulelist-keywords" className="block text-sm font-medium text-slate-700 mb-1">
+                  Keywords <span className="text-xs text-slate-400">(comma-separated, for keyword trigger)</span>
                 </label>
-                <input name="keywords" placeholder="price, cost, how much"
-                  className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
+                <input id="autoreplyrulelist-keywords" name="keywords" placeholder="price, cost, how much"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
               </div>
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Reply Message <span className="text-red-500">*</span></label>
-                <textarea name="response_text" required rows={3}
+                <label htmlFor="autoreplyrulelist-response-text" className="block text-sm font-medium text-slate-700 mb-1">Reply Message <span className="text-red-500">*</span></label>
+                <textarea id="autoreplyrulelist-response-text" name="response_text" required rows={3}
                   placeholder="Hi! Thanks for reaching out to ANON INDIA. Our team will get back to you shortly."
-                  className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none" />
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none" />
               </div>
             </div>
 
@@ -183,7 +183,7 @@ export default function AutoReplyRuleList({ rules: initialRules }: Props) {
 
             <div className="flex gap-3">
               <button type="button" onClick={() => setShowForm(false)}
-                className="flex-1 py-2.5 border border-gray-300 text-gray-600 text-sm rounded-xl hover:bg-gray-50">
+                className="flex-1 py-2.5 border border-slate-300 text-slate-600 text-sm rounded-xl hover:bg-slate-50">
                 Cancel
               </button>
               <button type="submit" disabled={formLoading}

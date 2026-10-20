@@ -34,18 +34,18 @@ export default function ConversationList({ conversations, activeId }: Props) {
   return (
     <div className="flex flex-col h-full">
       {/* Search */}
-      <div className="p-3 border-b border-gray-200">
-        <input
+      <div className="p-3 border-b border-slate-200">
+        <input aria-label="Search conversations..."
           type="text"
           placeholder="Search conversations..."
           value={search}
           onChange={(e) => startTransition(() => setSearch(e.target.value))}
-          className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
         />
       </div>
 
       {/* Status tabs */}
-      <div className="flex gap-1 px-3 py-2 border-b border-gray-200 overflow-x-auto">
+      <div className="flex gap-1 px-3 py-2 border-b border-slate-200 overflow-x-auto">
         {STATUS_TABS.map((tab) => (
           <button
             key={tab.value}
@@ -53,7 +53,7 @@ export default function ConversationList({ conversations, activeId }: Props) {
             className={`flex-shrink-0 text-xs px-2 py-1 rounded-full font-medium transition-colors ${
               statusFilter === tab.value
                 ? 'bg-green-500 text-white'
-                : 'text-gray-600 hover:bg-gray-100'
+                : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             {tab.label}
@@ -64,7 +64,7 @@ export default function ConversationList({ conversations, activeId }: Props) {
       {/* List */}
       <div className="flex-1 overflow-y-auto">
         {filtered.length === 0 ? (
-          <div className="p-8 text-center text-gray-400 text-sm">No conversations</div>
+          <div className="p-8 text-center text-slate-400 text-sm">No conversations</div>
         ) : (
           filtered.map((conv) => (
             <ConversationItem key={conv.id} conversation={conv} isActive={conv.id === activeId} />

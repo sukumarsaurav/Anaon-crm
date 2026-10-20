@@ -37,39 +37,39 @@ export default function EmployeeForm({ employee, managers }: Props) {
         <h3 className="font-semibold text-slate-900 mb-4">Personal Details</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Full Name <span className="text-red-500">*</span></label>
-            <input name="full_name" required defaultValue={employee.full_name ?? ''}
+            <label htmlFor="employeeform-full-name" className="block text-sm font-medium text-slate-700 mb-1">Full Name <span className="text-red-500">*</span></label>
+            <input id="employeeform-full-name" name="full_name" required defaultValue={employee.full_name ?? ''}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Phone <span className="text-red-500">*</span></label>
-            <input name="phone" required defaultValue={employee.phone ?? ''}
+            <label htmlFor="employeeform-phone" className="block text-sm font-medium text-slate-700 mb-1">Phone <span className="text-red-500">*</span></label>
+            <input id="employeeform-phone" name="phone" required defaultValue={employee.phone ?? ''}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-            <input name="email" type="email" defaultValue={employee.email ?? ''}
+            <label htmlFor="employeeform-email" className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <input id="employeeform-email" name="email" type="email" defaultValue={employee.email ?? ''}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Aadhar Number</label>
-            <input name="aadhar_number" defaultValue={employee.aadhar_number ?? ''}
+            <label htmlFor="employeeform-aadhar-number" className="block text-sm font-medium text-slate-700 mb-1">Aadhar Number</label>
+            <input id="employeeform-aadhar-number" name="aadhar_number" defaultValue={employee.aadhar_number ?? ''}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">PAN Number</label>
-            <input name="pan_number" defaultValue={employee.pan_number ?? ''}
+            <label htmlFor="employeeform-pan-number" className="block text-sm font-medium text-slate-700 mb-1">PAN Number</label>
+            <input id="employeeform-pan-number" name="pan_number" defaultValue={employee.pan_number ?? ''}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Emergency Contact</label>
-            <input name="emergency_contact" placeholder="Name – Phone"
+            <label htmlFor="employeeform-emergency-contact" className="block text-sm font-medium text-slate-700 mb-1">Emergency Contact</label>
+            <input id="employeeform-emergency-contact" name="emergency_contact" placeholder="Name – Phone"
               defaultValue={employee.emergency_contact ?? ''}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
-            <textarea name="address" rows={2} defaultValue={employee.address ?? ''}
+            <label htmlFor="employeeform-address" className="block text-sm font-medium text-slate-700 mb-1">Address</label>
+            <textarea id="employeeform-address" name="address" rows={2} defaultValue={employee.address ?? ''}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
         </div>
@@ -80,23 +80,23 @@ export default function EmployeeForm({ employee, managers }: Props) {
         <h3 className="font-semibold text-slate-900 mb-4">Employment Details</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Employee ID</label>
-            <input name="employee_id" defaultValue={employee.employee_id ?? ''}
+            <label htmlFor="employeeform-employee-id" className="block text-sm font-medium text-slate-700 mb-1">Employee ID</label>
+            <input id="employeeform-employee-id" name="employee_id" defaultValue={employee.employee_id ?? ''}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Designation</label>
-            <input name="designation" defaultValue={employee.designation ?? ''}
+            <label htmlFor="employeeform-designation" className="block text-sm font-medium text-slate-700 mb-1">Designation</label>
+            <input id="employeeform-designation" name="designation" defaultValue={employee.designation ?? ''}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Department</label>
-            <input name="department" defaultValue={employee.department ?? ''}
+            <label htmlFor="employeeform-department" className="block text-sm font-medium text-slate-700 mb-1">Department</label>
+            <input id="employeeform-department" name="department" defaultValue={employee.department ?? ''}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Employment Type</label>
-            <select name="employment_type" defaultValue={employee.employment_type ?? 'full_time'}
+            <label htmlFor="employeeform-employment-type" className="block text-sm font-medium text-slate-700 mb-1">Employment Type</label>
+            <select id="employeeform-employment-type" name="employment_type" defaultValue={employee.employment_type ?? 'full_time'}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
               <option value="full_time">Full Time</option>
               <option value="part_time">Part Time</option>
@@ -105,18 +105,18 @@ export default function EmployeeForm({ employee, managers }: Props) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Joining Date</label>
-            <input name="joining_date" type="date" defaultValue={employee.joining_date ?? ''}
+            <label htmlFor="employeeform-joining-date" className="block text-sm font-medium text-slate-700 mb-1">Joining Date</label>
+            <input id="employeeform-joining-date" name="joining_date" type="date" defaultValue={employee.joining_date ?? ''}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Probation End Date</label>
-            <input name="probation_end_date" type="date" defaultValue={employee.probation_end_date ?? ''}
+            <label htmlFor="employeeform-probation-end-date" className="block text-sm font-medium text-slate-700 mb-1">Probation End Date</label>
+            <input id="employeeform-probation-end-date" name="probation_end_date" type="date" defaultValue={employee.probation_end_date ?? ''}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Reporting Manager</label>
-            <select name="reporting_manager_id" defaultValue={employee.reporting_manager_id ?? ''}
+            <label htmlFor="employeeform-reporting-manager-id" className="block text-sm font-medium text-slate-700 mb-1">Reporting Manager</label>
+            <select id="employeeform-reporting-manager-id" name="reporting_manager_id" defaultValue={employee.reporting_manager_id ?? ''}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400">
               <option value="">No manager</option>
               {managers.filter(m => m.id !== employee.id).map(m => (
@@ -125,8 +125,8 @@ export default function EmployeeForm({ employee, managers }: Props) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Monthly Base Salary (₹)</label>
-            <input name="base_salary" type="number" min="0" defaultValue={employee.base_salary ?? ''}
+            <label htmlFor="employeeform-base-salary" className="block text-sm font-medium text-slate-700 mb-1">Monthly Base Salary (₹)</label>
+            <input id="employeeform-base-salary" name="base_salary" type="number" min="0" defaultValue={employee.base_salary ?? ''}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
         </div>
@@ -137,18 +137,18 @@ export default function EmployeeForm({ employee, managers }: Props) {
         <h3 className="font-semibold text-slate-900 mb-4">Bank Details</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Bank Name</label>
-            <input name="bank_name" defaultValue={employee.bank_name ?? ''}
+            <label htmlFor="employeeform-bank-name" className="block text-sm font-medium text-slate-700 mb-1">Bank Name</label>
+            <input id="employeeform-bank-name" name="bank_name" defaultValue={employee.bank_name ?? ''}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Account Number</label>
-            <input name="bank_account" defaultValue={employee.bank_account ?? ''}
+            <label htmlFor="employeeform-bank-account" className="block text-sm font-medium text-slate-700 mb-1">Account Number</label>
+            <input id="employeeform-bank-account" name="bank_account" defaultValue={employee.bank_account ?? ''}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">IFSC Code</label>
-            <input name="bank_ifsc" defaultValue={employee.bank_ifsc ?? ''}
+            <label htmlFor="employeeform-bank-ifsc" className="block text-sm font-medium text-slate-700 mb-1">IFSC Code</label>
+            <input id="employeeform-bank-ifsc" name="bank_ifsc" defaultValue={employee.bank_ifsc ?? ''}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
           </div>
         </div>

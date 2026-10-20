@@ -8,7 +8,9 @@ import {
 } from '@/types/clients'
 import type { Complaint, ComplaintCategory, ComplaintPriority, ComplaintStatus } from '@/types/clients'
 import { formatDate } from '@/lib/utils'
+import { usePrompt } from '@/components/ui/PromptDialog'
 import { Plus, ChevronDown } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Props {
   clientId:   string
@@ -22,6 +24,7 @@ export default function ComplaintBoard({ clientId, bookings, complaints, canMana
   const [showForm, setShowForm] = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const askPrompt = usePrompt()
   const [error, setError] = useState<string | null>(null)
 
   function handleCreate(e: React.FormEvent<HTMLFormElement>) {
@@ -65,8 +68,8 @@ export default function ComplaintBoard({ clientId, bookings, complaints, canMana
         <form onSubmit={handleCreate} className="mb-4 p-4 bg-red-50 rounded-xl space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Category *</label>
-              <select name="category" required
+              <label htmlFor="complaintboard-category" className="block text-xs font-medium text-slate-600 mb-1">Category *</label>
+              <select id="complaintboard-category" name="category" required
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                 {Object.entries(COMPLAINT_CATEGORY_LABELS).map(([v, label]) => (
                   <option key={v} value={v}>{label}</option>
@@ -74,8 +77,8 @@ export default function ComplaintBoard({ clientId, bookings, complaints, canMana
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Priority</label>
-              <select name="priority" defaultValue="normal"
+              <label htmlFor="complaintboard-priority" className="block text-xs font-medium text-slate-600 mb-1">Priority</label>
+              <select id="complaintboard-priority" name="priority" defaultValue="normal"
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                 {(['low', 'normal', 'high', 'urgent'] as ComplaintPriority[]).map((p) => (
                   <option key={p} value={p}>{COMPLAINT_PRIORITY_CONFIG[p].label}</option>
@@ -84,8 +87,8 @@ export default function ComplaintBoard({ clientId, bookings, complaints, canMana
             </div>
             {bookings.length > 0 && (
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Booking (optional)</label>
-                <select name="booking_id"
+                <label htmlFor="complaintboard-booking-id" className="block text-xs font-medium text-slate-600 mb-1">Booking (optional)</label>
+                <select id="complaintboard-booking-id" name="booking_id"
                   className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                   <option value="">— None —</option>
                   {bookings.map((b) => <option key={b.id} value={b.id}>{b.booking_number}</option>)}
@@ -93,8 +96,8 @@ export default function ComplaintBoard({ clientId, bookings, complaints, canMana
               </div>
             )}
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Description *</label>
-              <textarea name="description" required rows={3}
+              <label htmlFor="complaintboard-description" className="block text-xs font-medium text-slate-600 mb-1">Description *</label>
+              <textarea id="complaintboard-description" name="description" required rows={3}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
             </div>
           </div>
@@ -113,7 +116,7 @@ export default function ComplaintBoard({ clientId, bookings, complaints, canMana
       )}
 
       {complaints.length === 0 ? (
-        <p className="text-sm text-slate-400 text-center py-4">No complaints raised</p>
+        <EmptyState title="No complaints raised" className="py-4" />
       ) : (
         <div className="space-y-2">
           {complaints.map((c) => {
@@ -197,8 +200,8 @@ export default function ComplaintBoard({ clientId, bookings, complaints, canMana
                           </button>
                         )}
                         <button
-                          onClick={() => {
-                            const note = prompt('Resolution notes:')
+                          onClick={async () => {
+                            const note = await askPrompt('Resolution notes', { title: 'Resolve complaint', confirmLabel: 'Mark resolved', optional: true })
                             if (note !== null) handleStatusChange(c.id, 'resolved', note)
                           }}
                           disabled={isPending}
