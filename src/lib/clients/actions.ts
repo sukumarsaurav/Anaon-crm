@@ -131,17 +131,27 @@ export async function recordPayment(paymentId: string, formData: FormData) {
   const amountPaid = parseFloat(formData.get('amount_paid') as string) || 0
 
   const { data: payment } = await auth.supabase
-    .from('payments').select('client_id, amount_due, booking_id').eq('id', paymentId).single()
+    .from('payments').select('client_id, amount_due, amount_paid, status, booking_id').eq('id', paymentId).single()
+  if (!payment) return { success: false, error: 'Installment not found' }
+  if (payment.status === 'paid') return { success: false, error: 'This installment is already fully paid' }
+  if (payment.status === 'waived') return { success: false, error: 'This installment was waived' }
+  if (amountPaid <= 0) return { success: false, error: 'Enter the amount received' }
+
+  // Accumulate: a second part-payment used to overwrite the first, losing what was already received.
+  const totalPaid = Number(payment.amount_paid ?? 0) + amountPaid
 
   const { error } = await auth.supabase.from('payments').update({
-    amount_paid:       amountPaid,
+    amount_paid:       totalPaid,
     paid_date:         formData.get('paid_date') as string,
     mode:              formData.get('mode') as string || null,
     transaction_id:    formData.get('transaction_id') as string || null,
     cheque_number:     formData.get('cheque_number') as string || null,
     bank_name:         formData.get('bank_name') as string || null,
     payment_reference: formData.get('payment_reference') as string || null,
-    status:            amountPaid > 0 ? 'paid' : 'pending',
+    // Marked paid only when the installment is covered. A part payment used to flip it to
+    // 'paid', which dropped the balance from every outstanding figure and from reminders;
+    // it now stays open for what is left (the portal's Pay Now already charges due − paid).
+    status:            totalPaid >= Number(payment.amount_due ?? 0) ? 'paid' : 'pending',
     notes:             formData.get('notes') as string || null,
     verified_by:       auth.userId,
     verified_at:       new Date().toISOString(),

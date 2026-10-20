@@ -181,7 +181,7 @@ export async function recordLoginSuccess(
   sessionId: string,
   deviceInfo: string,
   ip: string,
-): Promise<{ role: string | null }> {
+): Promise<{ role: string | null; isActive: boolean }> {
   const svc = serviceSupabase()
 
   const [profileRes] = await Promise.all([
@@ -191,7 +191,7 @@ export async function recordLoginSuccess(
       last_failed_login_at: null,
       last_login_at: new Date().toISOString(),
       last_login_ip: ip || null,
-    }).eq('id', userId).select('role').maybeSingle(),
+    }).eq('id', userId).select('role, is_active').maybeSingle(),
 
     svc.from('user_sessions').insert({
       user_id: userId,
@@ -203,5 +203,5 @@ export async function recordLoginSuccess(
     writeAuditLog({ userId, action: 'login', metadata: { session_id: sessionId } }),
   ])
 
-  return { role: profileRes.data?.role ?? null }
+  return { role: profileRes.data?.role ?? null, isActive: profileRes.data?.is_active !== false }
 }

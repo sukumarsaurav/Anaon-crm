@@ -107,6 +107,7 @@ export async function getPaymentExtensionRequests(status?: string): Promise<Paym
     .from('payment_extension_requests')
     .select(`
       *,
+      client:clients!payment_extension_requests_client_id_fkey(id, full_name, phone),
       payment:payments!payment_extension_requests_payment_id_fkey(id, installment_number, amount_due, due_date),
       reviewer:profiles!payment_extension_requests_reviewed_by_fkey(id, full_name)
     `)

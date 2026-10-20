@@ -11,17 +11,19 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createServiceClient()
-  const today = new Date().toISOString().split('T')[0]
+  // Calendar day in IST, not UTC: this runs every 15 minutes, and UTC midnight is 05:30 IST.
+  const today = new Date(Date.now() + 330 * 60000).toISOString().split('T')[0]
   const results: Record<string, number> = {}
 
   // ── 1. Payment due in 7 days ──────────────────────────────────────────────
-  const sevenDaysOut = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
+  const sevenDaysOut = new Date(Date.now() + 330 * 60000 + 7 * 86400000).toISOString().split('T')[0]
   const { data: duePayments } = await supabase
     .from('payments')
-    .select('id, amount_due, due_date, client_id, booking_id, clients(full_name, phone, date_of_birth)')
+    .select('id, amount_due, due_date, client_id, booking_id, clients(full_name, phone, date_of_birth), bookings!inner(status)')
     .eq('due_date', sevenDaysOut)
     .in('status', ['pending', 'overdue'])
-    .limit(100)
+    .eq('bookings.status', 'confirmed') // a cancelled booking's installments must not keep chasing the client
+    .limit(1000)
 
   let paymentDueCount = 0
   for (const payment of duePayments ?? []) {
@@ -37,10 +39,11 @@ export async function POST(req: NextRequest) {
   // ── 2. Overdue payments ───────────────────────────────────────────────────
   const { data: overduePayments } = await supabase
     .from('payments')
-    .select('id, amount_due, due_date, client_id, clients(full_name, phone)')
+    .select('id, amount_due, due_date, client_id, clients(full_name, phone), bookings!inner(status)')
     .lt('due_date', today)
     .in('status', ['pending', 'overdue'])
-    .limit(100)
+    .eq('bookings.status', 'confirmed')
+    .limit(1000)
 
   let overdueCount = 0
   for (const payment of overduePayments ?? []) {
@@ -60,15 +63,18 @@ export async function POST(req: NextRequest) {
 
   // ── 3. Client birthdays ───────────────────────────────────────────────────
   const todayMMDD = today.slice(5) // MM-DD
-  const { data: birthdayClients } = await supabase
+  // date columns can't be matched with LIKE (Postgres: "operator does not exist: date ~~ unknown"),
+  // which made this query fail silently — birthdays and anniversaries never fired. Match in code.
+  const { data: dobClients, error: dobErr } = await supabase
     .from('clients')
     .select('id, full_name, phone, date_of_birth')
     .not('date_of_birth', 'is', null)
-    .like('date_of_birth', `%-${todayMMDD}`)
-    .limit(50)
+    .limit(5000)
+  if (dobErr) console.error('[cron/automations] birthdays query failed', dobErr.message)
+  const birthdayClients = (dobClients ?? []).filter((c) => String(c.date_of_birth).slice(5) === todayMMDD)
 
   let birthdayCount = 0
-  for (const client of birthdayClients ?? []) {
+  for (const client of birthdayClients) {
     await fireAutomations('client_birthday', {
       client: { id: client.id, full_name: client.full_name, phone: client.phone, date_of_birth: client.date_of_birth },
     }, 'client', client.id)
@@ -77,16 +83,19 @@ export async function POST(req: NextRequest) {
   results.client_birthday = birthdayCount
 
   // ── 4. Booking anniversaries ──────────────────────────────────────────────
-  const { data: anniversaryBookings } = await supabase
+  const { data: confirmedBookings, error: annErr } = await supabase
     .from('bookings')
     .select('id, booking_date, client_id, project_id, clients(full_name, phone)')
     .eq('status', 'confirmed')
-    .like('booking_date', `%-${todayMMDD}`)
-    .neq('booking_date', today) // Exclude current year bookings
-    .limit(50)
+    .not('booking_date', 'is', null)
+    .limit(5000)
+  if (annErr) console.error('[cron/automations] anniversaries query failed', annErr.message)
+  const anniversaryBookings = (confirmedBookings ?? []).filter(
+    (b) => String(b.booking_date).slice(5) === todayMMDD && b.booking_date !== today, // not this year's booking
+  )
 
   let anniversaryCount = 0
-  for (const booking of anniversaryBookings ?? []) {
+  for (const booking of anniversaryBookings) {
     const client = (booking as any).clients
     await fireAutomations('booking_anniversary', {
       booking: { id: booking.id, booking_date: booking.booking_date, project_id: booking.project_id },

@@ -2,18 +2,33 @@
 
 import { useState, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { approveBroker, rejectBroker, deactivateBroker } from '@/lib/brokers/actions'
+import { approveBroker, rejectBroker, deactivateBroker, grantBrokerPortalAccess } from '@/lib/brokers/actions'
 
 interface Props {
   brokerId: string
   status: string
+  hasPortalAccess?: boolean
 }
 
-export default function BrokerApprovalPanel({ brokerId, status }: Props) {
+export default function BrokerApprovalPanel({ brokerId, status, hasPortalAccess = false }: Props) {
   const router = useRouter()
   const [mode, setMode] = useState<'idle' | 'reject'>('idle')
   const [reason, setReason] = useState('')
   const [loading, setLoading] = useState(false)
+  const [creds, setCreds] = useState<{ email: string; tempPassword: string } | null>(null)
+  const [accessError, setAccessError] = useState<string | null>(null)
+
+  async function handleGrantAccess() {
+    setLoading(true)
+    setAccessError(null)
+    startTransition(async () => {
+      const res = await grantBrokerPortalAccess(brokerId)
+      if (res.success) setCreds({ email: res.email, tempPassword: res.tempPassword })
+      else setAccessError(res.error)
+      router.refresh()
+      setLoading(false)
+    })
+  }
 
   async function handleApprove() {
     setLoading(true)
@@ -86,10 +101,30 @@ export default function BrokerApprovalPanel({ brokerId, status }: Props) {
 
   if (status === 'approved') {
     return (
-      <button onClick={handleDeactivate} disabled={loading}
-        className="px-4 py-2 border border-slate-300 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 disabled:opacity-50">
-        Deactivate Broker
-      </button>
+      <div className="space-y-3">
+        {creds ? (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm space-y-1">
+            <p className="font-semibold text-green-800">Portal login created — share these now</p>
+            <p className="text-green-900">Email: <span className="font-mono">{creds.email}</span></p>
+            <p className="text-green-900">Temporary password: <span className="font-mono select-all">{creds.tempPassword}</span></p>
+            <p className="text-xs text-green-700">Shown only once. The broker signs in at the normal login page and lands in the broker portal.</p>
+          </div>
+        ) : hasPortalAccess ? (
+          <p className="text-sm text-slate-500">Portal login: active</p>
+        ) : (
+          <div>
+            <button onClick={handleGrantAccess} disabled={loading}
+              className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50">
+              Create portal login
+            </button>
+            {accessError && <p className="mt-2 text-sm text-red-600">{accessError}</p>}
+          </div>
+        )}
+        <button onClick={handleDeactivate} disabled={loading}
+          className="px-4 py-2 border border-slate-300 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 disabled:opacity-50">
+          Deactivate Broker
+        </button>
+      </div>
     )
   }
 

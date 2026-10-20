@@ -77,7 +77,7 @@ deployment. So `crm/vercel.json` keeps a once-daily baseline (Hobby-compliant):
 | `/api/cron/automations` | `0 2 * * *` | ~07:30 | Time-based automations (payments, birthdays) |
 
 Vercel auto-sends `Authorization: Bearer $CRON_SECRET` when `CRON_SECRET` is set.
-All routes accept GET (Vercel) and POST (external). `pg_cron` is **not** enabled.
+All routes accept GET (Vercel) and POST (external). `pg_cron` **is** enabled (migration `20261020100200`) and runs `release_expired_holds()` every 15 minutes, so soft-held plots expire without any HTTP cron.
 
 ### Restoring frequent execution (free, no Pro plan)
 
@@ -140,5 +140,6 @@ The browser service worker is `crm/public/sw.js`; users opt in via the "Enable a
 | `EXOTEL_SID` / `EXOTEL_API_KEY` / `EXOTEL_API_TOKEN` | Exotel account credentials |
 | `EXOTEL_CALLER_ID` | Your ExoPhone (the number shown to leads) |
 | `EXOTEL_SUBDOMAIN` | `api.exotel.com` (default) or `api.in.exotel.com` |
+| `EXOTEL_WEBHOOK_TOKEN` | **Required.** Random secret (`openssl rand -hex 24`). The StatusCallback must be `https://<crm>/api/webhooks/exotel?token=<value>`; without it every callback is rejected with 401 |
 
 Click-to-call from a lead detail rings the agent (their `profiles.phone`) first, then dials the lead. Set the Exotel **StatusCallback** / passthru to `https://dashboard.anonindia.com/api/webhooks/exotel` — it records call duration + recording URL on the lead timeline (and logs inbound calls by matching the caller's phone to a lead). Recording requires `Record=true` to be permitted on the ExoPhone.

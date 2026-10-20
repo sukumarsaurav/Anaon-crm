@@ -172,6 +172,10 @@ async function executeAction(
         .update({ stage: payload.new_stage, updated_at: new Date().toISOString() })
         .eq('id', ctx.lead.id)
       if (error) return { success: false, error: error.message }
+      await supabase.from('lead_activities').insert({
+        lead_id: ctx.lead.id, type: 'system', stage_from: ctx.lead.stage ?? null, stage_to: payload.new_stage,
+        notes: `Stage changed to ${payload.new_stage.replace(/_/g, ' ')} by automation "${automation.name}"`,
+      })
       return { success: true, result: { new_stage: payload.new_stage } }
     }
 
@@ -197,6 +201,13 @@ async function executeAction(
         .update({ assigned_to: advisorId, updated_at: new Date().toISOString() })
         .eq('id', ctx.lead.id)
       if (error) return { success: false, error: error.message }
+      await supabase.from('lead_activities').insert({
+        lead_id: ctx.lead.id, type: 'assignment', notes: `Assigned by automation "${automation.name}"`,
+      })
+      await notifyUsers([advisorId], {
+        title: 'New Lead Assigned', message: `${ctx.lead.full_name ?? 'A lead'} has been assigned to you.`,
+        type: 'lead_assigned', related_type: 'lead', related_id: ctx.lead.id, action_url: `/leads/${ctx.lead.id}`,
+      })
       return { success: true, result: { assigned_to: advisorId } }
     }
 
@@ -283,7 +294,7 @@ export function fireAutomations(
 // GitHub Actions schedule). Each automation may act on a record once a day for these,
 // or a client due in 7 days would be messaged ~96 times that day.
 const ONCE_PER_DAY: TriggerEvent[] = [
-  'payment_due_approaching', 'payment_overdue', 'client_birthday', 'booking_anniversary', 'follow_up_overdue',
+  'payment_due_approaching', 'payment_overdue', 'client_birthday', 'booking_anniversary', 'follow_up_overdue', 'site_visit_reminder',
 ]
 
 async function alreadyRanToday(supabase: ServiceClient, automationId: string, recordId: string): Promise<boolean> {
@@ -324,7 +335,7 @@ async function fireAutomationsNow(
         // birthday must still send); per record otherwise.
         const day = ONCE_PER_DAY.includes(trigger) ? `_${new Date().toISOString().slice(0, 10)}` : ''
         await runAutomation(automation, ctx, recordType, recordId,
-          recordId ? `auto_${automation.id}_${trigger}_${recordId}${day}`.slice(0, 200) : null)
+          recordId ? `auto_${automation.id}_${trigger}_${recordId}${ctx.milestone?.id ? `_${ctx.milestone.id}` : ''}${day}`.slice(0, 200) : null)
       } else {
         const ms = automation.delay_unit === 'minutes' ? automation.delay_value * 60000
           : automation.delay_unit === 'hours' ? automation.delay_value * 3600000

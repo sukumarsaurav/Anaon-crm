@@ -97,12 +97,14 @@ export async function getPaymentSummary(bookingId: string): Promise<PaymentSumma
   const payments = await getBookingPayments(bookingId)
   const today = new Date().toISOString().split('T')[0]
 
-  const total_due   = payments.reduce((s, p) => s + p.amount_due + (p.late_charge ?? 0), 0)
-  const total_paid  = payments.reduce((s, p) => s + (p.amount_paid ?? 0), 0)
+  // A waived installment is forgiven: it neither counts as due nor as outstanding.
+  const payable     = payments.filter((p) => p.status !== 'waived')
+  const total_due   = payable.reduce((s, p) => s + p.amount_due + (p.late_charge ?? 0), 0)
+  const total_paid  = payable.reduce((s, p) => s + (p.amount_paid ?? 0), 0)
   const outstanding = Math.max(0, total_due - total_paid)
-  const overdue     = payments.filter((p) => p.status === 'pending' && p.due_date < today)
-  const pending     = payments
-    .filter((p) => p.status === 'pending' && p.due_date >= today)
+  const overdue     = payable.filter((p) => (p.status === 'pending' || p.status === 'overdue') && p.due_date < today)
+  const pending     = payable
+    .filter((p) => (p.status === 'pending' || p.status === 'overdue') && p.due_date >= today)
     .sort((a, b) => a.due_date.localeCompare(b.due_date))
 
   return {

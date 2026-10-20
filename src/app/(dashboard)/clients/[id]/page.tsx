@@ -7,6 +7,7 @@ import {
   getClientComplaints, getClientTimeline, getPaymentSummary,
 } from '@/lib/clients/queries'
 import { getProfile } from '@/lib/supabase/getProfile'
+import { createClient as createSupabase } from '@/lib/supabase/server'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { OCCUPATION_LABELS } from '@/types/clients'
 import KycStatusBadge from '@/components/clients/KycStatusBadge'
@@ -50,6 +51,14 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
     getClientComplaints(id),
     activeTab === 'timeline' ? getClientTimeline(id) : Promise.resolve([]),
   ])
+
+  // Staff a complaint can be assigned to (only loaded where it is used)
+  let staff: Array<{ id: string; full_name: string }> = []
+  if (canManage && activeTab === 'complaints') {
+    const { data } = await (await createSupabase()).from('profiles')
+      .select('id, full_name').eq('is_active', true).in('role', ['admin', 'manager', 'sales_advisor', 'telecaller']).order('full_name')
+    staff = data ?? []
+  }
 
   // Payment summaries per booking
   const summaries = await Promise.all(bookings.map((b) => getPaymentSummary(b.id)))
@@ -272,6 +281,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
           bookings={bookings.map((b) => ({ id: b.id, booking_number: b.booking_number }))}
           complaints={complaints}
           canManage={canManage}
+          staff={staff}
         />
       )}
 

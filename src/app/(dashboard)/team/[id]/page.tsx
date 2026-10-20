@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import ActionButton from '@/components/ui/ActionButton'
+import { toggleMemberActive } from '@/lib/team/actions'
 import { getProfile } from '@/lib/supabase/getProfile'
 import {
   getMemberProfile, getMonthlyKPI, getMonthlyTarget,
@@ -82,6 +84,14 @@ export default async function MemberProfilePage({ params }: Props) {
             </div>
           </div>
           <div className="flex gap-2 flex-shrink-0">
+            {currentProfile?.role === 'admin' && !isOwn && (
+              <ActionButton
+                label={member.is_active ? 'Deactivate' : 'Reactivate'}
+                tone={member.is_active ? 'danger' : 'success'}
+                confirm={member.is_active ? 'Deactivate this team member? They will lose access to the CRM.' : undefined}
+                action={toggleMemberActive.bind(null, id, !member.is_active)}
+              />
+            )}
             {canManage && (
               <Button href={`/team/targets?member=${id}`} variant="secondary" size="sm">
                 Set Target

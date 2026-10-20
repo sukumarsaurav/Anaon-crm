@@ -137,7 +137,7 @@ export default async function RecruitmentPage() {
 
         {candidates.length === 0 && (
           <div className="text-center py-16 text-slate-400 bg-white rounded-xl border border-dashed border-slate-200">
-            <p className="text-sm">No candidates yet. Applications from the website careers page appear here.</p>
+            <p className="text-sm">No candidates yet. Applications from the careers page appear here.</p>
           </div>
         )}
       </div>

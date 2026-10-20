@@ -4,6 +4,7 @@ export type TriggerEvent =
   | 'lead_assigned'
   | 'follow_up_overdue'
   | 'site_visit_scheduled'
+  | 'site_visit_reminder'
   | 'site_visit_completed'
   | 'booking_created'
   | 'payment_received'
@@ -120,6 +121,7 @@ export const TRIGGER_OPTIONS: { value: TriggerEvent; label: string; category: st
   { value: 'lead_assigned',            label: 'Lead Assigned to Advisor',     category: 'Lead' },
   { value: 'follow_up_overdue',        label: 'Follow-up Overdue (48h)',      category: 'Lead' },
   { value: 'site_visit_scheduled',     label: 'Site Visit Scheduled',         category: 'Sales' },
+  { value: 'site_visit_reminder',      label: 'Site Visit Day (morning of the visit)', category: 'Sales' },
   { value: 'site_visit_completed',     label: 'Site Visit Completed',         category: 'Sales' },
   { value: 'booking_created',          label: 'Booking Created',              category: 'Sales' },
   { value: 'payment_received',         label: 'Payment Received',             category: 'Finance' },
@@ -149,9 +151,11 @@ export const CONDITION_FIELDS = [
   { value: 'project_id',  label: 'Project' },
 ]
 
+// Must match the database's lead_stage enum — 'new', 'booked' and 'lost' were not valid values,
+// so an automation that changed a lead to them failed every time.
 export const LEAD_STAGES = [
-  'new', 'contacted', 'interested', 'site_visit_scheduled',
-  'site_visit_done', 'negotiation', 'booked', 'not_interested', 'lost',
+  'new_lead', 'contacted', 'interested', 'site_visit_scheduled', 'site_visit_done',
+  'negotiation', 'token_paid', 'closed_won', 'not_interested', 'future_followup',
 ]
 
 // 15 pre-built templates
@@ -198,10 +202,10 @@ export const AUTOMATION_TEMPLATES: Omit<Automation, 'id' | 'created_by' | 'creat
   },
   {
     name: 'Site Visit Reminder (Lead)',
-    description: 'Send WhatsApp reminder to lead 1 day before scheduled site visit',
-    trigger_event: 'site_visit_scheduled',
+    description: 'Send WhatsApp reminder to the lead on the morning of the site visit',
+    trigger_event: 'site_visit_reminder',
     conditions: [],
-    delay_value: 23, delay_unit: 'hours',
+    delay_value: 0, delay_unit: 'minutes',
     action_type: 'send_whatsapp',
     action_payload: { template_name: 'site_visit_reminder', recipient: 'lead' },
     is_active: false, is_template: true, template_key: 'site_visit_reminder_lead',

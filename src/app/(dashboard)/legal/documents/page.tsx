@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { getLegalDocumentTemplates } from '@/lib/legal/queries'
 import { LEGAL_DOCUMENT_TYPE_LABELS, LEGAL_DOCUMENT_TYPES, type LegalDocumentType } from '@/types/legal'
 import LegalTemplateForm from '@/components/legal/LegalTemplateForm'
+import ActionButton from '@/components/ui/ActionButton'
+import { toggleLegalTemplate } from '@/lib/legal/actions'
 import { ChevronLeft, FileText, Download, CheckCircle2, XCircle } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
@@ -80,6 +82,11 @@ export default async function LegalDocumentsPage() {
                         ) : (
                           <span className="text-xs text-slate-400 px-3 py-1.5">No file</span>
                         )}
+                        <ActionButton
+                          label={tpl.is_active ? 'Deactivate' : 'Activate'}
+                          tone={tpl.is_active ? 'default' : 'success'}
+                          action={toggleLegalTemplate.bind(null, tpl.id, !tpl.is_active)}
+                        />
                       </div>
                     </div>
                   ))}

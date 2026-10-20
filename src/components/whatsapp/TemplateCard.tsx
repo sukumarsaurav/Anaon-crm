@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { toggleTemplateActive, submitTemplateForApproval } from '@/lib/whatsapp/actions'
+import { useRouter } from 'next/navigation'
+import { toggleTemplateActive, submitTemplateForApproval, updateTemplate, resubmitRejectedTemplate, deleteTemplate } from '@/lib/whatsapp/actions'
+import { namedVariables } from '@/lib/whatsapp/template-render'
 import { sampleValueFor } from '@/lib/whatsapp/template-render'
 import type { WaTemplate } from '@/types/whatsapp'
 
@@ -19,7 +21,12 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 }
 
 export default function TemplateCard({ template, canSubmit }: Props) {
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [editing, setEditing] = useState(false)
+  const [editBody, setEditBody] = useState(template.body)
+  const [editName, setEditName] = useState(template.display_name)
+  const [editFooter, setEditFooter] = useState(template.footer ?? '')
   const [showSubmit, setShowSubmit] = useState(false)
   const [examples, setExamples] = useState<Record<string, string>>(
     () => Object.fromEntries(template.variable_names.map((v) => [v, sampleValueFor(v)])),
@@ -34,6 +41,38 @@ export default function TemplateCard({ template, canSubmit }: Props) {
       const r = await submitTemplateForApproval(template.id, examples)
       setSubmitMsg(r.success ? 'Submitted — WhatsApp is reviewing it' : r.error ?? 'Submission failed')
       if (r.success) setShowSubmit(false)
+    })
+  }
+
+  const editable = template.status === 'draft' || template.status === 'rejected'
+  const deletable = template.status !== 'disabled'
+
+  function handleSaveEdit() {
+    setSubmitMsg(null)
+    const fd = new FormData()
+    fd.set('display_name', editName)
+    fd.set('body', editBody)
+    fd.set('footer', editFooter)
+    startTransition(async () => {
+      // A rejected template already exists at WhatsApp, so it is edited there and re-reviewed;
+      // a draft only exists in the CRM.
+      const r = template.status === 'rejected'
+        ? await resubmitRejectedTemplate(template.id, fd)
+        : await updateTemplate(template.id, fd)
+      setSubmitMsg(r.success
+        ? (template.status === 'rejected' ? 'Resubmitted — WhatsApp is reviewing it' : 'Saved')
+        : r.error ?? 'Could not save')
+      if (r.success) { setEditing(false); router.refresh() }
+    })
+  }
+
+  function handleDelete() {
+    if (!window.confirm(`Delete template "${template.display_name}"? This also removes it from WhatsApp if it was submitted.`)) return
+    setSubmitMsg(null)
+    startTransition(async () => {
+      const r = await deleteTemplate(template.id)
+      if (r.success) router.refresh()
+      else setSubmitMsg(r.error ?? 'Could not delete')
     })
   }
 
@@ -93,7 +132,15 @@ export default function TemplateCard({ template, canSubmit }: Props) {
       )}
 
       <div className="flex items-center justify-between">
-        <span className="text-xs text-gray-400">{template.language.toUpperCase()}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-400">{template.language.toUpperCase()}</span>
+          {editable && !editing && (
+            <button onClick={() => setEditing(true)} disabled={isPending} className="text-xs text-blue-600 hover:underline disabled:opacity-40">Edit</button>
+          )}
+          {deletable && (
+            <button onClick={handleDelete} disabled={isPending} className="text-xs text-red-600 hover:underline disabled:opacity-40">Delete</button>
+          )}
+        </div>
         {submittable && !showSubmit && (
           <button
             onClick={() => (template.variable_names.length ? setShowSubmit(true) : handleSubmit())}
@@ -138,6 +185,26 @@ export default function TemplateCard({ template, canSubmit }: Props) {
               className="text-xs px-3 py-1 rounded-lg font-medium bg-green-500 text-white hover:bg-green-600 disabled:opacity-40"
             >
               {isPending ? 'Submitting…' : 'Submit'}
+            </button>
+          </div>
+        </div>
+      )}
+      {editing && (
+        <div className="mt-3 border-t border-gray-100 pt-3 space-y-2">
+          <input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Display name"
+            className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm" />
+          <textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={5}
+            className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm" />
+          {namedVariables(editBody).length > 0 && (
+            <p className="text-xs text-gray-500">Variables: {namedVariables(editBody).map((v) => `{{${v}}}`).join(', ')}</p>
+          )}
+          <input value={editFooter} onChange={(e) => setEditFooter(e.target.value)} placeholder="Footer (optional)"
+            className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm" />
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setEditing(false)} className="text-xs px-3 py-1 text-gray-600">Cancel</button>
+            <button onClick={handleSaveEdit} disabled={isPending || !editBody.trim()}
+              className="text-xs px-3 py-1 rounded-lg font-medium bg-green-500 text-white hover:bg-green-600 disabled:opacity-40">
+              {isPending ? 'Saving…' : template.status === 'rejected' ? 'Save & resubmit' : 'Save'}
             </button>
           </div>
         </div>

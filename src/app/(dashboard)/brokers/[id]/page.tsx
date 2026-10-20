@@ -8,6 +8,8 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import BrokerStatusBadge from '@/components/brokers/BrokerStatusBadge'
 import BrokerPerformanceCard from '@/components/brokers/BrokerPerformanceCard'
 import BrokerApprovalPanel from '@/components/brokers/BrokerApprovalPanel'
+import ActionButton from '@/components/ui/ActionButton'
+import { updateLeadRegistrationStatus } from '@/lib/brokers/actions'
 import { ArrowLeft, Edit, Phone, Mail, MapPin, Building, CreditCard } from 'lucide-react'
 import { COMMISSION_STATUS_CONFIG } from '@/types/bookings'
 import { LEAD_REG_STATUS_CONFIG } from '@/types/brokers'
@@ -71,7 +73,7 @@ export default async function BrokerDetailPage({ params }: PageProps) {
 
       {/* Approval panel */}
       {canManage && (broker.status === 'pending' || broker.status === 'approved') && (
-        <BrokerApprovalPanel brokerId={id} status={broker.status} />
+        <BrokerApprovalPanel brokerId={id} status={broker.status} hasPortalAccess={!!broker.auth_user_id} />
       )}
 
       {/* Performance */}
@@ -163,9 +165,17 @@ export default async function BrokerDetailPage({ params }: PageProps) {
                         <p className="text-sm font-medium text-slate-900">{l.client_name}</p>
                         <p className="text-xs text-slate-400">{l.client_phone} · {l.project?.name ?? 'No project'} · {formatDate(l.created_at)}</p>
                       </div>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${cfg.color} ${cfg.bg}`}>
-                        {cfg.label}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {canManage && l.status === 'registered' && (
+                          <>
+                            <ActionButton label="Converted" tone="success" action={updateLeadRegistrationStatus.bind(null, l.id, 'converted', undefined)} />
+                            <ActionButton label="Lost" confirm="Mark this registration as lost?" action={updateLeadRegistrationStatus.bind(null, l.id, 'lost', undefined)} />
+                          </>
+                        )}
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${cfg.color} ${cfg.bg}`}>
+                          {cfg.label}
+                        </span>
+                      </div>
                     </div>
                   )
                 })}

@@ -120,10 +120,24 @@ export async function updateMilestoneProgress(milestoneId: string, projectId: st
   if (error) return { success: false, error: error.message }
 
   if (status === 'completed' && milestone?.status !== 'completed') {
-    fireAutomations('milestone_completed', {
-      milestone: { id: milestoneId, name: milestone?.name ?? '', project_id: projectId },
-      project: { id: projectId, name: '' },
-    }, 'milestone', milestoneId)
+    // The automation messages clients, but the context carried none (and an empty project name),
+    // so every milestone WhatsApp failed with "No phone number". Fan out to each booked client.
+    const { data: proj } = await supabase.from('projects').select('name').eq('id', projectId).single()
+    const { data: booked } = await supabase
+      .from('bookings')
+      .select('id, client:clients!bookings_client_id_fkey(id, full_name, phone)')
+      .eq('project_id', projectId)
+      .eq('status', 'confirmed')
+      .limit(500)
+    for (const b of booked ?? []) {
+      const client = (Array.isArray(b.client) ? b.client[0] : b.client) as { id: string; full_name: string; phone: string } | null
+      if (!client) continue
+      fireAutomations('milestone_completed', {
+        milestone: { id: milestoneId, name: milestone?.name ?? '', project_id: projectId },
+        project: { id: projectId, name: proj?.name ?? '' },
+        client,
+      }, 'client', client.id)
+    }
   }
 
   revalidatePath(`/inventory/${projectId}/construction`)

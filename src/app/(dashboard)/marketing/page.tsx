@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/server'
 import { PLATFORM_CONFIG } from '@/types/marketing'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import CampaignForm from '@/components/marketing/CampaignForm'
+import ActionButton from '@/components/ui/ActionButton'
+import { deleteCampaign } from '@/lib/marketing/actions'
 import CampaignStatusToggle from '@/components/marketing/CampaignStatusToggle'
 import SpendLogForm from '@/components/marketing/SpendLogForm'
 import ROITable from '@/components/marketing/ROITable'
@@ -174,6 +176,11 @@ export default async function MarketingPage() {
                         </div>
                       )}
                       <SpendLogForm campaignId={c.id} campaignName={c.name} />
+                      <div className="mt-2">
+                        <ActionButton label="Delete campaign" tone="danger"
+                          confirm={`Delete campaign "${c.name}" and its spend log? This cannot be undone.`}
+                          action={deleteCampaign.bind(null, c.id)} />
+                      </div>
                     </div>
                   </div>
                 )

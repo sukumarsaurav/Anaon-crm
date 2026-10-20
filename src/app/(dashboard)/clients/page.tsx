@@ -41,6 +41,11 @@ export default async function ClientsPage({ searchParams }: PageProps) {
     countMap[b.client_id] = (countMap[b.client_id] ?? 0) + 1
   }
 
+  const { count: pendingExtensions } = await supabase
+    .from('payment_extension_requests')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'pending')
+
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
   return (
@@ -49,9 +54,14 @@ export default async function ClientsPage({ searchParams }: PageProps) {
         title="Clients"
         subtitle={`${total} total client${total !== 1 ? 's' : ''}`}
         actions={
-          <Button href="/clients/new">
-            <Plus size={16} /> New Client
-          </Button>
+          <>
+            <Button href="/clients/extension-requests" variant="secondary">
+              Extension requests{pendingExtensions ? ` (${pendingExtensions})` : ''}
+            </Button>
+            <Button href="/clients/new">
+              <Plus size={16} /> New Client
+            </Button>
+          </>
         }
       />
 

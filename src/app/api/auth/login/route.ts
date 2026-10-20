@@ -65,14 +65,24 @@ export async function POST(req: NextRequest) {
     // The role comes back from the same write that records the login, through
     // the service client — so profile RLS can never turn a valid sign-in into a
     // failed redirect, and it costs no extra round-trip.
-    const { role } = await recordLoginSuccess(
+    const { role, isActive } = await recordLoginSuccess(
       data.user.id,
       data.session.access_token.slice(-20),
       req.headers.get('user-agent')?.slice(0, 200) ?? '',
       ip,
     )
 
-    if (!role || !STAFF_ROLES.includes(role)) {
+    // Deactivating an employee or broker used to flip profiles.is_active and nothing else, so
+    // they could still sign in.
+    if (!isActive) {
+      await supabase.auth.signOut()
+      return NextResponse.json(
+        { error: 'This account has been deactivated. Contact an administrator.' },
+        { status: 403 },
+      )
+    }
+
+    if (!role || (!STAFF_ROLES.includes(role) && role !== 'broker')) {
       // No CRM role means there is nowhere valid to land — the client portal runs
       // on its own OTP session and would bounce them straight back to a login page.
       await supabase.auth.signOut()
@@ -84,7 +94,8 @@ export async function POST(req: NextRequest) {
 
     // Straight to the real page: '/' is only a redirect to /dashboard, and
     // bouncing through it costs a full extra proxy pass on every login.
-    return NextResponse.json({ redirectTo: '/dashboard' })
+    // Brokers sign in here too but live in their own portal.
+    return NextResponse.json({ redirectTo: role === 'broker' ? '/broker-portal' : '/dashboard' })
   } catch (err) {
     console.error('[auth/login]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

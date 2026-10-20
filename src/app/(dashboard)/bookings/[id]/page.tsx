@@ -15,6 +15,8 @@ import PageHeader from '@/components/ui/PageHeader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import Alert from '@/components/ui/Alert'
 import Link from 'next/link'
+import ActionButton from '@/components/ui/ActionButton'
+import { markAllotmentLetterSent, uploadAgreement } from '@/lib/bookings/actions'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -42,6 +44,16 @@ export default async function BookingDetailPage({ params }: PageProps) {
 
   const profile = (await getProfile())?.profile
   const canManage = ['admin', 'manager'].includes(profile?.role ?? '')
+
+  async function markAllotmentSent() {
+    'use server'
+    return markAllotmentLetterSent(id)
+  }
+  async function recordAgreement(url?: string) {
+    'use server'
+    if (!url || !/^https?:\/\//i.test(url)) return { success: false, error: 'Enter a full https:// link' }
+    return uploadAgreement(id, url, true)
+  }
 
   const paidTotal    = payments.reduce((s, p) => s + (p.amount_paid ?? 0), 0)
   const pendingTotal = payments.reduce((s, p) => p.status === 'pending' ? s + p.amount_due : s, 0)
@@ -165,6 +177,18 @@ export default async function BookingDetailPage({ params }: PageProps) {
                   )}
                 </div>
               ))}
+              {canManage && (
+                <div className="flex flex-wrap gap-2 pt-3">
+                  {!booking.allotment_letter_sent_at && (
+                    <ActionButton label="Mark allotment letter sent" tone="success"
+                      confirm="Record that the allotment letter was sent to the client?"
+                      action={markAllotmentSent} />
+                  )}
+                  <ActionButton label={booking.agreement_signed ? 'Replace signed agreement link' : 'Add signed agreement'}
+                    promptLabel="Link to the signed agreement (https://…):"
+                    action={recordAgreement} />
+                </div>
+              )}
             </div>
           </Card>
         </div>

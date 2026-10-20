@@ -60,8 +60,10 @@ async function handler(req: NextRequest) {
     await supabase.from('site_visits').update({ reminded_at: now.toISOString() }).eq('id', v.id)
 
     if (lead) {
+      // Its own trigger: this used to re-fire 'site_visit_scheduled' on the morning of the visit,
+      // so confirmation automations ran twice and a "remind 23h later" rule landed the day AFTER.
       fireAutomations(
-        'site_visit_scheduled',
+        'site_visit_reminder',
         {
           lead: {
             id: v.lead_id,

@@ -7,10 +7,18 @@ import { getProfile } from '@/lib/supabase/getProfile'
 import { deliverOtp } from '@/lib/messaging/otp'
 import { createServiceClient } from '@/lib/supabase/service'
 import { getPortalSession } from './session'
+import { notifyUsers, type NotifyInput } from '@/lib/notifications/notify'
+import { fireAutomations } from '@/lib/automation/engine'
 import { createHash, randomInt } from 'crypto'
 
 function hashOtp(otp: string): string {
   return createHash('sha256').update(otp).digest('hex')
+}
+
+/** Tell the people who handle customer requests (admins and managers). Never throws. */
+async function notifyManagers(input: NotifyInput) {
+  const { data } = await portalDb().from('profiles').select('id').in('role', ['admin', 'manager']).eq('is_active', true)
+  await notifyUsers((data ?? []).map((p) => p.id), input)
 }
 
 // crypto, not Math.random: an OTP is a credential.
@@ -29,7 +37,8 @@ function portalDb() {
 // ── OTP auth ────────────────────────────────────────────────────────
 
 export async function sendPortalOtp(phone: string): Promise<{ success: boolean; error?: string }> {
-  const cleaned = phone.replace(/\s+/g, '').replace(/^(\+91|91)/, '')
+  // Digits only, last 10: "+91-98100 01025" and "9810001025" are the same person.
+  const cleaned = phone.replace(/\D/g, '').slice(-10)
   const otp     = generateOtp()
   const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
@@ -59,7 +68,8 @@ export async function sendPortalOtp(phone: string): Promise<{ success: boolean; 
 }
 
 export async function verifyPortalOtp(phone: string, otp: string): Promise<{ success: boolean; error?: string }> {
-  const cleaned = phone.replace(/\s+/g, '').replace(/^(\+91|91)/, '')
+  // Digits only, last 10: "+91-98100 01025" and "9810001025" are the same person.
+  const cleaned = phone.replace(/\D/g, '').slice(-10)
 
   const supabase = portalDb()
   const { data: result } = await supabase.rpc('portal_verify_otp', {
@@ -114,6 +124,12 @@ export async function requestPaymentExtension(_clientId: string, formData: FormD
   })
 
   if (error) return { success: false, error: error.message }
+  await notifyManagers({
+    title: 'Payment extension requested',
+    message: `${session.client.full_name} asked to move an installment to ${formData.get('requested_date')}.`,
+    type: 'extension_request', related_type: 'client', related_id: session.client.id,
+    action_url: '/clients/extension-requests',
+  })
   return { success: true }
 }
 
@@ -135,6 +151,17 @@ export async function raisePortalComplaint(_clientId: string, formData: FormData
   })
 
   if (error) return { success: false, error: error.message }
+  // Complaints raised in the CRM already notify staff and fire the automation; ones raised by
+  // the customer in the portal told nobody.
+  await notifyManagers({
+    title: 'New customer complaint',
+    message: `${session.client.full_name} raised a complaint (${formData.get('category')}).`,
+    type: 'complaint', related_type: 'client', related_id: session.client.id,
+    action_url: `/clients/${session.client.id}?tab=complaints`,
+  })
+  fireAutomations('complaint_raised', {
+    client: { id: session.client.id, full_name: session.client.full_name, phone: session.client.phone },
+  }, 'client', session.client.id)
   return { success: true }
 }
 
@@ -190,8 +217,28 @@ export async function deleteConstructionUpdate(updateId: string, projectId: stri
 
 export async function reviewExtensionRequest(requestId: string, status: 'approved' | 'rejected', notes?: string) {
   const supabase = await createClient()
-  const user = (await getProfile())?.user
+  const session = await getProfile()
+  const user = session?.user
   if (!user) return { success: false, error: 'Unauthorized' }
+  if (!['admin', 'manager'].includes(session?.profile?.role ?? '')) return { success: false, error: 'Forbidden' }
+
+  const { data: req } = await supabase
+    .from('payment_extension_requests')
+    .select('id, status, payment_id, requested_date')
+    .eq('id', requestId)
+    .single()
+  if (!req) return { success: false, error: 'Request not found' }
+  if (req.status !== 'pending') return { success: false, error: 'This request was already reviewed' }
+
+  // Approving has to actually move the due date, otherwise the customer is told yes and the
+  // schedule (and overdue reminders) still use the old date.
+  if (status === 'approved') {
+    const { error: payErr } = await supabase
+      .from('payments')
+      .update({ due_date: req.requested_date, updated_at: new Date().toISOString() })
+      .eq('id', req.payment_id)
+    if (payErr) return { success: false, error: `Could not move the due date: ${payErr.message}` }
+  }
 
   const { error } = await supabase.from('payment_extension_requests').update({
     status,
@@ -203,5 +250,6 @@ export async function reviewExtensionRequest(requestId: string, status: 'approve
 
   if (error) return { success: false, error: error.message }
   revalidatePath('/clients')
+  revalidatePath('/clients/extension-requests')
   return { success: true }
 }

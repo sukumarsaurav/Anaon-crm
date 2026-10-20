@@ -66,7 +66,7 @@ export async function proxy(request: NextRequest) {
     if (userId && pathname === '/login') {
       const { role } = await getUserGate(supabase, userId)
       const isStaff = !!role && STAFF_ROLES.includes(role)
-      return NextResponse.redirect(new URL(isStaff ? '/dashboard' : '/client-portal', request.url))
+      return NextResponse.redirect(new URL(isStaff ? '/dashboard' : role === 'broker' ? '/broker-portal' : '/client-portal', request.url))
     }
     return supabaseResponse
   }

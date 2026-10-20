@@ -2,6 +2,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { calculateLeadScore } from './scoring'
 import { resolveAssignee } from './assignment'
 import { fireAutomations } from '@/lib/automation/engine'
+import { notifyUsers } from '@/lib/notifications/notify'
 import type { Lead, LeadSource } from '@/types/leads'
 
 export interface NormalizedLeadInput {
@@ -141,6 +142,15 @@ export async function ingestLead(input: NormalizedLeadInput): Promise<IngestResu
       : `Lead captured from ${input.source}`,
   })
 
+  // Nobody was told about leads arriving from ads, WhatsApp, the website or brokers.
+  if (assignedTo) {
+    await notifyUsers([assignedTo], {
+      title: 'New Lead Assigned',
+      message: `${leadPayload.full_name as string} (${input.source.replace(/_/g, ' ')}) has been assigned to you.`,
+      type: 'lead_assigned', related_type: 'lead', related_id: created.id, action_url: `/leads/${created.id}`,
+    })
+  }
+
   fireAutomations(
     'lead_created',
     {
@@ -151,7 +161,7 @@ export async function ingestLead(input: NormalizedLeadInput): Promise<IngestResu
         source: input.source,
         stage: 'new_lead',
         assigned_to: assignedTo,
-        project_id: null,
+        project_id: input.project_id ?? null,
         utm_source: (leadPayload.utm_source as string) ?? null,
       },
     },

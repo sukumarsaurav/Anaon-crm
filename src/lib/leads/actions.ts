@@ -85,6 +85,15 @@ export async function createLead(formData: FormData): Promise<{ success: boolean
     performed_by: user.id,
   })
 
+  // Tell the advisor who got it (the other assignment paths already do)
+  if (payload.assigned_to && payload.assigned_to !== user.id) {
+    await notifyUsers([payload.assigned_to as string], {
+      title: 'New Lead Assigned',
+      message: `${payload.full_name as string} has been assigned to you.`,
+      type: 'lead_assigned', related_type: 'lead', related_id: data.id, action_url: `/leads/${data.id}`,
+    })
+  }
+
   // Fire automations
   fireAutomations('lead_created', {
     lead: {
@@ -120,17 +129,29 @@ export async function updateLead(
   const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Not authenticated' }
 
+  // The browser sends this object, so only the edit form's fields are accepted. It used to be
+  // applied as-is: a caller could also set assigned_to, stage, is_active or created_by here,
+  // skipping the assignment, stage-change and delete paths (and their notifications and logs).
+  const EDITABLE = [
+    'full_name', 'phone', 'alternate_phone', 'email', 'city', 'locality', 'project_id', 'property_type',
+    'budget_min', 'budget_max', 'configuration', 'purpose', 'timeline', 'source',
+    'preferred_contact_method', 'preferred_contact_time',
+  ] as const
+  const safe: Record<string, unknown> = {}
+  for (const k of EDITABLE) if (k in updates) safe[k] = (updates as Record<string, unknown>)[k]
+
   const { data: oldLead } = await supabase.from('leads').select('*').eq('id', id).single()
+  if (!oldLead) return { success: false, error: 'Lead not found' }
 
   const activities = await getLeadActivities(id)
   const { score, temperature } = calculateLeadScore({
-    lead: { ...oldLead, ...updates },
+    lead: { ...oldLead, ...safe },
     activities,
   })
 
   const { error } = await supabase
     .from('leads')
-    .update({ ...updates, score, temperature, updated_at: new Date().toISOString() })
+    .update({ ...safe, score, temperature, updated_at: new Date().toISOString() })
     .eq('id', id)
 
   if (error) return { success: false, error: error.message }
@@ -141,7 +162,7 @@ export async function updateLead(
     table_name: 'leads',
     record_id: id,
     old_values: oldLead,
-    new_values: updates,
+    new_values: safe,
   })
 
   revalidatePath(`/leads/${id}`)
@@ -238,9 +259,10 @@ export async function logActivity(formData: FormData): Promise<{ success: boolea
   if (error) return { success: false, error: error.message }
 
   // Update lead: last contacted, follow-up count, next followup
+  const { data: current } = await supabase.from('leads').select('follow_up_count').eq('id', leadId).single()
   const updates: Record<string, unknown> = {
     last_contacted_at: new Date().toISOString(),
-    follow_up_count: supabase.rpc('increment', { table: 'leads', id: leadId, column: 'follow_up_count' }),
+    follow_up_count: (current?.follow_up_count ?? 0) + 1,
   }
 
   if (scheduleFollowup && followupAt) {
@@ -321,21 +343,47 @@ export async function assignLead(
 export async function bulkAssignLeads(
   leadIds: string[],
   advisorId: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; count?: number }> {
   const supabase = await createClient()
-  const user = (await getProfile())?.user
+  const session = await getProfile()
+  const user = session?.user
   if (!user) return { success: false, error: 'Not authenticated' }
+  if (!leadIds.length) return { success: false, error: 'No leads selected' }
+  if (leadIds.length > 500) return { success: false, error: 'Select at most 500 leads at once' }
+
+  // Only leads this user can see (RLS) and that actually change owner.
+  const { data: before } = await supabase.from('leads').select('id, assigned_to').in('id', leadIds)
+  const toMove = (before ?? []).filter((l) => l.assigned_to !== advisorId).map((l) => l.id)
+  if (!toMove.length) return { success: true, count: 0 }
 
   const { error } = await supabase
     .from('leads')
     .update({ assigned_to: advisorId, updated_at: new Date().toISOString() })
-    .in('id', leadIds)
+    .in('id', toMove)
 
   if (error) return { success: false, error: error.message }
 
+  const { data: advisor } = await supabase.from('profiles').select('full_name').eq('id', advisorId).single()
+  await supabase.from('lead_activities').insert(
+    toMove.map((lead_id) => ({
+      lead_id, type: 'assignment', notes: `Lead assigned to ${advisor?.full_name ?? 'advisor'} (bulk)`, performed_by: user.id,
+    }))
+  )
+  await notifyUsers([advisorId], {
+    title: `${toMove.length} lead${toMove.length > 1 ? 's' : ''} assigned to you`,
+    message: `${toMove.length} lead${toMove.length > 1 ? 's were' : ' was'} assigned to you.`,
+    type: 'lead_assigned', related_type: 'lead', related_id: toMove.length === 1 ? toMove[0] : null,
+    action_url: toMove.length === 1 ? `/leads/${toMove[0]}` : '/leads',
+  })
+
   revalidatePath('/leads')
-  return { success: true }
+  return { success: true, count: toMove.length }
 }
+
+const VALID_STAGES: LeadStage[] = [
+  'new_lead', 'contacted', 'interested', 'site_visit_scheduled', 'site_visit_done',
+  'negotiation', 'token_paid', 'closed_won', 'not_interested', 'future_followup',
+]
 
 export async function bulkChangeStage(
   leadIds: string[],
@@ -345,25 +393,48 @@ export async function bulkChangeStage(
   const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Not authenticated' }
   if (!leadIds.length) return { success: false, error: 'No leads selected' }
+  if (!VALID_STAGES.includes(stage as LeadStage)) return { success: false, error: 'Unknown stage' }
+  if (leadIds.length > 500) return { success: false, error: 'Select at most 500 leads at once' }
 
-  const { error } = await supabase
-    .from('leads')
-    .update({ stage, updated_at: new Date().toISOString() })
-    .in('id', leadIds)
+  const { data: before } = await supabase
+    .from('leads').select('id, stage, full_name, phone, assigned_to, project_id, utm_source').in('id', leadIds)
+  const changing = (before ?? []).filter((l) => l.stage !== stage)
+  if (!changing.length) return { success: true, count: 0 }
+
+  const updates: Record<string, unknown> = { stage, updated_at: new Date().toISOString() }
+  // A loss reason belongs to "not interested" only (single-lead path does the same).
+  if (stage !== 'not_interested') updates.loss_reason = null
+
+  const { error } = await supabase.from('leads').update(updates).in('id', changing.map((l) => l.id))
   if (error) return { success: false, error: error.message }
 
-  // One timeline entry per lead recording the bulk change.
+  // One timeline entry per lead, with from/to like the single-lead path.
   await supabase.from('lead_activities').insert(
-    leadIds.map((lead_id) => ({
-      lead_id,
+    changing.map((l) => ({
+      lead_id: l.id,
       type: 'stage_change',
-      notes: `Stage changed to "${stage.replace(/_/g, ' ')}" (bulk action)`,
+      stage_from: l.stage,
+      stage_to: stage,
+      notes: `Stage changed from ${String(l.stage).replace(/_/g, ' ')} to ${stage.replace(/_/g, ' ')} (bulk action)`,
       performed_by: user.id,
     }))
   )
 
+  // Scores depend on stage, and automations hang off stage changes.
+  for (const l of changing) {
+    const activities = await getLeadActivities(l.id)
+    const { data: full } = await supabase.from('leads').select('*').eq('id', l.id).single()
+    if (full) {
+      const { score, temperature } = calculateLeadScore({ lead: full, activities })
+      await supabase.from('leads').update({ score, temperature }).eq('id', l.id)
+    }
+    fireAutomations('lead_stage_changed', {
+      lead: { id: l.id, full_name: l.full_name, phone: l.phone, stage, assigned_to: l.assigned_to, project_id: l.project_id, utm_source: l.utm_source },
+    }, 'lead', l.id)
+  }
+
   revalidatePath('/leads')
-  return { success: true, count: leadIds.length }
+  return { success: true, count: changing.length }
 }
 
 /**
@@ -530,6 +601,10 @@ export async function mergeDuplicate(
     supabase.from('lead_activities').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
     supabase.from('site_visits').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
     supabase.from('clients').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
+    // Left behind, these pointed at the retired lead: inbox threads and broker registrations
+    // would show it as an inactive duplicate.
+    supabase.from('whatsapp_conversations').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
+    supabase.from('broker_lead_registrations').update({ crm_lead_id: keepLeadId }).eq('crm_lead_id', mergeLeadId),
   ])
 
   // Backfill survivor fields that are empty, and keep the higher score.

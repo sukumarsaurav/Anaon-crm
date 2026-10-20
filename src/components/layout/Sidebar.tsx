@@ -8,7 +8,7 @@ import {
   Users, Building2, LayoutDashboard, MessageSquare,
   UserCheck, UsersRound, BarChart3, Settings, ChevronLeft,
   Zap, Briefcase, LogOut, BookOpen, Handshake,
-  HardHat, Globe, PenLine, Megaphone, Scale, CreditCard,
+  HardHat, Megaphone, Scale, CreditCard,
   Smartphone, ShieldCheck, ClipboardList, X, Images, ChevronDown,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -59,8 +59,6 @@ const navGroups = [
   {
     label: 'Platform',
     items: [
-      { label: 'Blog', href: '/blog', icon: PenLine },
-      { label: 'Website', href: '/website/careers', icon: Globe },
       { label: 'Mobile', href: '/mobile', icon: Smartphone },
       { label: 'Security', href: '/admin/security', icon: ShieldCheck },
       { label: 'Audit Log', href: '/audit-logs', icon: ClipboardList },

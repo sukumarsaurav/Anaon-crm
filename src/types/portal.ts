@@ -40,6 +40,7 @@ export interface PaymentExtensionRequest {
   created_at: string
   updated_at: string
   // joined
+  client?: { id: string; full_name: string; phone: string } | null
   payment?: { id: string; installment_number: number; amount_due: number; due_date: string } | null
   reviewer?: { id: string; full_name: string } | null
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { createComplaint, updateComplaintStatus } from '@/lib/clients/actions'
+import { createComplaint, updateComplaintStatus, assignComplaint } from '@/lib/clients/actions'
 import {
   COMPLAINT_STATUS_CONFIG, COMPLAINT_PRIORITY_CONFIG,
   COMPLAINT_CATEGORY_LABELS,
@@ -15,9 +15,10 @@ interface Props {
   bookings:   Array<{ id: string; booking_number: string }>
   complaints: Complaint[]
   canManage:  boolean
+  staff?:     Array<{ id: string; full_name: string }>
 }
 
-export default function ComplaintBoard({ clientId, bookings, complaints, canManage }: Props) {
+export default function ComplaintBoard({ clientId, bookings, complaints, canManage, staff = [] }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -154,6 +155,27 @@ export default function ComplaintBoard({ clientId, bookings, complaints, canMana
                       <div className="p-3 bg-green-50 rounded-lg text-sm text-green-700">
                         <span className="font-medium">Resolution:</span> {c.resolution_notes}
                       </div>
+                    )}
+
+                    {canManage && c.status !== 'resolved' && staff.length > 0 && (
+                      <label className="flex items-center gap-2 text-xs text-slate-600">
+                        Assigned to
+                        <select
+                          defaultValue={c.assigned_to ?? ''}
+                          disabled={isPending}
+                          onChange={(e) => {
+                            const advisorId = e.target.value
+                            if (!advisorId) return
+                            startTransition(async () => {
+                              const r = await assignComplaint(c.id, advisorId)
+                              if (!r.success) setError(r.error ?? 'Could not assign')
+                            })
+                          }}
+                          className="border border-slate-300 rounded-lg px-2 py-1 text-xs bg-white">
+                          <option value="">Unassigned</option>
+                          {staff.map((m) => <option key={m.id} value={m.id}>{m.full_name}</option>)}
+                        </select>
+                      </label>
                     )}
 
                     {canManage && c.status !== 'resolved' && (

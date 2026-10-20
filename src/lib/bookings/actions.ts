@@ -27,10 +27,14 @@ export async function createBooking(formData: FormData) {
 
   // Validate plot is still available
   const { data: plot } = await auth.supabase
-    .from('plots').select('status').eq('id', plotId).single()
+    .from('plots').select('status, held_by').eq('id', plotId).single()
   if (!plot) return { success: false, error: 'Plot not found' }
   if (!['available', 'soft_hold'].includes(plot.status)) {
     return { success: false, error: `Plot is not available (status: ${plot.status})` }
+  }
+  // A plot another advisor is holding is theirs until the hold ends.
+  if (plot.status === 'soft_hold' && plot.held_by && plot.held_by !== auth.userId && !isManager(auth.role)) {
+    return { success: false, error: 'This plot is on hold for another advisor' }
   }
 
   const brokerId = formData.get('broker_id') as string || null
@@ -66,12 +70,18 @@ export async function createBooking(formData: FormData) {
     created_by:              auth.userId,
   }).select('id').single()
 
+  if (error?.code === '23505') return { success: false, error: 'This plot already has an active booking' }
   if (error || !data) return { success: false, error: error?.message ?? 'Failed to create booking' }
 
-  // If plot was on soft_hold, keep it; otherwise mark it as soft_hold to prevent double booking
-  if (plot.status === 'available') {
-    await auth.supabase.from('plots').update({ status: 'soft_hold', held_by: auth.userId })
-      .eq('id', plotId)
+  // Hold the plot for the booking until it is approved or rejected. held_until is cleared:
+  // the scheduled hold release would otherwise free the plot while this booking is still
+  // pending approval, and a second booking could take it.
+  const { error: holdErr } = await auth.supabase.from('plots')
+    .update({ status: 'soft_hold', held_by: auth.userId, held_until: null, updated_at: new Date().toISOString() })
+    .eq('id', plotId)
+  if (holdErr) {
+    await auth.supabase.from('bookings').delete().eq('id', data.id)
+    return { success: false, error: `Could not hold the plot: ${holdErr.message}` }
   }
 
   revalidatePath('/bookings')
@@ -105,7 +115,7 @@ export async function approveBooking(bookingId: string, notes?: string) {
   if (bookingError) return { success: false, error: bookingError.message }
 
   // 2. Mark plot as booked
-  await auth.supabase.from('plots').update({
+  const { error: plotError } = await auth.supabase.from('plots').update({
     status:              'booked',
     held_by:             null,
     held_until:          null,
@@ -113,15 +123,28 @@ export async function approveBooking(bookingId: string, notes?: string) {
     booking_date:        new Date().toISOString().split('T')[0],
     updated_at:          new Date().toISOString(),
   }).eq('id', booking.plot_id)
+  if (plotError) {
+    // Don't leave a confirmed booking on a plot that still shows as held/available.
+    await auth.supabase.from('bookings').update({ status: 'pending_approval', approved_by: null, approved_at: null, updated_at: new Date().toISOString() }).eq('id', bookingId)
+    return { success: false, error: `Could not mark the plot as booked: ${plotError.message}` }
+  }
 
   // 3. Update lead to closed_won if linked
   const { data: client } = await auth.supabase
     .from('clients').select('lead_id').eq('id', booking.client_id).single()
   if (client?.lead_id) {
+    const { data: leadBefore } = await auth.supabase.from('leads').select('stage').eq('id', client.lead_id).single()
     await auth.supabase.from('leads').update({
       stage:      'closed_won',
+      loss_reason: null,
       updated_at: new Date().toISOString(),
     }).eq('id', client.lead_id)
+    if (leadBefore && leadBefore.stage !== 'closed_won') {
+      await auth.supabase.from('lead_activities').insert({
+        lead_id: client.lead_id, type: 'stage_change', stage_from: leadBefore.stage, stage_to: 'closed_won',
+        notes: 'Booking approved — lead marked closed won', performed_by: auth.userId,
+      })
+    }
   }
 
   // 4. Create broker commission record
@@ -158,6 +181,11 @@ export async function rejectBooking(bookingId: string, reason: string) {
   const { data: booking } = await auth.supabase
     .from('bookings').select('plot_id, project_id, status').eq('id', bookingId).single()
   if (!booking) return { success: false, error: 'Booking not found' }
+  // Rejecting a confirmed or already-cancelled booking used to free the plot even if another
+  // booking now owned it. Use "Cancel booking" for confirmed ones.
+  if (booking.status !== 'pending_approval') {
+    return { success: false, error: 'Only a booking that is pending approval can be rejected — use Cancel for a confirmed booking' }
+  }
 
   // Release the plot back to available
   await auth.supabase.from('plots').update({
@@ -205,11 +233,17 @@ export async function cancelBooking(bookingId: string, formData: FormData) {
     updated_at:          new Date().toISOString(),
   }).eq('id', booking.plot_id)
 
-  // Void commission if any
+  // Void commission if any — but never one that has already been paid out.
   if (booking.broker_id) {
     await auth.supabase.from('broker_commissions').update({ status: 'voided', updated_at: new Date().toISOString() })
-      .eq('booking_id', bookingId)
+      .eq('booking_id', bookingId).in('status', ['pending', 'approved'])
   }
+
+  // The remaining installments no longer fall due; left as pending they kept producing
+  // overdue reminders to the client (and showed as receivables).
+  await auth.supabase.from('payments')
+    .update({ status: 'waived', notes: 'Booking cancelled', updated_at: new Date().toISOString() })
+    .eq('booking_id', bookingId).in('status', ['pending', 'overdue'])
 
   const { error } = await auth.supabase.from('bookings').update({
     status:               'cancelled',
@@ -297,53 +331,5 @@ export async function uploadAgreement(bookingId: string, url: string, signed: bo
 
   if (error) return { success: false, error: error.message }
   revalidatePath(`/bookings/${bookingId}`)
-  return { success: true }
-}
-
-// ── Commission management ─────────────────────────────────────
-
-export async function approveCommission(commissionId: string) {
-  const auth = await getAuth()
-  if (!auth.ok || !isManager(auth.role)) return { success: false, error: 'Forbidden' }
-
-  const { error } = await auth.supabase.from('broker_commissions').update({
-    status:      'approved',
-    approved_by: auth.userId,
-    approved_at: new Date().toISOString(),
-    updated_at:  new Date().toISOString(),
-  }).eq('id', commissionId)
-
-  if (error) return { success: false, error: error.message }
-
-  // Fire broker_commission_approved automation
-  const { data: commission } = await auth.supabase
-    .from('broker_commissions')
-    .select('broker_id, commission_amount, brokers(full_name, phone)')
-    .eq('id', commissionId)
-    .single()
-  if (commission) {
-    const broker = (commission as any).brokers
-    fireAutomations('broker_commission_approved', {
-      lead: broker ? { id: commission.broker_id, full_name: broker.full_name, phone: broker.phone } : undefined,
-    }, 'broker_commission', commissionId)
-  }
-
-  revalidatePath('/bookings')
-  return { success: true }
-}
-
-export async function markCommissionPaid(commissionId: string, utrNumber: string) {
-  const auth = await getAuth()
-  if (!auth.ok || !isManager(auth.role)) return { success: false, error: 'Forbidden' }
-
-  const { error } = await auth.supabase.from('broker_commissions').update({
-    status:     'paid',
-    paid_at:    new Date().toISOString(),
-    utr_number: utrNumber,
-    updated_at: new Date().toISOString(),
-  }).eq('id', commissionId)
-
-  if (error) return { success: false, error: error.message }
-  revalidatePath('/bookings')
   return { success: true }
 }

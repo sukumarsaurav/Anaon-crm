@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import Link from 'next/link'
 import { getLoanStats, getLoanApplications, getPendingDisbursements } from '@/lib/loans/queries'
 import { LOAN_STAGES, DISBURSEMENT_STATUS_CONFIG } from '@/types/loans'
-import { CreditCard, Building2, Users2, AlertTriangle, CheckCircle2, TrendingUp } from 'lucide-react'
+import { CreditCard, Building2, Users2, AlertTriangle, CheckCircle2, TrendingUp, Plus } from 'lucide-react'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import PageHeader from '@/components/ui/PageHeader'
 import Button from '@/components/ui/Button'
@@ -29,6 +29,9 @@ export default async function LoansPage() {
         subtitle={`${stats.activeApplications} active applications · ${stats.activeBanks} banks · ${stats.activeDSAs} DSAs`}
         actions={
           <>
+            <Button href="/loans/new" size="sm">
+              <Plus size={16} /> New Application
+            </Button>
             <Button href="/loans/banks" variant="secondary" size="sm">
               <Building2 size={16} /> Banks
             </Button>

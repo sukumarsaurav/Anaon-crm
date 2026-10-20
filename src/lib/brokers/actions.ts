@@ -2,7 +2,11 @@
 
 import { revalidatePath } from 'next/cache'
 import { ingestLead, normalizePhone } from '@/lib/leads/ingest'
+import { randomBytes } from 'node:crypto'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
+import { fireAutomations } from '@/lib/automation/engine'
+import { notifyUsers } from '@/lib/notifications/notify'
 import { getProfile } from '@/lib/supabase/getProfile'
 
 async function getAuth() {
@@ -14,6 +18,15 @@ async function getAuth() {
 }
 
 const isManager = (role: string) => ['admin', 'manager'].includes(role)
+
+/** A deactivated broker must not keep a working login. No-op when they never had one. */
+async function setBrokerLoginEnabled(brokerId: string, enabled: boolean) {
+  const svc = createServiceClient()
+  const { data } = await svc.from('brokers').select('auth_user_id').eq('id', brokerId).maybeSingle()
+  if (!data?.auth_user_id) return
+  await svc.auth.admin.updateUserById(data.auth_user_id, { ban_duration: enabled ? 'none' : '876000h' })
+  await svc.from('profiles').update({ is_active: enabled }).eq('id', data.auth_user_id)
+}
 
 // ── Admin: broker management ───────────────────────────────────────
 
@@ -85,6 +98,7 @@ export async function approveBroker(id: string) {
   }).eq('id', id)
 
   if (error) return { success: false, error: error.message }
+  await setBrokerLoginEnabled(id, true)
   revalidatePath(`/brokers/${id}`)
   revalidatePath('/brokers')
   return { success: true }
@@ -116,42 +130,62 @@ export async function deactivateBroker(id: string) {
   }).eq('id', id)
 
   if (error) return { success: false, error: error.message }
+  await setBrokerLoginEnabled(id, false)
   revalidatePath(`/brokers/${id}`)
   revalidatePath('/brokers')
   return { success: true }
 }
 
-// ── Admin: link broker to auth user ───────────────────────────────
+// ── Admin: broker portal access ───────────────────────────────────
 
-export async function linkBrokerAuthUser(brokerId: string, email: string) {
+/**
+ * Creates the broker's portal login. Until now nothing could: `linkBrokerAuthUser` only linked
+ * an *existing* profile by email (so it could attach a staff account to a broker), the broker
+ * portal gate checks `role === 'broker'` — a value that did not exist — and the login route
+ * turned every non-staff role away. The account is created with `app_metadata.role = 'broker'`
+ * (service-role-only), which `handle_new_user()` turns into a broker profile.
+ *
+ * Returns a temporary password ONCE; it is not stored anywhere readable.
+ */
+export async function grantBrokerPortalAccess(brokerId: string) {
   const auth = await getAuth()
-  if (!auth.ok || !isManager(auth.role)) return { success: false, error: 'Forbidden' }
+  if (!auth.ok || !isManager(auth.role)) return { success: false as const, error: 'Forbidden' }
 
-  // Check if user already exists
-  const { data: existing } = await auth.supabase
-    .from('profiles')
-    .select('id')
-    .eq('email', email)
-    .single()
+  const svc = createServiceClient()
+  const { data: broker } = await svc.from('brokers')
+    .select('id, full_name, email, phone, status, auth_user_id').eq('id', brokerId).single()
 
-  if (existing) {
-    // Update broker to link auth user
-    const { data: userRow } = await auth.supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', email)
-      .single()
+  if (!broker) return { success: false as const, error: 'Broker not found' }
+  if (broker.status !== 'approved') return { success: false as const, error: 'Approve the broker first' }
+  if (broker.auth_user_id) return { success: false as const, error: 'This broker already has portal access' }
+  if (!broker.email) return { success: false as const, error: 'Add an email address to the broker first' }
 
-    if (userRow) {
-      // Linking via brokers.auth_user_id is what grants portal access. (This also set
-      // profiles.role = 'broker', which isn't a user_role value — the update always
-      // failed — and if it had worked it would have demoted a staff account.)
-      await auth.supabase.from('brokers').update({ auth_user_id: userRow.id, updated_at: new Date().toISOString() }).eq('id', brokerId)
-    }
+  const tempPassword = `Br-${randomBytes(9).toString('base64url')}7!`
+  const { data: created, error } = await svc.auth.admin.createUser({
+    email: broker.email,
+    password: tempPassword,
+    email_confirm: true,
+    app_metadata: { role: 'broker' },
+    user_metadata: { full_name: broker.full_name },
+  })
+  if (error || !created.user) {
+    // An existing account is never taken over: it could be a staff login.
+    const exists = /already|registered|exists/i.test(error?.message ?? '')
+    return { success: false as const, error: exists ? 'That email already has an account — use a different email for the broker.' : (error?.message ?? 'Could not create the login') }
+  }
+
+  // The trigger sets role from app_metadata; make it certain, and keep contact details.
+  await svc.from('profiles').update({ role: 'broker', phone: broker.phone, full_name: broker.full_name, is_active: true }).eq('id', created.user.id)
+  const { error: linkErr } = await svc.from('brokers')
+    .update({ auth_user_id: created.user.id, onboarded_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq('id', brokerId)
+  if (linkErr) {
+    await svc.auth.admin.deleteUser(created.user.id)
+    return { success: false as const, error: linkErr.message }
   }
 
   revalidatePath(`/brokers/${brokerId}`)
-  return { success: true }
+  return { success: true as const, email: broker.email, tempPassword }
 }
 
 // ── Admin: commission batch management ─────────────────────────────
@@ -167,6 +201,32 @@ export async function approveCommissionBatch(commissionIds: string[]) {
     .eq('status', 'pending')
 
   if (error) return { success: false, error: error.message }
+
+  // broker_commission_approved automation + a notification for brokers with portal access.
+  // (Before, only an unused single-row action fired it, so the trigger never ran.)
+  const { data: approved } = await auth.supabase
+    .from('broker_commissions')
+    .select('id, broker_id, commission_amount, brokers(full_name, phone, auth_user_id)')
+    .in('id', commissionIds)
+    .eq('status', 'approved')
+  for (const c of approved ?? []) {
+    const broker = (Array.isArray(c.brokers) ? c.brokers[0] : c.brokers) as
+      { full_name: string; phone: string | null; auth_user_id: string | null } | null
+    fireAutomations('broker_commission_approved', {
+      lead: broker ? { id: c.broker_id, full_name: broker.full_name, phone: broker.phone ?? '' } : undefined,
+    }, 'broker_commission', c.id)
+    if (broker?.auth_user_id) {
+      await notifyUsers([broker.auth_user_id], {
+        title: 'Commission approved',
+        message: `Your commission of ₹${Number(c.commission_amount ?? 0).toLocaleString('en-IN')} has been approved.`,
+        type: 'commission',
+        related_type: 'broker_commission',
+        related_id: c.id,
+        action_url: '/broker-portal/commissions',
+      })
+    }
+  }
+
   revalidatePath('/brokers/commissions')
   return { success: true }
 }

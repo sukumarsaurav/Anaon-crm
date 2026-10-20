@@ -422,8 +422,10 @@ export async function getOutstandingReport() {
     ...p,
     daysOverdue: p.due_date < today ? Math.floor((new Date(today).getTime() - new Date(p.due_date).getTime()) / 86400000) : 0,
   }))
-  const total = rows.reduce((s, p) => s + Number(p.amount_due ?? 0), 0)
-  const overdue = rows.filter(p => p.daysOverdue > 0).reduce((s, p) => s + Number(p.amount_due ?? 0), 0)
+  // What is still owed: a part-paid installment stays listed, for its balance only.
+  const owed = (p: { amount_due?: unknown; amount_paid?: unknown }) => Math.max(0, Number(p.amount_due ?? 0) - Number(p.amount_paid ?? 0))
+  const total = rows.reduce((s, p) => s + owed(p), 0)
+  const overdue = rows.filter(p => p.daysOverdue > 0).reduce((s, p) => s + owed(p), 0)
   return { payments: rows, total, overdue }
 }
 

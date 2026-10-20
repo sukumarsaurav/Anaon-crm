@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
+import { eraseSubject } from '@/lib/legal/erasure'
 import type { LegalDocumentType, DeletionRequestStatus } from '@/types/legal'
 
 async function getAuth() {
@@ -155,11 +156,6 @@ export async function updateDeletionRequestStatus(
     processed_by: auth.userId,
   }
   if (notes) update.admin_notes = notes
-  if (status === 'completed') {
-    update.completed_at = new Date().toISOString()
-    // Anonymize data if completed
-    // Note: actual anonymization done here in production
-  }
 
   const { data: req } = await auth.supabase
     .from('data_deletion_requests')
@@ -167,26 +163,25 @@ export async function updateDeletionRequestStatus(
     .eq('id', id)
     .single()
 
+  // Erase first and only mark the request completed if every step worked, so a failure
+  // can be retried instead of being recorded as done.
+  if (status === 'completed') {
+    if (!req?.requester_id || (req.requester_type !== 'lead' && req.requester_type !== 'client')) {
+      return { success: false, error: 'This request is not linked to a lead or client record, so nothing can be erased automatically.' }
+    }
+    const result = await eraseSubject(req.requester_type, req.requester_id)
+    if (!result.ok) {
+      return { success: false, error: `Erasure incomplete — request left open. ${result.errors.join('; ')}` }
+    }
+    update.completed_at = new Date().toISOString()
+    update.admin_notes = [notes, `Erased: ${result.summary.join('; ')}`].filter(Boolean).join('\n')
+  }
+
   const { error } = await auth.supabase.from('data_deletion_requests')
     .update(update)
     .eq('id', id)
 
   if (error) return { success: false, error: error.message }
-
-  // If completed, anonymize the requester's record
-  if (status === 'completed' && req?.requester_id) {
-    const anonymized = {
-      full_name: '[Deleted]',
-      phone:     null,
-      email:     null,
-      updated_at: new Date().toISOString(),
-    }
-    if (req.requester_type === 'lead') {
-      await auth.supabase.from('leads').update({ ...anonymized, is_active: false }).eq('id', req.requester_id)
-    } else if (req.requester_type === 'client') {
-      await auth.supabase.from('clients').update(anonymized).eq('id', req.requester_id)
-    }
-  }
 
   revalidatePath('/legal/privacy')
   return { success: true }

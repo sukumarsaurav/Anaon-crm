@@ -11,7 +11,7 @@ import {
   Users, Flame, Clock, CalendarCheck,
   Building2, CheckCircle2, AlertTriangle, CreditCard,
   BarChart2, Megaphone, UserCheck, Briefcase,
-  Scale, Bot, Globe, MessageCircle,
+  Scale, Bot, MessageCircle,
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { Card, StatCard } from '@/components/ui/Card'
@@ -32,7 +32,6 @@ const MODULES = [
   { href: '/legal',        label: 'Legal',        icon: Scale,        color: 'text-slate-600',  bg: 'bg-slate-100'  },
   { href: '/automation',   label: 'Automation',   icon: Bot,          color: 'text-teal-600',   bg: 'bg-teal-50'    },
   { href: '/whatsapp',     label: 'WhatsApp',     icon: MessageCircle,color: 'text-emerald-600', bg: 'bg-emerald-50'},
-  { href: '/website',      label: 'Website',      icon: Globe,        color: 'text-sky-600',    bg: 'bg-sky-50'     },
 ]
 
 export default async function DashboardHome() {

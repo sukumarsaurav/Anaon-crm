@@ -239,15 +239,17 @@ export async function softHoldPlot(plotId: string, leadId?: string) {
   const holdHours = project?.hold_duration_hours ?? 48
   const expiresAt = new Date(Date.now() + holdHours * 60 * 60 * 1000).toISOString()
 
-  // Update plot
-  const { error } = await auth.supabase.from('plots').update({
+  // Claim the plot only if it is still available. The status was read above without a lock, so
+  // two advisors pressing Hold together could both succeed and the second silently took over.
+  const { data: claimed, error } = await auth.supabase.from('plots').update({
     status:     'soft_hold',
     held_by:    auth.userId,
     held_until: expiresAt,
     updated_at: new Date().toISOString(),
-  }).eq('id', plotId)
+  }).eq('id', plotId).eq('status', 'available').select('id')
 
   if (error) return { success: false, error: error.message }
+  if (!claimed?.length) return { success: false, error: 'Someone else just took this plot' }
 
   // Log the hold
   await auth.supabase.from('plot_holds_log').insert({
@@ -277,6 +279,14 @@ export async function releaseHold(plotId: string, outcome: 'released' | 'booked'
   // Only the holder or admin/manager can release
   if (plot.held_by !== auth.userId && !['admin', 'manager'].includes(auth.role)) {
     return { success: false, error: 'You cannot release this hold' }
+  }
+
+  // A plot with a booking waiting for approval must go through reject/cancel, or it would be
+  // free to sell again while the first booking could still be approved.
+  const { count: pendingBookings } = await auth.supabase
+    .from('bookings').select('id', { count: 'exact', head: true }).eq('plot_id', plotId).eq('status', 'pending_approval')
+  if ((pendingBookings ?? 0) > 0) {
+    return { success: false, error: 'A booking for this plot is waiting for approval — reject that booking to release the plot' }
   }
 
   const { error } = await auth.supabase.from('plots').update({
