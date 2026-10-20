@@ -54,8 +54,12 @@
 - **Polish batch (`b241748`, deployed):**
   - #15: kanban drag-and-drop with optimistic move and revert, plus a cap banner. Verified: 25 draggable cards; no drop was made on live data.
   - P3: real unread count on the bell, Delete moved off the action row, Interest empty state, `get_lead_stats` polled every 5 min.
+- **DB policy clean-up applied (2026-10-20, owner-approved)**, migration `20261021110000_rls_plots_staff_and_split_write_policies`:
+  - `plots` updates are now staff-only. Before, any authenticated user, broker logins included, could update any plot.
+  - The no-op attendance policy is dropped, and the write(ALL) policies on 8 reference tables are split.
+  - Verified in a rolled-back transaction: a non-staff user can no longer update plots (reads unchanged); advisors and telecallers still can; projects stay admin/manager-only.
+  - `multiple_permissive_policies` went from 26 to 13. The rest are OR-of-different-conditions policies on broker, HR and CMS tables; merging them is a security-review task, not a mechanical one.
 - **Still open:**
-  - DB policy clean-up, awaiting owner approval. It includes a security fix: `plots_hold` lets any authenticated user, broker logins included, update any column of any plot.
   - ⌘K lazy-load: skipped, because `supabase-js` is still needed by the bell and badges, so it would save little.
 - **Not a regression:** a missing lead returns HTTP 200 with the not-found screen and `noindex`, because `leads/loading.tsx` streams the response before `notFound()` runs.
 
