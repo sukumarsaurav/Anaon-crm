@@ -51,6 +51,12 @@
 - **#13:** `%s · ANON CRM` template; 87 static titles via `scripts/codemods/page-titles.py`; record names on lead, client, booking, project and chat pages. Verified live.
 - **#14:** server-side inbox search, "N new messages" pill instead of a forced scroll, re-mark read on tab focus, plural fix, and a shorter reply placeholder.
 - **Phone-width sweep after deploy:** all 24 main pages are ≤375px. The last offender, the /brokers status tabs at 412px, is fixed, along with the same control on commissions.
+- **Polish batch (`b241748`, deployed):**
+  - #15: kanban drag-and-drop with optimistic move and revert, plus a cap banner. Verified: 25 draggable cards; no drop was made on live data.
+  - P3: real unread count on the bell, Delete moved off the action row, Interest empty state, `get_lead_stats` polled every 5 min.
+- **Still open:**
+  - DB policy clean-up, awaiting owner approval. It includes a security fix: `plots_hold` lets any authenticated user, broker logins included, update any column of any plot.
+  - ⌘K lazy-load: skipped, because `supabase-js` is still needed by the bell and badges, so it would save little.
 - **Not a regression:** a missing lead returns HTTP 200 with the not-found screen and `noindex`, because `leads/loading.tsx` streams the response before `notFound()` runs.
 
 ## Summary
