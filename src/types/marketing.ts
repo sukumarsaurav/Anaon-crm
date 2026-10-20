@@ -38,6 +38,8 @@ export interface CampaignSpendLog {
   clicks: number
   reach: number
   notes: string | null
+  /** 'opening' = the spend that was recorded before daily logging began. */
+  kind: 'daily' | 'opening'
   logged_by: string | null
   created_at: string
 }
@@ -46,8 +48,10 @@ export interface CampaignROI {
   utm_source: string
   utm_campaign: string | null
   platform: string | null
+  /** null = leads carry this tag/name but no campaign matches it ("unlinked"). */
   campaign_id: string | null
   campaign_name: string | null
+  status: CampaignStatus | null
   leads_count: number
   site_visits_count: number
   bookings_count: number
@@ -62,7 +66,8 @@ export interface CampaignROI {
 }
 
 export interface SourceROI {
-  utm_source: string
+  /** Normalised channel key (marketing_source_key in SQL): facebook, google, 99acres, walk_in… */
+  source: string
   leads_count: number
   site_visits_count: number
   bookings_count: number
@@ -85,6 +90,26 @@ export const PLATFORM_CONFIG: Record<CampaignPlatform, { label: string; color: s
   housing:       { label: 'Housing.com',   color: 'text-purple-700', bg: 'bg-purple-50' },
   other:         { label: 'Other',         color: 'text-slate-700',   bg: 'bg-slate-100' },
 }
+
+// Labels for the normalised source keys in the ROI-by-source table.
+const SOURCE_KEY_LABELS: Record<string, string> = {
+  facebook: 'Facebook', instagram: 'Instagram', google: 'Google', youtube: 'YouTube',
+  whatsapp: 'WhatsApp', '99acres': '99acres', magicbricks: 'MagicBricks', housing: 'Housing.com',
+  justdial: 'JustDial', indiamart: 'IndiaMart', linkedin: 'LinkedIn', website: 'Website',
+  manual: 'Manual Entry', walk_in: 'Walk-in', referral: 'Referral', ivr: 'IVR / Missed Call',
+  portal: 'Other Portal', broker: 'Broker', unknown: 'Unknown',
+}
+
+export function sourceLabel(key: string): string {
+  return SOURCE_KEY_LABELS[key] ?? key.replace(/[_-]+/g, ' ').replace(/^\w/, (c) => c.toUpperCase())
+}
+
+export function sourceStyle(key: string): { color: string; bg: string } {
+  const platform = key === '99acres' ? 'portal99acres' : key
+  return PLATFORM_CONFIG[platform as CampaignPlatform] ?? PLATFORM_CONFIG.other
+}
+
+export const CAMPAIGN_STATUSES: CampaignStatus[] = ['active', 'paused', 'completed', 'archived']
 
 export const CAMPAIGN_PLATFORMS: { value: CampaignPlatform; label: string }[] = [
   { value: 'facebook',      label: 'Facebook' },

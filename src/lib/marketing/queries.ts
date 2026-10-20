@@ -1,5 +1,28 @@
 import { createClient } from '@/lib/supabase/server'
-import type { MarketingCampaign, CampaignROI, SourceROI } from '@/types/marketing'
+import type { MarketingCampaign, CampaignROI, CampaignStatus, SourceROI } from '@/types/marketing'
+
+/**
+ * Marketing ROI. The aggregation runs in SQL (marketing_roi_by_source / _by_campaign /
+ * marketing_headline): pulling raw lead/visit/booking rows into JS was capped at PostgREST's
+ * row limit and used a different "site visit" and "paid" definition in every table.
+ *
+ * Shared definitions (see the 20261022100000_campaign_fixes migration):
+ *   - leads:        live, non-duplicate leads created in the window
+ *   - site visits:  leads with at least one completed visit in the window
+ *   - bookings:     confirmed bookings dated in the window, via client → lead
+ *   - spend:        spend logs dated in the window (all-time = campaign.spend)
+ * Dates are IST calendar days, inclusive; omit both for all time.
+ */
+export interface DateRange {
+  from?: string
+  to?: string
+}
+
+const rangeArgs = ({ from, to }: DateRange) => ({ p_from: from || null, p_to: to || null })
+
+const rate = (num: number, den: number) => (den > 0 ? Math.round((num / den) * 1000) / 10 : 0)
+const perUnit = (spend: number, n: number) => (spend > 0 && n > 0 ? Math.round(spend / n) : null)
+const roas = (revenue: number, spend: number) => (spend > 0 ? Math.round((revenue / spend) * 100) / 100 : null)
 
 export async function getMarketingCampaigns(): Promise<MarketingCampaign[]> {
   const supabase = await createClient()
@@ -21,256 +44,85 @@ export async function getCampaignById(id: string): Promise<MarketingCampaign | n
   return data as MarketingCampaign | null
 }
 
-// Source-level ROI: group by utm_source across all campaigns
-export async function getSourceROI(
-  fromDate?: string,
-  toDate?: string,
-): Promise<SourceROI[]> {
+export async function getSourceROI(range: DateRange = {}): Promise<SourceROI[]> {
   const supabase = await createClient()
+  const { data, error } = await supabase.rpc('marketing_roi_by_source', rangeArgs(range))
+  if (error) throw error
 
-  // Build date filters
-  const dateFilter = (col: string) => {
-    const filters: string[] = []
-    if (fromDate) filters.push(`${col}.gte.${fromDate}`)
-    if (toDate) filters.push(`${col}.lte.${toDate}`)
-    return filters
-  }
-
-  // Fetch leads grouped by utm_source
-  let leadsQuery = supabase
-    .from('leads')
-    .select('utm_source, id')
-    .not('utm_source', 'is', null)
-  if (fromDate) leadsQuery = leadsQuery.gte('created_at', fromDate)
-  if (toDate) leadsQuery = leadsQuery.lte('created_at', toDate)
-  const { data: leads } = await leadsQuery
-
-  // Fetch site visits with lead utm_source join
-  let visitsQuery = supabase
-    .from('site_visits')
-    .select('id, lead_id, leads!inner(utm_source)')
-  if (fromDate) visitsQuery = visitsQuery.gte('created_at', fromDate)
-  if (toDate) visitsQuery = visitsQuery.lte('created_at', toDate)
-  const { data: visits } = await visitsQuery
-
-  // Fetch bookings with lead utm_source join (via client)
-  let bookingsQuery = supabase
-    .from('bookings')
-    .select('id, total_sale_value, clients!inner(leads!inner(utm_source))')
-    .eq('status', 'confirmed')
-  if (fromDate) bookingsQuery = bookingsQuery.gte('booking_date', fromDate)
-  if (toDate) bookingsQuery = bookingsQuery.lte('booking_date', toDate)
-  const { data: bookings } = await bookingsQuery
-
-  // Fetch spend per utm_source via campaigns
-  const { data: campaigns } = await supabase
-    .from('marketing_campaigns')
-    .select('utm_source, spend')
-    .not('utm_source', 'is', null)
-
-  // Aggregate
-  const sources = new Map<string, SourceROI>()
-
-  const getOrCreate = (src: string) => {
-    if (!sources.has(src)) {
-      sources.set(src, {
-        utm_source: src,
-        leads_count: 0,
-        site_visits_count: 0,
-        bookings_count: 0,
-        revenue: 0,
-        spend: 0,
-        cpl: null,
-        roas: null,
-        lead_to_visit_rate: 0,
-        visit_to_booking_rate: 0,
-      })
-    }
-    return sources.get(src)!
-  }
-
-  for (const lead of leads ?? []) {
-    if (lead.utm_source) getOrCreate(lead.utm_source).leads_count++
-  }
-
-  for (const visit of visits ?? []) {
-    const src = (visit as any).leads?.utm_source
-    if (src) getOrCreate(src).site_visits_count++
-  }
-
-  for (const booking of bookings ?? []) {
-    const src = (booking as any).clients?.leads?.utm_source
-    if (src) {
-      const row = getOrCreate(src)
-      row.bookings_count++
-      row.revenue += Number(booking.total_sale_value ?? 0)
-    }
-  }
-
-  for (const c of campaigns ?? []) {
-    if (c.utm_source) getOrCreate(c.utm_source).spend += Number(c.spend ?? 0)
-  }
-
-  // Calculate derived metrics
-  for (const row of sources.values()) {
-    row.cpl = row.spend > 0 && row.leads_count > 0 ? Math.round(row.spend / row.leads_count) : null
-    row.roas = row.spend > 0 ? Math.round((row.revenue / row.spend) * 100) / 100 : null
-    row.lead_to_visit_rate = row.leads_count > 0
-      ? Math.round((row.site_visits_count / row.leads_count) * 1000) / 10
-      : 0
-    row.visit_to_booking_rate = row.site_visits_count > 0
-      ? Math.round((row.bookings_count / row.site_visits_count) * 1000) / 10
-      : 0
-  }
-
-  return Array.from(sources.values()).sort((a, b) => b.leads_count - a.leads_count)
+  return ((data ?? []) as Record<string, unknown>[])
+    .map((r) => {
+      const leads = Number(r.leads_count), visits = Number(r.site_visits_count)
+      const bookings = Number(r.bookings_count), revenue = Number(r.revenue), spend = Number(r.spend)
+      return {
+        source: r.source_key as string,
+        leads_count: leads,
+        site_visits_count: visits,
+        bookings_count: bookings,
+        revenue,
+        spend,
+        cpl: perUnit(spend, leads),
+        roas: roas(revenue, spend),
+        lead_to_visit_rate: rate(visits, leads),
+        visit_to_booking_rate: rate(bookings, visits),
+      }
+    })
+    .sort((a, b) => b.leads_count - a.leads_count || b.spend - a.spend)
 }
 
-// Campaign-level ROI: each campaign matched by utm_campaign
-export async function getCampaignROI(fromDate?: string, toDate?: string): Promise<CampaignROI[]> {
+export async function getCampaignROI(range: DateRange = {}): Promise<CampaignROI[]> {
   const supabase = await createClient()
+  const { data, error } = await supabase.rpc('marketing_roi_by_campaign', rangeArgs(range))
+  if (error) throw error
 
-  const { data: campaigns } = await supabase
-    .from('marketing_campaigns')
-    .select('id, name, platform, utm_source, utm_campaign, spend')
-    .order('created_at', { ascending: false })
-
-  let leadsQuery = supabase
-    .from('leads')
-    .select('utm_source, utm_campaign, id')
-    .not('utm_campaign', 'is', null)
-  if (fromDate) leadsQuery = leadsQuery.gte('created_at', fromDate)
-  if (toDate) leadsQuery = leadsQuery.lte('created_at', toDate)
-  const { data: leads } = await leadsQuery
-
-  let visitsQuery = supabase
-    .from('site_visits')
-    .select('id, leads!inner(utm_campaign, utm_source)')
-  if (fromDate) visitsQuery = visitsQuery.gte('created_at', fromDate)
-  if (toDate) visitsQuery = visitsQuery.lte('created_at', toDate)
-  const { data: visits } = await visitsQuery
-
-  let bookingsQuery = supabase
-    .from('bookings')
-    .select('id, total_sale_value, clients!inner(leads!inner(utm_campaign, utm_source))')
-    .eq('status', 'confirmed')
-  if (fromDate) bookingsQuery = bookingsQuery.gte('booking_date', fromDate)
-  if (toDate) bookingsQuery = bookingsQuery.lte('booking_date', toDate)
-  const { data: bookings } = await bookingsQuery
-
-  // Build a campaign map keyed by utm_campaign
-  const campaignMap = new Map<string, CampaignROI>()
-
-  for (const c of campaigns ?? []) {
-    const key = c.utm_campaign ?? `campaign:${c.id}`
-    if (!campaignMap.has(key)) {
-      campaignMap.set(key, {
-        utm_source: c.utm_source ?? '',
-        utm_campaign: c.utm_campaign,
-        platform: c.platform,
-        campaign_id: c.id,
-        campaign_name: c.name,
-        leads_count: 0,
-        site_visits_count: 0,
-        bookings_count: 0,
-        revenue: 0,
-        spend: 0,
-        cpl: null, cpv: null, cpb: null, roas: null,
-        lead_to_visit_rate: 0,
-        visit_to_booking_rate: 0,
-      })
-    }
-    campaignMap.get(key)!.spend += Number(c.spend ?? 0)
-  }
-
-  // Also create rows for utm_campaigns not linked to a campaign record
-  for (const lead of leads ?? []) {
-    const key = lead.utm_campaign!
-    if (!campaignMap.has(key)) {
-      campaignMap.set(key, {
-        utm_source: lead.utm_source ?? '',
-        utm_campaign: key,
-        platform: null,
-        campaign_id: null,
-        campaign_name: null,
-        leads_count: 0,
-        site_visits_count: 0,
-        bookings_count: 0,
-        revenue: 0,
-        spend: 0,
-        cpl: null, cpv: null, cpb: null, roas: null,
-        lead_to_visit_rate: 0,
-        visit_to_booking_rate: 0,
-      })
-    }
-    campaignMap.get(key)!.leads_count++
-  }
-
-  for (const visit of visits ?? []) {
-    const utm = (visit as any).leads?.utm_campaign
-    if (utm && campaignMap.has(utm)) campaignMap.get(utm)!.site_visits_count++
-  }
-
-  for (const booking of bookings ?? []) {
-    const utm = (booking as any).clients?.leads?.utm_campaign
-    if (utm && campaignMap.has(utm)) {
-      const row = campaignMap.get(utm)!
-      row.bookings_count++
-      row.revenue += Number(booking.total_sale_value ?? 0)
-    }
-  }
-
-  for (const row of campaignMap.values()) {
-    row.cpl = row.spend > 0 && row.leads_count > 0 ? Math.round(row.spend / row.leads_count) : null
-    row.cpv = row.spend > 0 && row.site_visits_count > 0 ? Math.round(row.spend / row.site_visits_count) : null
-    row.cpb = row.spend > 0 && row.bookings_count > 0 ? Math.round(row.spend / row.bookings_count) : null
-    row.roas = row.spend > 0 ? Math.round((row.revenue / row.spend) * 100) / 100 : null
-    row.lead_to_visit_rate = row.leads_count > 0
-      ? Math.round((row.site_visits_count / row.leads_count) * 1000) / 10
-      : 0
-    row.visit_to_booking_rate = row.site_visits_count > 0
-      ? Math.round((row.bookings_count / row.site_visits_count) * 1000) / 10
-      : 0
-  }
-
-  return Array.from(campaignMap.values()).sort((a, b) => b.leads_count - a.leads_count)
+  return ((data ?? []) as Record<string, unknown>[])
+    .map((r) => {
+      const leads = Number(r.leads_count), visits = Number(r.site_visits_count)
+      const bookings = Number(r.bookings_count), revenue = Number(r.revenue), spend = Number(r.spend)
+      return {
+        utm_source: (r.utm_source as string | null) ?? '',
+        utm_campaign: r.utm_campaign as string | null,
+        platform: r.platform as string | null,
+        campaign_id: r.campaign_id as string | null,
+        campaign_name: r.campaign_name as string | null,
+        status: r.status as CampaignStatus | null,
+        leads_count: leads,
+        site_visits_count: visits,
+        bookings_count: bookings,
+        revenue,
+        spend,
+        cpl: perUnit(spend, leads),
+        cpv: perUnit(spend, visits),
+        cpb: perUnit(spend, bookings),
+        roas: roas(revenue, spend),
+        lead_to_visit_rate: rate(visits, leads),
+        visit_to_booking_rate: rate(bookings, visits),
+      }
+    })
+    // Linked campaigns first, by activity; unlinked tags after them.
+    .sort((a, b) =>
+      Number(b.campaign_id !== null) - Number(a.campaign_id !== null)
+      || b.leads_count - a.leads_count
+      || b.spend - a.spend)
 }
 
-export async function getMarketingStats() {
+export async function getMarketingStats(range: DateRange = {}) {
   const supabase = await createClient()
-  const [campaigns, leads, visits, bookings, clientLeads] = await Promise.all([
-    supabase.from('marketing_campaigns').select('id, spend, status'),
-    supabase.from('leads').select('id, utm_source').not('utm_source', 'is', null),
-    supabase.from('site_visits').select('id'),
-    supabase.from('bookings').select('id, client_id, total_sale_value').eq('status', 'confirmed'),
-    supabase.from('clients').select('id, lead_id'),
-  ])
+  const { data, error } = await supabase.rpc('marketing_headline', rangeArgs(range))
+  if (error) throw error
+  // A set-returning function: always exactly one row.
+  const h = ((Array.isArray(data) ? data[0] : data) ?? {}) as Record<string, unknown>
 
-  // Revenue and bookings are counted only when the buyer came from a PAID channel, the same basis as
-  // the by-source and by-campaign tables. The headline used every confirmed booking (Rs 1.6 Cr) against
-  // paid spend, giving a 42x ROAS next to tables that showed Rs 19.5 L.
-  const PAID = ['facebook', 'instagram', 'google']
-  const sourceByLead = new Map((leads.data ?? []).map((l) => [l.id, l.utm_source as string | null]))
-  const leadByClient = new Map((clientLeads.data ?? []).map((c) => [c.id, c.lead_id as string | null]))
-  const paidBookings = (bookings.data ?? []).filter((b) => {
-    const leadId = leadByClient.get(b.client_id)
-    return leadId ? PAID.includes(sourceByLead.get(leadId) ?? '') : false
-  })
-
-  const totalSpend = (campaigns.data ?? []).reduce((s, c) => s + Number(c.spend ?? 0), 0)
-  const activeCampaigns = (campaigns.data ?? []).filter(c => c.status === 'active').length
-  const paidLeads = (leads.data ?? []).filter(l => ['facebook', 'instagram', 'google'].includes(l.utm_source ?? '')).length
-  const totalRevenue = paidBookings.reduce((s, b) => s + Number(b.total_sale_value ?? 0), 0)
-
+  const totalSpend = Number(h.total_spend)
+  const paidLeads = Number(h.paid_leads)
+  const totalRevenue = Number(h.paid_revenue)
   return {
     totalSpend,
-    activeCampaigns,
-    totalLeads: (leads.data ?? []).length,
+    activeCampaigns: Number(h.active_campaigns),
     paidLeads,
-    totalSiteVisits: (visits.data ?? []).length,
-    totalBookings: paidBookings.length,
+    paidSiteVisits: Number(h.paid_site_visits),
+    totalBookings: Number(h.paid_bookings),
     totalRevenue,
-    overallROAS: totalSpend > 0 ? Math.round((totalRevenue / totalSpend) * 100) / 100 : null,
-    overallCPL: totalSpend > 0 && paidLeads > 0 ? Math.round(totalSpend / paidLeads) : null,
+    overallROAS: roas(totalRevenue, totalSpend),
+    overallCPL: perUnit(totalSpend, paidLeads),
   }
 }

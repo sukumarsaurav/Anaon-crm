@@ -21,6 +21,9 @@ export interface NormalizedLeadInput {
   utm_source?: string | null
   utm_medium?: string | null
   utm_campaign?: string | null
+  /** Meta ad-manager campaign ID: matches the lead to a marketing campaign exactly. */
+  meta_campaign_id?: string | null
+  ad_set_name?: string | null
   project_id?: string | null
   /** The channel partner who brought the lead (broker portal). */
   broker_id?: string | null
@@ -112,6 +115,8 @@ export async function ingestLead(input: NormalizedLeadInput): Promise<IngestResu
     utm_medium: input.utm_medium || null,
     utm_campaign: input.utm_campaign || null,
     campaign_name: input.campaign_name || null,
+    meta_campaign_id: input.meta_campaign_id || null,
+    ad_set_name: input.ad_set_name || null,
     project_id: input.project_id || null,
     broker_id: input.broker_id || null,
     assigned_to: assignedTo,

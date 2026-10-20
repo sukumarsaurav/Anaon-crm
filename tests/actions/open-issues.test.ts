@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { NextRequest } from 'next/server'
 import { createPayrollRun } from '@/lib/hr/actions'
 import { getMarketingStats } from '@/lib/marketing/queries'
-import { createCampaign } from '@/lib/marketing/actions'
+import { createCampaign, updateCampaign, logCampaignSpend, updateCampaignStatus } from '@/lib/marketing/actions'
 import { createTemplate } from '@/lib/whatsapp/actions'
 
 const fd = (o: Record<string, string>) => { const f = new FormData(); for (const [k, v] of Object.entries(o)) f.set(k, v); return f }
@@ -32,16 +32,55 @@ describe('payroll: approved unpaid leave is loss of pay', () => {
 })
 
 describe('marketing headline numbers use the same basis as the tables', () => {
-  it('only bookings from paid channels count toward revenue, bookings and ROAS', async () => {
-    resetWorld({
-      marketing_campaigns: [{ id: 'c', spend: 100000, status: 'active' }],
-      leads: [{ id: 'L1', utm_source: 'facebook' }, { id: 'L2', utm_source: 'referral' }, { id: 'L3', utm_source: 'google' }],
-      site_visits: [{ id: 'v' }],
-      clients: [{ id: 'C1', lead_id: 'L1' }, { id: 'C2', lead_id: 'L2' }, { id: 'C3', lead_id: null }],
-      bookings: [{ id: 'B1', client_id: 'C1', total_sale_value: 2000000, status: 'confirmed' }, { id: 'B2', client_id: 'C2', total_sale_value: 9000000, status: 'confirmed' }, { id: 'B3', client_id: 'C3', total_sale_value: 5000000, status: 'confirmed' }],
-    }, {}, 'admin')
-    const s = await getMarketingStats()
-    expect(s).toMatchObject({ totalRevenue: 2000000, totalBookings: 1, paidLeads: 2, overallROAS: 20 })
+  // The aggregation itself is SQL (marketing_headline, see tests/sql/04_campaigns.sql);
+  // this checks the date range is passed through and the derived ratios.
+  it('passes the date range to SQL and derives ROAS and CPL from paid numbers', async () => {
+    const seen: any[] = []
+    resetWorld({}, { rpc: { marketing_headline: (a: any) => { seen.push(a); return { total_spend: '100000', active_campaigns: 2, paid_leads: 4, paid_site_visits: 2, paid_bookings: 1, paid_revenue: '2000000' } } } }, 'admin')
+    const s = await getMarketingStats({ from: '2026-10-01', to: '2026-10-20' })
+    expect(seen[0]).toEqual({ p_from: '2026-10-01', p_to: '2026-10-20' })
+    expect(s).toMatchObject({ totalSpend: 100000, totalRevenue: 2000000, totalBookings: 1, paidLeads: 4, paidSiteVisits: 2, overallROAS: 20, overallCPL: 25000 })
+    await getMarketingStats()
+    expect(seen[1]).toEqual({ p_from: null, p_to: null })
+  })
+})
+
+describe('campaign actions', () => {
+  it('rejects an end date before the start date and a negative budget', async () => {
+    resetWorld({ marketing_campaigns: [] }, {}, 'manager')
+    expect((await createCampaign(fd({ name: 'A', platform: 'facebook', start_date: '2026-10-10', end_date: '2026-10-01' }))).error).toMatch(/before the start/)
+    expect((await createCampaign(fd({ name: 'A', platform: 'facebook', start_date: '2026-10-10', budget: '-1' }))).error).toMatch(/Budget/)
+    expect((await createCampaign(fd({ name: 'A', platform: 'tiktok', start_date: '2026-10-10' }))).error).toMatch(/platform/)
+    expect(world.db.rows('marketing_campaigns')).toHaveLength(0)
+  })
+  it('sales staff cannot manage campaigns', async () => {
+    resetWorld({ marketing_campaigns: [] }, {}, 'sales_advisor')
+    expect((await createCampaign(fd({ name: 'A', platform: 'facebook', start_date: '2026-10-10' }))).success).toBe(false)
+  })
+  it('a campaign can be edited, and utm_source is stored lower-case', async () => {
+    resetWorld({ marketing_campaigns: [{ id: 'c1', name: 'Old', platform: 'facebook', start_date: '2026-10-01' }] }, {}, 'manager')
+    const r = await updateCampaign('c1', fd({ name: 'New', platform: 'instagram', start_date: '2026-10-01', utm_source: ' Instagram ', utm_campaign: 'diwali' }))
+    expect(r.success).toBe(true)
+    expect(world.db.rows('marketing_campaigns')[0]).toMatchObject({ name: 'New', platform: 'instagram', utm_source: 'instagram', utm_campaign: 'diwali' })
+    expect((await updateCampaign('missing', fd({ name: 'X', platform: 'facebook', start_date: '2026-10-01' }))).error).toMatch(/not found/)
+  })
+  it('logging a day twice replaces that day instead of adding to it, and never writes campaign spend itself', async () => {
+    resetWorld({ marketing_campaigns: [{ id: 'c1', spend: 142800 }], campaign_spend_logs: [{ id: 'o', campaign_id: 'c1', log_date: '2026-01-01', spend: 142800, kind: 'opening' }] }, {}, 'manager')
+    const first = await logCampaignSpend(fd({ campaign_id: 'c1', log_date: '2026-10-19', spend: '5000' }))
+    const again = await logCampaignSpend(fd({ campaign_id: 'c1', log_date: '2026-10-19', spend: '7000', reach: '900' }))
+    expect(first).toMatchObject({ success: true, replaced: false })
+    expect(again).toMatchObject({ success: true, replaced: true })
+    const daily = world.db.rows('campaign_spend_logs').filter((l) => l.kind === 'daily')
+    expect(daily).toHaveLength(1)
+    expect(daily[0]).toMatchObject({ spend: 7000, reach: 900 })
+    // The total is the DB trigger's job (sync_campaign_spend); the action must not overwrite it.
+    expect(world.db.rows('marketing_campaigns')[0].spend).toBe(142800)
+  })
+  it('an unknown status is refused', async () => {
+    resetWorld({ marketing_campaigns: [{ id: 'c1', status: 'active' }] }, {}, 'manager')
+    expect((await updateCampaignStatus('c1', 'deleted')).success).toBe(false)
+    expect((await updateCampaignStatus('c1', 'paused')).success).toBe(true)
+    expect(world.db.rows('marketing_campaigns')[0].status).toBe('paused')
   })
 })
 

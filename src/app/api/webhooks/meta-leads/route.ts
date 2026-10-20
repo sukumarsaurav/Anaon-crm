@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { matchesSecret, verifyHmacSha256 } from '@/lib/security/secrets'
+import { ingestLead, INVALID_PHONE } from '@/lib/leads/ingest'
 
 // Fail closed: unset env → no valid token / no valid signature.
 const META_VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN
@@ -19,7 +20,14 @@ export async function GET(req: NextRequest) {
   return new NextResponse('Forbidden', { status: 403 })
 }
 
-// POST — incoming lead events from Meta
+/**
+ * POST — lead-ad events from Meta. Each lead goes through ingestLead like every other
+ * source (dedupe, assignment, scoring, notification, automations).
+ *
+ * An event is only marked processed once its lead exists. A failure that a retry can fix
+ * (Graph API down, DB error) answers 500, so Meta redelivers it and the unprocessed event
+ * row is picked up again; one that can't (no usable phone) is recorded and acknowledged.
+ */
 export async function POST(req: NextRequest) {
   // Verify the payload actually came from Meta (HMAC over the raw body) before
   // trusting anything in it — the handler writes via the service-role client.
@@ -28,7 +36,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
 
-  let body: any
+  type LeadgenChange = { field?: string; value?: Record<string, string | undefined> }
+  let body: { entry?: { changes?: LeadgenChange[] }[] }
   try {
     body = JSON.parse(rawBody)
   } catch {
@@ -36,143 +45,144 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createServiceClient()
+  let retryable = false
 
   const entries = body?.entry ?? []
   for (const entry of entries) {
     const changes = entry?.changes ?? []
     for (const change of changes) {
       if (change.field !== 'leadgen') continue
-      const value = change.value
+      const value = change.value ?? {}
+      if (!value.leadgen_id) continue
       const eventId = `${value.leadgen_id}:${value.form_id}`
 
-      // Dedup: skip if already processed
       const { data: existing } = await supabase
         .from('meta_lead_webhook_events')
-        .select('id')
+        .select('id, processed')
         .eq('event_id', eventId)
-        .single()
-      if (existing) continue
+        .maybeSingle()
+      if (existing?.processed) continue
 
-      // Fetch lead details from Meta Graph API
-      let leadData: MetaLeadFields | null = null
-      let errorMsg: string | null = null
-      try {
-        leadData = await fetchMetaLeadData(value.leadgen_id)
-      } catch (e) {
-        errorMsg = (e as Error).message
+      const record = async (fields: Record<string, unknown>) => {
+        await supabase.from('meta_lead_webhook_events').upsert({
+          event_id: eventId,
+          leadgen_id: value.leadgen_id,
+          form_id: value.form_id ?? null,
+          page_id: value.page_id ?? null,
+          ad_id: value.ad_id ?? null,
+          adset_id: value.adgroup_id ?? value.adset_id ?? null,
+          campaign_id: value.campaign_id ?? null,
+          payload: value,
+          ...fields,
+        }, { onConflict: 'event_id' })
       }
 
-      // Insert webhook event record
-      const { data: eventRow } = await supabase
-        .from('meta_lead_webhook_events')
-        .insert({
-          event_id:    eventId,
-          leadgen_id:  value.leadgen_id,
-          form_id:     value.form_id,
-          page_id:     value.page_id,
-          ad_id:       value.ad_id ?? null,
-          campaign_id: value.campaign_id ?? null,
-          adset_id:    value.adset_id ?? null,
-          payload:     value,
-          error_message: errorMsg,
-        })
-        .select('id')
-        .single()
-
-      if (!leadData || !eventRow) continue
-
-      const phone = normalizePhone(leadData.phone)
-      if (!phone) {
-        await supabase
-          .from('meta_lead_webhook_events')
-          .update({ error_message: 'No phone in lead data', processed: false })
-          .eq('id', eventRow.id)
+      let lead: MetaLead
+      try {
+        lead = await fetchMetaLead(value.leadgen_id)
+      } catch (e) {
+        await record({ processed: false, error_message: (e as Error).message })
+        retryable = true
         continue
       }
 
-      // Check for duplicate lead by phone
-      const { data: dupCheck } = await supabase
-        .from('leads')
-        .select('id')
-        .eq('phone', phone)
-        .single()
+      const instagram = lead.platform === 'ig' || lead.platform === 'instagram'
+      const result = await ingestLead({
+        source: instagram ? 'instagram_ads' : 'facebook_ads',
+        full_name: lead.name,
+        phone: lead.phone,
+        email: lead.email,
+        city: lead.city,
+        requirement: lead.extras.length ? lead.extras.join(' · ') : null,
+        campaign_name: lead.campaign_name ?? null,
+        ad_set_name: lead.adset_name ?? null,
+        meta_campaign_id: lead.campaign_id ?? value.campaign_id ?? null,
+        utm_source: instagram ? 'instagram' : 'facebook',
+        utm_medium: lead.is_organic ? 'organic_social' : 'paid_social',
+        utm_campaign: lead.campaign_name ?? null,
+      })
 
-      let leadId: string | null = null
-      if (!dupCheck) {
-        // Create new lead
-        const source = platformToSource(value.page_id)
-        const { data: newLead } = await supabase
-          .from('leads')
-          .insert({
-            full_name:       leadData.name ?? 'Meta Lead',
-            phone,
-            email:           leadData.email ?? null,
-            source,
-            utm_source:      source,
-            utm_medium:      'social',
-            utm_campaign:    leadData.campaign_name ?? null,
-            campaign_name:   leadData.campaign_name ?? null,
-            ad_set_name:     leadData.adset_name ?? null,
-            whatsapp_opt_in: true,
-          })
-          .select('id')
-          .single()
-        leadId = newLead?.id ?? null
-      } else {
-        leadId = dupCheck.id
+      if (!result.ok) {
+        // A lead without a usable phone will never ingest; anything else is worth a retry.
+        const permanent = result.error === INVALID_PHONE
+        await record({ processed: permanent, error_message: result.error ?? 'Lead could not be created' })
+        if (!permanent) retryable = true
+        continue
       }
 
-      await supabase
-        .from('meta_lead_webhook_events')
-        .update({ lead_id: leadId, processed: true })
-        .eq('id', eventRow.id)
+      await record({
+        processed: true,
+        error_message: null,
+        lead_id: result.id ?? null,
+        campaign_id: lead.campaign_id ?? value.campaign_id ?? null,
+        adset_id: lead.adset_id ?? value.adgroup_id ?? value.adset_id ?? null,
+        ad_id: lead.ad_id ?? value.ad_id ?? null,
+      })
     }
   }
 
+  if (retryable) return NextResponse.json({ status: 'retry' }, { status: 500 })
   return NextResponse.json({ status: 'ok' })
 }
 
-interface MetaLeadFields {
+interface MetaLead {
   name?: string
   phone?: string
   email?: string
+  city?: string
+  /** Answers that have no lead column (budget, timeline…), kept as the first note. */
+  extras: string[]
+  campaign_id?: string
   campaign_name?: string
+  adset_id?: string
   adset_name?: string
+  ad_id?: string
+  /** 'fb' | 'ig' */
+  platform?: string
+  is_organic?: boolean
 }
 
-async function fetchMetaLeadData(leadgenId: string): Promise<MetaLeadFields> {
+const STANDARD_FIELDS = new Set(['full_name', 'name', 'first_name', 'last_name', 'phone_number', 'phone', 'email', 'city'])
+
+async function fetchMetaLead(leadgenId: string): Promise<MetaLead> {
   const token = process.env.META_PAGE_ACCESS_TOKEN
   if (!token) throw new Error('META_PAGE_ACCESS_TOKEN not configured')
 
+  const fields = 'field_data,campaign_id,campaign_name,adset_id,adset_name,ad_id,platform,is_organic'
   const res = await fetch(
-    `https://graph.facebook.com/v21.0/${leadgenId}?access_token=${token}&fields=field_data,campaign_name,adset_name`,
-    { next: { revalidate: 0 } }
+    `https://graph.facebook.com/v21.0/${encodeURIComponent(leadgenId)}?fields=${fields}`,
+    { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' },
   )
   if (!res.ok) throw new Error(`Meta API error ${res.status}`)
   const data = await res.json()
 
-  const result: MetaLeadFields = {
+  const lead: MetaLead = {
+    extras: [],
+    campaign_id: data.campaign_id,
     campaign_name: data.campaign_name,
+    adset_id: data.adset_id,
     adset_name: data.adset_name,
+    ad_id: data.ad_id,
+    platform: data.platform,
+    is_organic: Boolean(data.is_organic),
   }
+  let first: string | undefined
+  let last: string | undefined
   for (const field of data.field_data ?? []) {
+    const key = String(field.name ?? '').toLowerCase()
     const val = field.values?.[0]
-    if (field.name === 'full_name' || field.name === 'name') result.name = val
-    else if (field.name === 'phone_number' || field.name === 'phone') result.phone = val
-    else if (field.name === 'email') result.email = val
+    if (!val) continue
+    if (key === 'full_name' || key === 'name') lead.name = val
+    else if (key === 'first_name') first = val
+    else if (key === 'last_name') last = val
+    else if (key === 'phone_number' || key === 'phone') lead.phone = val
+    else if (key === 'email') lead.email = val
+    else if (key === 'city') lead.city = val
+    else if (!STANDARD_FIELDS.has(key)) {
+      const label = key.replace(/[_?]+/g, ' ').trim()
+      lead.extras.push(`${label.charAt(0).toUpperCase()}${label.slice(1)}: ${val}`)
+    }
   }
-  return result
-}
-
-function normalizePhone(raw?: string): string | null {
-  if (!raw) return null
-  const digits = raw.replace(/\D/g, '')
-  if (digits.length === 12 && digits.startsWith('91')) return digits.slice(2)
-  if (digits.length === 10) return digits
-  return null
-}
-
-function platformToSource(pageId?: string): string {
-  // Can be made smarter by mapping known page IDs
-  return 'facebook'
+  if (!lead.name && (first || last)) lead.name = [first, last].filter(Boolean).join(' ')
+  return lead
 }

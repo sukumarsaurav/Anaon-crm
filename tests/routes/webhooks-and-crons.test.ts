@@ -1,5 +1,5 @@
 import { world, resetWorld } from '../helpers/world'
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { createHmac } from 'node:crypto'
 
@@ -220,5 +220,65 @@ describe('cron routes', () => {
     expect(fired.filter((t) => t === 'booking_anniversary')).toHaveLength(1) // not this year's booking
     const overdueIds = world.automations.filter((a) => a.trigger === 'payment_overdue').map((a) => a.ctx.payment.id)
     expect(overdueIds.every((id: string) => id !== 'p-cancelled')).toBe(true)
+  })
+})
+
+describe('Meta lead-ads webhook /api/webhooks/meta-leads', async () => {
+  process.env.META_APP_SECRET = 'meta-secret'
+  process.env.META_PAGE_ACCESS_TOKEN = 'page-token'
+  const { POST } = await import('@/app/api/webhooks/meta-leads/route')
+  const send = (leadgenId = 'LG1') => {
+    const body = JSON.stringify({ entry: [{ changes: [{ field: 'leadgen', value: { leadgen_id: leadgenId, form_id: 'F1', page_id: 'P1', ad_id: 'A1' } }] }] })
+    const sig = 'sha256=' + createHmac('sha256', 'meta-secret').update(body).digest('hex')
+    return POST(req('/api/webhooks/meta-leads', { body, headers: { 'x-hub-signature-256': sig } }))
+  }
+  const graph = (o: any = {}) => ({
+    campaign_id: '120210', campaign_name: 'Diwali Plots', adset_id: '120211', adset_name: 'Jaipur 25-45', ad_id: 'A1', platform: 'ig', is_organic: false,
+    field_data: [{ name: 'full_name', values: ['Ravi'] }, { name: 'phone_number', values: ['+919810001025'] }, { name: 'when_do_you_plan_to_buy?', values: ['3 months'] }],
+    ...o,
+  })
+  let graphResponse: () => Response
+  beforeEach(() => {
+    resetWorld({ profiles: [{ id: 'a1', role: 'sales_advisor', is_active: true }], leads: [], lead_activities: [], assignment_rules: [], meta_lead_webhook_events: [] })
+    graphResponse = () => new Response(JSON.stringify(graph()), { status: 200 })
+    vi.stubGlobal('fetch', vi.fn(async () => graphResponse()))
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('rejects an unsigned payload', async () => {
+    const r = await POST(req('/api/webhooks/meta-leads', { body: '{}' }))
+    expect(r.status).toBe(401)
+  })
+  it('creates the lead through the normal ingest path, with a valid source and the Meta campaign ID', async () => {
+    const r = await send()
+    expect(r.status).toBe(200)
+    expect(world.db.rows('leads')[0]).toMatchObject({
+      full_name: 'Ravi', phone: '9810001025', source: 'instagram_ads', utm_source: 'instagram', utm_medium: 'paid_social',
+      campaign_name: 'Diwali Plots', utm_campaign: 'Diwali Plots', meta_campaign_id: '120210', ad_set_name: 'Jaipur 25-45', stage: 'new_lead',
+    })
+    expect(world.db.rows('lead_activities')[0].notes).toMatch(/When do you plan to buy: 3 months/)
+    expect(world.db.rows('meta_lead_webhook_events')[0]).toMatchObject({ processed: true, campaign_id: '120210' })
+  })
+  it('a Graph API outage answers 500 so Meta redelivers, and the redelivery creates the lead', async () => {
+    graphResponse = () => new Response('{}', { status: 503 })
+    expect((await send()).status).toBe(500)
+    expect(world.db.rows('leads')).toHaveLength(0)
+    expect(world.db.rows('meta_lead_webhook_events')[0]).toMatchObject({ processed: false, error_message: expect.stringMatching(/503/) })
+    graphResponse = () => new Response(JSON.stringify(graph({ platform: 'fb' })), { status: 200 })
+    expect((await send()).status).toBe(200)
+    expect(world.db.rows('leads')[0]).toMatchObject({ source: 'facebook_ads' })
+    expect(world.db.rows('meta_lead_webhook_events')).toHaveLength(1)
+  })
+  it('a processed event is not ingested again', async () => {
+    await send()
+    await send()
+    expect(world.db.rows('leads')).toHaveLength(1)
+    expect(world.db.rows('lead_activities')).toHaveLength(1)
+  })
+  it('a lead without a usable phone is recorded and acknowledged (a retry cannot fix it)', async () => {
+    graphResponse = () => new Response(JSON.stringify(graph({ field_data: [{ name: 'full_name', values: ['No Phone'] }] })), { status: 200 })
+    expect((await send()).status).toBe(200)
+    expect(world.db.rows('leads')).toHaveLength(0)
+    expect(world.db.rows('meta_lead_webhook_events')[0]).toMatchObject({ processed: true, error_message: expect.stringMatching(/phone/i) })
   })
 })

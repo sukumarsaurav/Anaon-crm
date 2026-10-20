@@ -10,6 +10,7 @@ interface Props {
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   draft: { label: 'Draft', color: 'text-slate-600', bg: 'bg-slate-100' },
   scheduled: { label: 'Scheduled', color: 'text-blue-700', bg: 'bg-blue-50' },
+  queueing: { label: 'Starting...', color: 'text-amber-700', bg: 'bg-amber-50' },
   sending: { label: 'Sending...', color: 'text-amber-700', bg: 'bg-amber-50' },
   sent: { label: 'Sent', color: 'text-green-700', bg: 'bg-green-50' },
   paused: { label: 'Paused', color: 'text-orange-700', bg: 'bg-orange-50' },
@@ -43,6 +44,9 @@ export default function BroadcastCard({ broadcast }: Props) {
           {statusCfg.label}
         </span>
       </div>
+      {broadcast.last_error && (
+        <p className="text-xs text-amber-700 bg-amber-50 rounded-md px-2 py-1 -mt-1 mb-3 line-clamp-2">{broadcast.last_error}</p>
+      )}
 
       {/* Stats row */}
       <div className="grid grid-cols-4 gap-3 text-center mb-3">

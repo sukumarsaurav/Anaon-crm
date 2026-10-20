@@ -141,7 +141,8 @@ class Query implements PromiseLike<Result> {
       if (this.op === 'upsert' && this.onConflict) {
         const out: Row[] = []
         for (const r of rows) {
-          const ex = this.db.rows(t).find((x) => x[this.onConflict!] === r[this.onConflict!])
+          const keys = this.onConflict.split(',').map((k) => k.trim())
+          const ex = this.db.rows(t).find((x) => keys.every((k) => x[k] === r[k]))
           if (ex) { if (!this.ignoreDup) Object.assign(ex, r, { id: ex.id }); out.push(ex) } else { this.db.rows(t).push(r); out.push(r) }
         }
         return this.finish(out)

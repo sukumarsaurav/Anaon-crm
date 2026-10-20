@@ -41,6 +41,12 @@ export interface AgencyXSendResult {
   rateLimited?: boolean
   /** 400 reconnect_required: the number's WhatsApp access expired. Nothing will send until an admin reconnects it. */
   reconnectRequired?: boolean
+  /**
+   * The send didn't happen for a reason a later retry can fix (AgencyX/WhatsApp unreachable,
+   * a 5xx, or the number awaiting reconnection). Bulk senders should keep the message queued
+   * and stop, not mark it failed. Retrying with the same reference is idempotent.
+   */
+  retryable?: boolean
   /** true when the same client_reference was already sent — original result returned. */
   idempotentReplay?: boolean
 }
@@ -193,6 +199,7 @@ export async function sendViaAgencyX(input: {
       optedOut: data.error === 'opted_out',
       rateLimited: status === 429,
       reconnectRequired: data.code === 'reconnect_required',
+      retryable: (status === 0 && Boolean(API_KEY)) || status >= 500 || data.code === 'reconnect_required',
     }
   }
   return {

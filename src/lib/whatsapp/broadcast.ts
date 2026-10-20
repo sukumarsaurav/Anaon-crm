@@ -1,4 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/service'
+import { notifyUsers } from '@/lib/notifications/notify'
+import type { BroadcastAudienceFilters, BroadcastAudiencePreview } from '@/types/whatsapp'
 import { sendWhatsAppTemplate, recordOutboundWhatsApp, isMarketingCategory } from './send'
 import { fillTemplateVariables } from './variables'
 import { renderTemplate } from './template-render'
@@ -10,99 +12,176 @@ import { toWhatsAppNumber } from './phone'
  *
  * Two steps, so a big audience survives function timeouts and AgencyX's per-key rate
  * limit (120/min by default):
- *   1. queueBroadcast   — resolve the audience once into whatsapp_broadcast_recipients
- *                         rows ('queued'), with opt-outs and unfillable rows settled.
- *   2. processBroadcast — send queued rows for up to `budgetMs`, stop early on a 429,
- *                         and leave the rest queued for the next run (Resume button, or
- *                         the daily cron).
- * Each send uses the recipient row id as AgencyX's client_reference, so re-running a
- * batch can never message the same person twice.
+ *   1. queueBroadcast   — atomically claim the broadcast (draft|scheduled → queueing),
+ *                         resolve the audience once into whatsapp_broadcast_recipients rows
+ *                         ('queued'), with opt-outs and unfillable rows settled, then
+ *                         → sending. Any failure rolls back to draft with last_error.
+ *   2. processBroadcast — send queued rows for up to `budgetMs`; stop early on a 429 or an
+ *                         outage (rows stay queued), and leave the rest for the next run
+ *                         (the page's auto-continue, Continue, or the 5-minute cron).
+ * Each send uses the recipient row id as AgencyX's client_reference, and recipients are
+ * unique per (broadcast, number), so nobody can be messaged twice by one broadcast.
  */
 
-export interface BroadcastAudienceFilters {
-  stage?: string[]
-  source?: string[]
-  project_id?: string
-  city?: string
-  budget_min?: number
-  budget_max?: number
-  /** Fixed values for template variables the lead record can't fill (e.g. an offer). */
-  variables?: Record<string, string>
-}
+export type { BroadcastAudienceFilters }
 
 const SENT_STATES = ['sent', 'delivered', 'read']
+/** Won and lost leads are left out unless their stage is picked explicitly. */
+const EXCLUDED_BY_DEFAULT = ['closed_won', 'not_interested']
+const AUDIENCE_PAGE = 1000
+export const MAX_AUDIENCE = 20_000
+export const CANCELLED_REASON = 'Broadcast cancelled'
+export const OPTED_OUT_REASON = 'Opted out of WhatsApp'
+export const NO_OPT_IN_REASON = 'Lead has not opted in to WhatsApp'
+export const MISSING_VALUE_PREFIX = 'No value for:'
 
-export async function queueBroadcast(broadcastId: string): Promise<{ success: boolean; error?: string; queued?: number; skipped?: number }> {
-  const supabase = createServiceClient()
-  const { data: broadcast } = await supabase
-    .from('whatsapp_broadcasts')
-    .select('id, status, audience_filters, created_by, template:whatsapp_templates(id, name, language, category, status, is_active, body, variable_names)')
-    .eq('id', broadcastId)
-    .single()
+type ServiceClient = ReturnType<typeof createServiceClient>
 
-  if (!broadcast) return { success: false, error: 'Broadcast not found' }
-  if (broadcast.status !== 'draft' && broadcast.status !== 'scheduled') {
-    return { success: false, error: 'This broadcast has already been started' }
+interface BroadcastTemplate {
+  name: string
+  language: string
+  category: string
+  status: string
+  is_active: boolean
+  body: string
+  variable_names: string[]
+}
+
+interface RecipientDraft {
+  lead_id: string
+  phone: string
+  name: string | null
+  template_variables: Record<string, string>
+  status: 'queued' | 'failed'
+  failed_reason?: string
+  skipped_opted_out: boolean
+}
+
+const asStrings = (v: unknown) =>
+  Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && x.trim() !== '').map((x) => x.trim()))] : undefined
+const asNumber = (v: unknown) => {
+  const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() ? Number(v) : NaN
+  return Number.isFinite(n) && n > 0 ? n : undefined
+}
+
+/** Keeps only the filter keys and shapes the engine understands (they arrive from the browser). */
+export function sanitizeAudienceFilters(raw: unknown): BroadcastAudienceFilters {
+  const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  const out: BroadcastAudienceFilters = {}
+  const stage = asStrings(r.stage)
+  const source = asStrings(r.source)
+  const temperature = asStrings(r.temperature)
+  if (stage?.length) out.stage = stage
+  if (source?.length) out.source = source
+  if (temperature?.length) out.temperature = temperature
+  if (typeof r.project_id === 'string' && r.project_id.trim()) out.project_id = r.project_id.trim()
+  if (typeof r.city === 'string' && r.city.trim()) out.city = r.city.trim().slice(0, 100)
+  const min = asNumber(r.budget_min)
+  const max = asNumber(r.budget_max)
+  if (min) out.budget_min = min
+  if (max) out.budget_max = max
+  if (r.variables && typeof r.variables === 'object') {
+    const vars = Object.fromEntries(
+      Object.entries(r.variables as Record<string, unknown>)
+        .filter(([k, v]) => k.trim() && typeof v === 'string' && v.trim())
+        .map(([k, v]) => [k.trim(), (v as string).trim()]),
+    )
+    if (Object.keys(vars).length) out.variables = vars
   }
-  const template = broadcast.template as unknown as {
-    name: string; language: string; category: string; status: string; is_active: boolean; body: string; variable_names: string[]
-  } | null
-  if (!template) return { success: false, error: 'The broadcast has no template' }
-  if (template.status !== 'approved') return { success: false, error: 'The template is not approved by WhatsApp yet' }
+  return out
+}
 
-  const filters = (broadcast.audience_filters ?? {}) as BroadcastAudienceFilters
-  let query = supabase
-    .from('leads')
-    .select('id, full_name, phone, project:projects(name), advisor:profiles!leads_assigned_to_fkey(full_name, phone)')
-    .eq('is_active', true)
-    .not('phone', 'is', null)
-  if (filters.stage?.length) query = query.in('stage', filters.stage)
-  if (filters.source?.length) query = query.in('source', filters.source)
-  if (filters.project_id) query = query.eq('project_id', filters.project_id)
-  if (filters.city) query = query.ilike('city', `%${filters.city}%`)
-  if (filters.budget_min) query = query.gte('budget_max', filters.budget_min)
-  if (filters.budget_max) query = query.lte('budget_min', filters.budget_max)
-
-  // Runs on the service client (the cron has no session), so the creator's reach is
-  // applied here: admins message everyone, a manager only their own branch — the same
-  // line the WhatsApp inbox draws.
-  const { data: creator } = await supabase.from('profiles').select('role, branch_id').eq('id', broadcast.created_by).maybeSingle()
+/**
+ * Resolves filters to one recipient per WhatsApp number, settled up front:
+ * opted out (STOP, marketing templates only), not opted in (any template), or a template
+ * variable with no value. Runs on the service client, so the creator's reach is applied
+ * here: admins message everyone, a manager only their own branch — the line the inbox draws.
+ */
+export async function resolveAudience(
+  supabase: ServiceClient,
+  filters: BroadcastAudienceFilters,
+  creatorId: string | null,
+  template: Pick<BroadcastTemplate, 'category' | 'variable_names'>,
+): Promise<{ ok: true; rows: RecipientDraft[]; counts: BroadcastAudiencePreview } | { ok: false; error: string }> {
+  const { data: creator } = creatorId
+    ? await supabase.from('profiles').select('role, branch_id').eq('id', creatorId).maybeSingle()
+    : { data: null }
+  let branchId: string | null = null
   if (creator?.role !== 'admin') {
     if (creator?.role !== 'manager' || !creator.branch_id) {
-      return { success: false, error: 'Only an admin, or a manager with a branch, can send a broadcast' }
+      return { ok: false, error: 'Only an admin, or a manager with a branch, can send a broadcast' }
     }
-    query = query.eq('branch_id', creator.branch_id)
+    branchId = creator.branch_id as string
   }
 
-  const { data: leads, error: leadsError } = await query.limit(5000)
-  if (leadsError) return { success: false, error: leadsError.message }
-  if (!leads?.length) return { success: false, error: 'No leads match the audience filters' }
+  type LeadRow = { id: string; full_name: string | null; phone: string; whatsapp_opt_in: boolean | null; project: unknown; advisor: unknown }
+  const build = () => {
+    // Explicit row type: inferring it from the select string, through this many optional
+    // filters, exceeds TypeScript's instantiation depth.
+    let q = supabase
+      .from('leads')
+      .select<string, LeadRow>('id, full_name, phone, whatsapp_opt_in, project:projects(name), advisor:profiles!leads_assigned_to_fkey(full_name, phone)')
+      .eq('is_active', true)
+      .not('phone', 'is', null)
+    if (filters.stage?.length) q = q.in('stage', filters.stage)
+    else {
+      // .not() on an enum column trips TypeScript's instantiation depth; same builder, looser type.
+      const loose = q as unknown as { not: (column: string, op: string, value: string) => typeof q }
+      q = loose.not('stage', 'in', `(${EXCLUDED_BY_DEFAULT.join(',')})`)
+    }
+    if (filters.source?.length) q = q.in('source', filters.source)
+    if (filters.temperature?.length) q = q.in('temperature', filters.temperature)
+    if (filters.project_id) q = q.eq('project_id', filters.project_id)
+    if (filters.city) q = q.ilike('city', `%${filters.city.replace(/[%_]/g, '')}%`)
+    if (filters.budget_min) q = q.gte('budget_max', filters.budget_min)
+    if (filters.budget_max) q = q.lte('budget_min', filters.budget_max)
+    if (branchId) q = q.eq('branch_id', branchId)
+    // Newest first, so a number shared by several leads is addressed by its latest name.
+    return q.order('created_at', { ascending: false }).order('id')
+  }
 
-  // One message per WhatsApp number, however many lead rows share it.
-  const byNumber = new Map<string, (typeof leads)[number]>()
+  // Paged: PostgREST caps a single response, which silently truncated big audiences.
+  const leads: LeadRow[] = []
+  for (let from = 0; ; from += AUDIENCE_PAGE) {
+    const { data, error } = await build().range(from, from + AUDIENCE_PAGE - 1)
+    if (error) return { ok: false, error: error.message }
+    leads.push(...(data ?? []))
+    if (leads.length > MAX_AUDIENCE) {
+      return { ok: false, error: `More than ${MAX_AUDIENCE.toLocaleString('en-IN')} leads match - narrow the filters (e.g. by stage, project or city) and send in parts` }
+    }
+    if (!data || data.length < AUDIENCE_PAGE) break
+  }
+
+  // One message per WhatsApp number, however many lead rows share it. If any of them said
+  // "no WhatsApp", the number is skipped.
+  const byNumber = new Map<string, LeadRow>()
+  const noOptIn = new Set<string>()
   for (const lead of leads) {
-    const wa = toWhatsAppNumber(lead.phone as string)
-    if (wa && !byNumber.has(wa)) byNumber.set(wa, lead)
+    const wa = toWhatsAppNumber(lead.phone)
+    if (!wa) continue
+    if (lead.whatsapp_opt_in === false) noOptIn.add(wa)
+    if (!byNumber.has(wa)) byNumber.set(wa, lead)
   }
   const numbers = [...byNumber.keys()]
 
   // A STOP opts out of marketing only; a utility broadcast (e.g. a possession update)
-  // still reaches everyone.
+  // still reaches them.
   const optedOut = new Set<string>()
   for (let i = 0; isMarketingCategory(template.category) && i < numbers.length; i += 500) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('whatsapp_conversations')
       .select('wa_id')
       .eq('opted_out', true)
       .in('wa_id', numbers.slice(i, i + 500))
+    if (error) return { ok: false, error: `Could not check opt-outs: ${error.message}` }
     data?.forEach((c) => optedOut.add(c.wa_id as string))
   }
 
-  let skipped = 0
-  const rows = numbers.map((wa) => {
+  const counts: BroadcastAudiencePreview = { matched: numbers.length, sendable: 0, optedOut: 0, noOptIn: 0, missingVariables: 0 }
+  const rows: RecipientDraft[] = numbers.map((wa) => {
     const lead = byNumber.get(wa)!
-    const project = lead.project as unknown as { name?: string } | null
-    const advisor = lead.advisor as unknown as { full_name?: string; phone?: string } | null
+    const project = lead.project as { name?: string } | null
+    const advisor = lead.advisor as { full_name?: string; phone?: string } | null
     const { values, missing } = fillTemplateVariables(template.variable_names, {
       name: lead.full_name || 'there',
       project: project?.name,
@@ -111,43 +190,113 @@ export async function queueBroadcast(broadcastId: string): Promise<{ success: bo
       overrides: filters.variables,
     })
     const vars = Object.fromEntries(template.variable_names.map((n, i) => [n, values[i]]))
-    const base = { broadcast_id: broadcastId, lead_id: lead.id, phone: wa, name: lead.full_name, template_variables: vars }
+    const base = { lead_id: lead.id, phone: wa, name: lead.full_name, template_variables: vars }
     if (optedOut.has(wa)) {
-      skipped++
-      return { ...base, status: 'failed', failed_reason: 'Opted out of WhatsApp', skipped_opted_out: true }
+      counts.optedOut++
+      return { ...base, status: 'failed', failed_reason: OPTED_OUT_REASON, skipped_opted_out: true }
+    }
+    if (noOptIn.has(wa)) {
+      counts.noOptIn++
+      return { ...base, status: 'failed', failed_reason: NO_OPT_IN_REASON, skipped_opted_out: true }
     }
     if (missing.length) {
-      skipped++
-      return { ...base, status: 'failed', failed_reason: `No value for: ${missing.join(', ')}`, skipped_opted_out: false }
+      counts.missingVariables++
+      return { ...base, status: 'failed', failed_reason: `${MISSING_VALUE_PREFIX} ${missing.join(', ')}`, skipped_opted_out: false }
     }
+    counts.sendable++
     return { ...base, status: 'queued', skipped_opted_out: false }
   })
 
-  for (let i = 0; i < rows.length; i += 500) {
-    const { error } = await supabase.from('whatsapp_broadcast_recipients').insert(rows.slice(i, i + 500))
-    if (error) return { success: false, error: `Could not queue recipients: ${error.message}` }
+  return { ok: true, rows, counts }
+}
+
+export async function queueBroadcast(
+  broadcastId: string,
+  opts: { notifyOnFailure?: boolean } = {},
+): Promise<{ success: boolean; error?: string; queued?: number; skipped?: number }> {
+  const supabase = createServiceClient()
+  const { data: broadcast } = await supabase
+    .from('whatsapp_broadcasts')
+    .select('id, name, status, audience_filters, created_by, template:whatsapp_templates(id, name, language, category, status, is_active, body, variable_names)')
+    .eq('id', broadcastId)
+    .single()
+
+  if (!broadcast) return { success: false, error: 'Broadcast not found' }
+  if (broadcast.status !== 'draft' && broadcast.status !== 'scheduled') {
+    return { success: false, error: 'This broadcast has already been started' }
+  }
+
+  // The claim: only one caller (a double click, the cron, a second manager) gets past this.
+  const { data: claimed } = await supabase
+    .from('whatsapp_broadcasts')
+    .update({ status: 'queueing', last_error: null, updated_at: new Date().toISOString() })
+    .eq('id', broadcastId)
+    .eq('status', broadcast.status)
+    .select('id')
+  if (!claimed?.length) return { success: false, error: 'This broadcast is already being started' }
+
+  const fail = async (error: string) => {
+    await supabase.from('whatsapp_broadcast_recipients').delete().eq('broadcast_id', broadcastId)
+    await supabase.from('whatsapp_broadcasts')
+      .update({ status: 'draft', last_error: error, updated_at: new Date().toISOString() })
+      .eq('id', broadcastId)
+      .eq('status', 'queueing')
+    if (opts.notifyOnFailure && broadcast.created_by) {
+      await notifyUsers([broadcast.created_by as string], {
+        title: 'Scheduled broadcast did not start',
+        message: `"${broadcast.name}": ${error}. It is back in draft.`,
+        type: 'system', related_type: 'whatsapp_broadcast', related_id: broadcastId,
+        action_url: `/whatsapp/broadcasts/${broadcastId}`,
+      })
+    }
+    return { success: false, error }
+  }
+
+  const template = broadcast.template as unknown as BroadcastTemplate | null
+  if (!template) return fail('The broadcast has no template')
+  if (template.status !== 'approved') return fail('The template is not approved by WhatsApp')
+  if (!template.is_active) return fail('The template is switched off')
+
+  const filters = sanitizeAudienceFilters(broadcast.audience_filters)
+  const audience = await resolveAudience(supabase, filters, broadcast.created_by as string | null, template)
+  if (!audience.ok) return fail(audience.error)
+  if (!audience.rows.length) return fail('No leads match the audience filters')
+
+  for (let i = 0; i < audience.rows.length; i += 500) {
+    const chunk = audience.rows.slice(i, i + 500).map((r) => ({ ...r, broadcast_id: broadcastId }))
+    const { error } = await supabase
+      .from('whatsapp_broadcast_recipients')
+      .upsert(chunk, { onConflict: 'broadcast_id,phone', ignoreDuplicates: true })
+    if (error) return fail(`Could not queue recipients: ${error.message}`)
   }
 
   await supabase.from('whatsapp_broadcasts').update({
     status: 'sending',
     sent_at: new Date().toISOString(),
-    audience_count: rows.length,
+    audience_count: audience.rows.length,
     updated_at: new Date().toISOString(),
-  }).eq('id', broadcastId)
+  }).eq('id', broadcastId).eq('status', 'queueing')
 
   await recomputeBroadcastTotals(broadcastId)
-  return { success: true, queued: rows.length - skipped, skipped }
+  return { success: true, queued: audience.counts.sendable, skipped: audience.rows.length - audience.counts.sendable }
 }
 
-export async function processBroadcast(
-  broadcastId: string,
-  budgetMs = 45_000,
-): Promise<{ sent: number; failed: number; remaining: number; rateLimited: boolean }> {
+export interface ProcessResult {
+  sent: number
+  failed: number
+  remaining: number
+  rateLimited: boolean
+  /** Sending paused on an outage; the rows stay queued for the next run. */
+  error?: string
+}
+
+export async function processBroadcast(broadcastId: string, budgetMs = 45_000): Promise<ProcessResult> {
   const supabase = createServiceClient()
   const started = Date.now()
   let sent = 0
   let failed = 0
   let rateLimited = false
+  let paused: string | undefined
 
   const { data: broadcast } = await supabase
     .from('whatsapp_broadcasts')
@@ -158,13 +307,17 @@ export async function processBroadcast(
 
   if (broadcast && template) {
     outer: while (Date.now() - started < budgetMs) {
+      // Re-read the status every batch, so a Cancel stops the run within a few sends.
+      const { data: current } = await supabase.from('whatsapp_broadcasts').select('status').eq('id', broadcastId).single()
+      if (current?.status !== 'sending') break
+
       const { data: batch } = await supabase
         .from('whatsapp_broadcast_recipients')
         .select('id, lead_id, phone, template_variables')
         .eq('broadcast_id', broadcastId)
         .eq('status', 'queued')
         .order('created_at')
-        .limit(25)
+        .limit(10)
       if (!batch?.length) break
 
       for (const r of batch) {
@@ -188,11 +341,16 @@ export async function processBroadcast(
           rateLimited = true
           break outer
         }
+        if (result.retryable) {
+          // AgencyX/WhatsApp unreachable: failing the row would burn the audience on an outage.
+          paused = result.error ?? 'WhatsApp is unreachable'
+          break outer
+        }
         const now = new Date().toISOString()
         if (result.success) {
           sent++
           await supabase.from('whatsapp_broadcast_recipients')
-            .update({ status: 'sent', wa_message_id: result.messageId ?? null, sent_at: now })
+            .update({ status: 'sent', wa_message_id: result.messageId ?? null, sent_at: now, failed_reason: null })
             .eq('id', r.id)
           await recordOutboundWhatsApp({
             to: r.phone as string,
@@ -211,7 +369,7 @@ export async function processBroadcast(
             // AgencyX knew of an opt-out the CRM hadn't mirrored yet (respect_opt_out).
             .update({
               status: 'failed',
-              failed_reason: result.optedOut ? 'Opted out of WhatsApp' : result.error ?? 'Send failed',
+              failed_reason: result.optedOut ? OPTED_OUT_REASON : result.error ?? 'Send failed',
               skipped_opted_out: Boolean(result.optedOut),
             })
             .eq('id', r.id)
@@ -228,28 +386,79 @@ export async function processBroadcast(
 
   if (!remaining) {
     await supabase.from('whatsapp_broadcasts')
-      .update({ status: 'sent', updated_at: new Date().toISOString() })
+      .update({ status: 'sent', last_error: null, updated_at: new Date().toISOString() })
       .eq('id', broadcastId)
       .eq('status', 'sending')
+  } else if (paused) {
+    await supabase.from('whatsapp_broadcasts')
+      .update({ last_error: `Paused: ${paused}`, updated_at: new Date().toISOString() })
+      .eq('id', broadcastId)
   }
   await recomputeBroadcastTotals(broadcastId)
-  return { sent, failed, remaining: remaining ?? 0, rateLimited }
+  return { sent, failed, remaining: remaining ?? 0, rateLimited, error: paused }
+}
+
+/**
+ * Puts send-time failures back in the queue: rows WhatsApp never accepted (no wa_message_id),
+ * other than opt-outs, unfillable variables and cancellations, which a retry can't fix.
+ * The same recipient id is the idempotency reference, so a retry can't double-send.
+ */
+export async function requeueFailedRecipients(broadcastId: string): Promise<{ success: boolean; error?: string; requeued?: number }> {
+  const supabase = createServiceClient()
+  const { data: broadcast } = await supabase.from('whatsapp_broadcasts').select('status').eq('id', broadcastId).single()
+  if (!broadcast || !['sending', 'sent'].includes(broadcast.status as string)) {
+    return { success: false, error: 'Only a sending or sent broadcast can retry its failures' }
+  }
+  const { data, error } = await retryableFailures(
+    supabase.from('whatsapp_broadcast_recipients').update({ status: 'queued', failed_reason: null }),
+    broadcastId,
+  ).select('id')
+  if (error) return { success: false, error: error.message }
+  if (!data?.length) return { success: false, error: 'There are no failed messages that can be retried' }
+
+  await supabase.from('whatsapp_broadcasts')
+    .update({ status: 'sending', last_error: null, updated_at: new Date().toISOString() })
+    .eq('id', broadcastId)
+    .in('status', ['sending', 'sent'])
+  await recomputeBroadcastTotals(broadcastId)
+  return { success: true, requeued: data.length }
+}
+
+/** The filter for failures a retry can fix (shared by the retry and the page's count). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function retryableFailures<Q extends { eq: any; is: any; not: any; neq: any }>(query: Q, broadcastId: string): Q {
+  return query
+    .eq('broadcast_id', broadcastId)
+    .eq('status', 'failed')
+    .eq('skipped_opted_out', false)
+    .is('wa_message_id', null)
+    .not('failed_reason', 'like', `${MISSING_VALUE_PREFIX}%`)
+    .neq('failed_reason', CANCELLED_REASON)
 }
 
 /** Totals are always recounted from recipient rows, so a retry or receipt can't skew them. */
 export async function recomputeBroadcastTotals(broadcastId: string): Promise<void> {
   const supabase = createServiceClient()
-  const { data } = await supabase
-    .from('whatsapp_broadcast_recipients')
-    .select('status, replied, skipped_opted_out')
-    .eq('broadcast_id', broadcastId)
-  const rows = data ?? []
+  const count = async (apply: (q: any) => any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    const { count: n } = await apply(
+      supabase.from('whatsapp_broadcast_recipients').select('id', { count: 'exact', head: true }).eq('broadcast_id', broadcastId),
+    )
+    return n ?? 0
+  }
+  // Counted in SQL: reading the rows back was capped at PostgREST's row limit.
+  const [sent, delivered, read, replied, failed] = await Promise.all([
+    count((q) => q.in('status', SENT_STATES)),
+    count((q) => q.in('status', ['delivered', 'read'])),
+    count((q) => q.eq('status', 'read')),
+    count((q) => q.eq('replied', true)),
+    count((q) => q.eq('status', 'failed')),
+  ])
   await supabase.from('whatsapp_broadcasts').update({
-    total_sent: rows.filter((r) => SENT_STATES.includes(r.status as string)).length,
-    total_delivered: rows.filter((r) => r.status === 'delivered' || r.status === 'read').length,
-    total_read: rows.filter((r) => r.status === 'read').length,
-    total_replied: rows.filter((r) => r.replied).length,
-    total_failed: rows.filter((r) => r.status === 'failed').length,
+    total_sent: sent,
+    total_delivered: delivered,
+    total_read: read,
+    total_replied: replied,
+    total_failed: failed,
     updated_at: new Date().toISOString(),
   }).eq('id', broadcastId)
 }
@@ -300,10 +509,29 @@ export async function markBroadcastReplied(waId: string): Promise<void> {
   for (const id of ids) await recomputeBroadcastTotals(id)
 }
 
-/** Cron: start scheduled broadcasts that are due, and continue any still sending. */
+/**
+ * Cron (every 5 minutes via pg_cron → pg_net, daily via Vercel as a fallback): recover
+ * starts that were interrupted, start scheduled broadcasts that are due, and continue any
+ * still sending.
+ */
 export async function runDueBroadcasts(budgetMs = 50_000): Promise<Record<string, unknown>> {
   const supabase = createServiceClient()
   const started = Date.now()
+
+  // A start that died mid-queue (function killed) would otherwise sit in 'queueing' forever.
+  const { data: stale } = await supabase
+    .from('whatsapp_broadcasts')
+    .select('id')
+    .eq('status', 'queueing')
+    .lt('updated_at', new Date(Date.now() - 10 * 60_000).toISOString())
+  for (const b of stale ?? []) {
+    await supabase.from('whatsapp_broadcast_recipients').delete().eq('broadcast_id', b.id)
+    await supabase.from('whatsapp_broadcasts')
+      .update({ status: 'draft', last_error: 'Starting was interrupted - press Send now to try again', updated_at: new Date().toISOString() })
+      .eq('id', b.id)
+      .eq('status', 'queueing')
+  }
+
   const { data: due } = await supabase
     .from('whatsapp_broadcasts')
     .select('id')
@@ -311,7 +539,7 @@ export async function runDueBroadcasts(budgetMs = 50_000): Promise<Record<string
     .lte('scheduled_at', new Date().toISOString())
   const queued: Record<string, string> = {}
   for (const b of due ?? []) {
-    const r = await queueBroadcast(b.id)
+    const r = await queueBroadcast(b.id, { notifyOnFailure: true })
     queued[b.id] = r.success ? `queued ${r.queued}` : `error: ${r.error}`
   }
 
@@ -322,5 +550,5 @@ export async function runDueBroadcasts(budgetMs = 50_000): Promise<Record<string
     if (left < 5_000) break
     processed[b.id] = await processBroadcast(b.id, left)
   }
-  return { queued, processed }
+  return { recovered: (stale ?? []).length, queued, processed }
 }

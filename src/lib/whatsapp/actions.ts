@@ -16,13 +16,21 @@ import {
   syncAgencyXTemplateStatuses,
 } from './agencyx-api'
 import { renderTemplate, namedVariables, toPositionalBody, sampleValueFor } from './template-render'
-import { queueBroadcast, processBroadcast } from './broadcast'
+import {
+  queueBroadcast,
+  processBroadcast,
+  requeueFailedRecipients,
+  recomputeBroadcastTotals,
+  resolveAudience,
+  sanitizeAudienceFilters,
+  CANCELLED_REASON,
+} from './broadcast'
 import { isMarketingCategory } from './send'
 import { META_TEMPLATE_STATUS } from './agencyx-mirror'
 import { toWhatsAppNumber } from './phone'
 import { getTemplateById } from './queries'
 import { validateTemplateButtons, normalizeTemplateButtons } from './template-buttons'
-import type { WaTemplateButton } from '@/types/whatsapp'
+import type { WaTemplateButton, BroadcastAudiencePreview } from '@/types/whatsapp'
 
 type ServerClient = Awaited<ReturnType<typeof createClient>>
 
@@ -500,27 +508,50 @@ export async function toggleTemplateActive(id: string, isActive: boolean) {
   return { success: true }
 }
 
+/** Loads a template a broadcast may use: approved by WhatsApp and switched on. */
+async function broadcastableTemplate(templateId: string) {
+  if (!templateId) return { ok: false as const, error: 'Choose a template' }
+  const { data: template } = await createServiceClient()
+    .from('whatsapp_templates')
+    .select('id, status, is_active, category, variable_names')
+    .eq('id', templateId)
+    .maybeSingle()
+  if (!template) return { ok: false as const, error: 'Template not found' }
+  if (template.status !== 'approved') return { ok: false as const, error: 'The template is not approved by WhatsApp yet' }
+  if (!template.is_active) return { ok: false as const, error: 'The template is switched off' }
+  return { ok: true as const, template: template as { category: string; variable_names: string[] } }
+}
+
 export async function createBroadcast(formData: FormData) {
   const auth = await requireManager()
   if (!auth.ok) return { success: false, error: auth.error }
   const supabase = await createClient()
 
-  let audienceFilters: Record<string, unknown> = {}
+  const name = ((formData.get('name') as string) ?? '').trim()
+  if (!name) return { success: false, error: 'Name the broadcast' }
+  const templateId = (formData.get('template_id') as string) ?? ''
+  const tpl = await broadcastableTemplate(templateId)
+  if (!tpl.ok) return { success: false, error: tpl.error }
+
+  let audienceFilters
   try {
-    audienceFilters = JSON.parse((formData.get('audience_filters') as string) || '{}')
+    audienceFilters = sanitizeAudienceFilters(JSON.parse((formData.get('audience_filters') as string) || '{}'))
   } catch {
     return { success: false, error: 'Invalid audience filters' }
   }
   const scheduledAt = istToIso(formData.get('scheduled_at') as string)
   if (scheduledAt && Number.isNaN(Date.parse(scheduledAt))) return { success: false, error: 'Invalid schedule time' }
+  if (scheduledAt && Date.parse(scheduledAt) < Date.now() - 60_000) {
+    return { success: false, error: 'The schedule time is in the past - pick a later time, or use Send Now' }
+  }
 
   const { data, error } = await supabase.from('whatsapp_broadcasts').insert({
-    name: formData.get('name') as string,
-    template_id: formData.get('template_id') as string,
+    name,
+    template_id: templateId,
     audience_filters: audienceFilters,
     audience_count: 0,
     scheduled_at: scheduledAt,
-    // A scheduled broadcast is started by the cron (/api/cron/broadcasts) once due.
+    // A scheduled broadcast is started by the cron (/api/cron/broadcasts, every 5 minutes) once due.
     status: scheduledAt ? 'scheduled' : 'draft',
     total_sent: 0,
     total_delivered: 0,
@@ -535,42 +566,75 @@ export async function createBroadcast(formData: FormData) {
   return { success: true, id: data.id }
 }
 
+/** How many people the filters reach right now, and why the rest are skipped. Nothing is saved. */
+export async function previewBroadcastAudience(
+  rawFilters: unknown,
+  templateId: string,
+): Promise<{ success: boolean; error?: string; preview?: BroadcastAudiencePreview }> {
+  const auth = await requireManager()
+  if (!auth.ok) return { success: false, error: auth.error }
+  const tpl = await broadcastableTemplate(templateId)
+  if (!tpl.ok) return { success: false, error: tpl.error }
+  const audience = await resolveAudience(createServiceClient(), sanitizeAudienceFilters(rawFilters), auth.user.id, tpl.template)
+  if (!audience.ok) return { success: false, error: audience.error }
+  return { success: true, preview: audience.counts }
+}
+
 /** Starts a draft/scheduled broadcast now and sends the first batch. */
 export async function sendBroadcast(broadcastId: string) {
   const auth = await requireManager()
   if (!auth.ok) return { success: false, error: auth.error }
 
   const queued = await queueBroadcast(broadcastId)
-  if (!queued.success) return { success: false, error: queued.error }
+  if (!queued.success) {
+    revalidatePath(`/whatsapp/broadcasts/${broadcastId}`)
+    return { success: false, error: queued.error }
+  }
   const run = await processBroadcast(broadcastId)
 
   revalidatePath('/whatsapp/broadcasts')
   revalidatePath(`/whatsapp/broadcasts/${broadcastId}`)
-  return { success: true, totalSent: run.sent, totalFailed: run.failed, remaining: run.remaining, rateLimited: run.rateLimited, skipped: queued.skipped }
+  return { success: true, totalSent: run.sent, totalFailed: run.failed, remaining: run.remaining, rateLimited: run.rateLimited, paused: run.error, skipped: queued.skipped }
 }
 
-/** Sends the next batch of a broadcast that is still going (time limit or rate limit hit). */
+/** Sends the next batch of a broadcast that is still going (time limit, rate limit or outage). */
 export async function resumeBroadcast(broadcastId: string) {
   const auth = await requireManager()
   if (!auth.ok) return { success: false, error: auth.error }
   const run = await processBroadcast(broadcastId)
   revalidatePath('/whatsapp/broadcasts')
   revalidatePath(`/whatsapp/broadcasts/${broadcastId}`)
-  return { success: true, ...run }
+  return { success: true, sent: run.sent, failed: run.failed, remaining: run.remaining, rateLimited: run.rateLimited, paused: run.error }
+}
+
+/** Re-queues send-time failures (outages, timeouts) and sends the first batch. */
+export async function retryFailedBroadcast(broadcastId: string) {
+  const auth = await requireManager()
+  if (!auth.ok) return { success: false, error: auth.error }
+  const requeued = await requeueFailedRecipients(broadcastId)
+  if (!requeued.success) return { success: false, error: requeued.error }
+  const run = await processBroadcast(broadcastId)
+  revalidatePath('/whatsapp/broadcasts')
+  revalidatePath(`/whatsapp/broadcasts/${broadcastId}`)
+  return { success: true, requeued: requeued.requeued, sent: run.sent, failed: run.failed, remaining: run.remaining, rateLimited: run.rateLimited, paused: run.error }
 }
 
 export async function cancelBroadcast(broadcastId: string) {
   const auth = await requireManager()
   if (!auth.ok) return { success: false, error: auth.error }
   const supabase = createServiceClient()
-  await supabase.from('whatsapp_broadcast_recipients')
-    .update({ status: 'failed', failed_reason: 'Broadcast cancelled' })
-    .eq('broadcast_id', broadcastId)
-    .eq('status', 'queued')
-  await supabase.from('whatsapp_broadcasts')
+  // Status first: a run in progress re-reads it before each batch and stops.
+  const { data: cancelled } = await supabase.from('whatsapp_broadcasts')
     .update({ status: 'cancelled', updated_at: new Date().toISOString() })
     .eq('id', broadcastId)
     .in('status', ['draft', 'scheduled', 'sending'])
+    .select('id')
+  if (!cancelled?.length) return { success: false, error: 'This broadcast can no longer be cancelled' }
+  await supabase.from('whatsapp_broadcast_recipients')
+    .update({ status: 'failed', failed_reason: CANCELLED_REASON })
+    .eq('broadcast_id', broadcastId)
+    .eq('status', 'queued')
+  await recomputeBroadcastTotals(broadcastId)
   revalidatePath('/whatsapp/broadcasts')
   revalidatePath(`/whatsapp/broadcasts/${broadcastId}`)
   return { success: true }

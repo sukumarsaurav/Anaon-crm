@@ -114,7 +114,10 @@ export interface WaBroadcast {
   audience_count: number
   scheduled_at: string | null
   sent_at: string | null
-  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'paused' | 'cancelled'
+  /** 'queueing' = the audience is being resolved (an atomic claim, so a broadcast can't start twice). */
+  status: 'draft' | 'scheduled' | 'queueing' | 'sending' | 'sent' | 'paused' | 'cancelled'
+  /** Why the last start attempt failed (e.g. a scheduled run whose template lost approval). */
+  last_error: string | null
   total_sent: number
   total_delivered: number
   total_read: number
@@ -134,6 +137,18 @@ export interface BroadcastAudienceFilters {
   budget_min?: number
   budget_max?: number
   temperature?: string[]
+  /** Fixed values for template variables the lead record can't fill (e.g. an offer). */
+  variables?: Record<string, string>
+}
+
+/** What a broadcast's filters resolve to right now (the preview before sending). */
+export interface BroadcastAudiencePreview {
+  /** Unique WhatsApp numbers matching the filters. */
+  matched: number
+  sendable: number
+  optedOut: number
+  noOptIn: number
+  missingVariables: number
 }
 
 export interface WaBroadcastRecipient {

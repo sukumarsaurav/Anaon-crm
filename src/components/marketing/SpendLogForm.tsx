@@ -6,15 +6,19 @@ import { useRouter } from 'next/navigation'
 import { logCampaignSpend } from '@/lib/marketing/actions'
 import { PlusCircle } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
+import { useToast } from '@/components/ui/Toast'
 
 interface Props {
   campaignId: string
   campaignName: string
 }
 
+const INPUT = 'w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400'
+
 export default function SpendLogForm({ campaignId, campaignName }: Props) {
   const uid = useId()
   const router = useRouter()
+  const toast = useToast()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -23,7 +27,8 @@ export default function SpendLogForm({ campaignId, campaignName }: Props) {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const formData = new FormData(e.currentTarget)
+    const form = e.currentTarget
+    const formData = new FormData(form)
     setLoading(true)
     setError(null)
     startTransition(async () => {
@@ -32,7 +37,8 @@ export default function SpendLogForm({ campaignId, campaignName }: Props) {
       if (!result.success) {
         setError(result.error ?? 'Failed to log spend')
       } else {
-        ;(e.target as HTMLFormElement).reset()
+        if (result.replaced) toast.success(`Replaced the spend already logged for ${formData.get('log_date')}`)
+        form.reset()
         setOpen(false)
         router.refresh()
       }
@@ -56,25 +62,26 @@ export default function SpendLogForm({ campaignId, campaignName }: Props) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor={`${uid}-log-date`} className="block text-sm font-medium text-slate-700 mb-1">Date <span className="text-red-500">*</span></label>
-                  <input id={`${uid}-log-date`} name="log_date" type="date" required defaultValue={today}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+                  <input id={`${uid}-log-date`} name="log_date" type="date" required defaultValue={today} max={today} className={INPUT} />
                 </div>
                 <div>
                   <label htmlFor={`${uid}-spend`} className="block text-sm font-medium text-slate-700 mb-1">Spend (₹) <span className="text-red-500">*</span></label>
-                  <input id={`${uid}-spend`} name="spend" type="number" required min="0" step="0.01" placeholder="0"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+                  <input id={`${uid}-spend`} name="spend" type="number" required min="0" step="0.01" placeholder="0" className={INPUT} />
                 </div>
                 <div>
                   <label htmlFor={`${uid}-impressions`} className="block text-sm font-medium text-slate-700 mb-1">Impressions</label>
-                  <input id={`${uid}-impressions`} name="impressions" type="number" min="0" placeholder="0"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+                  <input id={`${uid}-impressions`} name="impressions" type="number" min="0" placeholder="0" className={INPUT} />
                 </div>
                 <div>
                   <label htmlFor={`${uid}-clicks`} className="block text-sm font-medium text-slate-700 mb-1">Clicks</label>
-                  <input id={`${uid}-clicks`} name="clicks" type="number" min="0" placeholder="0"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+                  <input id={`${uid}-clicks`} name="clicks" type="number" min="0" placeholder="0" className={INPUT} />
+                </div>
+                <div>
+                  <label htmlFor={`${uid}-reach`} className="block text-sm font-medium text-slate-700 mb-1">Reach</label>
+                  <input id={`${uid}-reach`} name="reach" type="number" min="0" placeholder="0" className={INPUT} />
                 </div>
               </div>
+              <p className="text-xs text-slate-400">One entry per day: logging a day that already has spend replaces it.</p>
 
               {error && <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</p>}
 

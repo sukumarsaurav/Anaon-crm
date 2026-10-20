@@ -5,10 +5,13 @@ import PageHeader from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import BroadcastControls from '@/components/whatsapp/BroadcastControls'
 import { formatDateTime } from '@/lib/utils'
+import { retryableFailures } from '@/lib/whatsapp/broadcast'
 
 export const metadata = { title: 'Broadcast' }
 
 export const dynamic = 'force-dynamic'
+
+const LIST_LIMIT = 500
 
 const STATUS_STYLE: Record<string, string> = {
   queued: 'bg-slate-100 text-slate-600',
@@ -24,14 +27,24 @@ export default async function BroadcastDetailPage({ params }: { params: Promise<
   if (!broadcast) notFound()
 
   const supabase = await createClient()
-  const { data: recipients } = await supabase
-    .from('whatsapp_broadcast_recipients')
-    .select('id, name, phone, status, failed_reason, replied, sent_at')
-    .eq('broadcast_id', id)
-    .order('created_at')
-    .limit(500)
+  const recipientCount = () =>
+    supabase.from('whatsapp_broadcast_recipients').select('id', { count: 'exact', head: true }).eq('broadcast_id', id)
+  // Counts are exact; only the list is capped (the Continue button used to count queued rows
+  // in the first 500 only, and vanished on big audiences).
+  const [{ data: recipients }, { count: totalRows }, { count: queuedCount }, { count: retryableCount }] = await Promise.all([
+    supabase
+      .from('whatsapp_broadcast_recipients')
+      .select('id, name, phone, status, failed_reason, replied, sent_at')
+      .eq('broadcast_id', id)
+      .order('created_at')
+      .limit(LIST_LIMIT),
+    recipientCount(),
+    recipientCount().eq('status', 'queued'),
+    retryableFailures(recipientCount(), id),
+  ])
   const rows = recipients ?? []
-  const queued = rows.filter((r) => r.status === 'queued').length
+  const queued = queuedCount ?? 0
+  const total = totalRows ?? 0
 
   const stats = [
     { label: 'Audience', value: broadcast.audience_count },
@@ -51,8 +64,14 @@ export default async function BroadcastDetailPage({ params }: { params: Promise<
           broadcast.scheduled_at ? ` · Scheduled ${formatDateTime(broadcast.scheduled_at)}` : ''
         }`}
         backHref="/whatsapp/broadcasts"
-        actions={<BroadcastControls id={broadcast.id} status={broadcast.status} queued={queued} />}
+        actions={<BroadcastControls id={broadcast.id} status={broadcast.status} queued={queued} retryable={retryableCount ?? 0} />}
       />
+
+      {broadcast.last_error && (
+        <div role="alert" className="p-3 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg">
+          {broadcast.last_error}
+        </div>
+      )}
 
       <div className="grid grid-cols-3 sm:grid-cols-7 gap-3">
         {stats.map((s) => (
@@ -71,6 +90,11 @@ export default async function BroadcastDetailPage({ params }: { params: Promise<
       )}
 
       <Card padding="none">
+        {total > rows.length && (
+          <p className="px-4 py-2 text-xs text-slate-500 border-b border-slate-100">
+            Showing the first {rows.length} of {total} recipients. The totals above cover all of them.
+          </p>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-xs text-slate-500">
