@@ -1,5 +1,6 @@
 'use client'
 
+import { todayIST } from '@/lib/datetime'
 import { useState, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateLoanStage } from '@/lib/loans/actions'
@@ -162,7 +163,7 @@ export default function LoanStageAdvancer({ loan, banks, dsas }: Props) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label htmlFor="loanstageadvancer-rejection-date" className="block text-xs font-medium text-slate-600 mb-1">Rejection Date</label>
-                <input id="loanstageadvancer-rejection-date" type="date" name="rejection_date" defaultValue={new Date().toISOString().split('T')[0]}
+                <input id="loanstageadvancer-rejection-date" type="date" name="rejection_date" defaultValue={todayIST()}
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
               <div>

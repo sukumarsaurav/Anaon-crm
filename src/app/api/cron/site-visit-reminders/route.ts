@@ -48,7 +48,7 @@ async function handler(req: NextRequest) {
     const recipient = v.accompanied_by ?? lead?.assigned_to
     if (!recipient) continue
 
-    const time = new Date(v.scheduled_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+    const time = new Date(v.scheduled_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })
     await notifyUsers([recipient], {
       title: `Site visit today: ${lead?.full_name ?? 'Lead'}`,
       message: `Visit with ${lead?.full_name ?? 'lead'} (${lead?.phone ?? ''}) at ${time}.`,

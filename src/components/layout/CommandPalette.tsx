@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Search, Users, UserCheck, Building2, FileText, CornerDownLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
+import { searchOr } from '@/lib/supabase/search'
 
 interface Result {
   id: string
@@ -23,6 +24,8 @@ export default function CommandPalette() {
   const [results, setResults] = useState<Result[]>([])
   const [active, setActive] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const requestRef = useRef(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Global ⌘K / Ctrl+K toggle.
@@ -58,17 +61,25 @@ export default function CommandPalette() {
     async (q: string) => {
       const term = q.trim()
       if (term.length < 2) {
+        requestRef.current++ // drop any search still in flight
         setResults([])
+        setLoading(false)
+        setFailed(false)
         return
       }
       setLoading(true)
-      const pattern = `full_name.ilike.%${term}%,phone.ilike.%${term}%,email.ilike.%${term}%`
+      // A slow earlier search must not overwrite the results of a newer one.
+      const requestId = ++requestRef.current
+      const people = searchOr(term, { text: ['full_name', 'email'], phone: ['phone'] })!
+      const places = searchOr(term, { text: ['name', 'city'] })!
       const [leads, clients, projects, bookings] = await Promise.all([
-        supabase.from('leads').select('id, full_name, phone').eq('is_active', true).or(pattern).limit(5),
-        supabase.from('clients').select('id, full_name, phone').or(pattern).limit(5),
-        supabase.from('projects').select('id, name, city').or(`name.ilike.%${term}%,city.ilike.%${term}%`).limit(4),
+        supabase.from('leads').select('id, full_name, phone').eq('is_active', true).or(people).limit(5),
+        supabase.from('clients').select('id, full_name, phone').or(people).limit(5),
+        supabase.from('projects').select('id, name, city').or(places).limit(4),
         supabase.from('bookings').select('id, booking_number').ilike('booking_number', `%${term}%`).limit(4),
       ])
+      if (requestId !== requestRef.current) return
+      setFailed([leads, clients, projects, bookings].some((r) => r.error))
       const out: Result[] = [
         ...(leads.data ?? []).map((l) => ({
           id: l.id as string,
@@ -176,6 +187,8 @@ export default function CommandPalette() {
             <p className="px-4 py-6 text-center text-sm text-slate-400">Type at least 2 characters to search.</p>
           ) : loading ? (
             <p className="px-4 py-6 text-center text-sm text-slate-400">Searching…</p>
+          ) : failed && results.length === 0 ? (
+            <p className="px-4 py-6 text-center text-sm text-red-600" role="alert">Search failed. Check your connection and try again.</p>
           ) : results.length === 0 ? (
             <p className="px-4 py-6 text-center text-sm text-slate-400">No results for “{query}”.</p>
           ) : (

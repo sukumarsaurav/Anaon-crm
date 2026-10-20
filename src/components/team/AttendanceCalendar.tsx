@@ -1,3 +1,4 @@
+import { todayIST } from '@/lib/datetime'
 import { ATTENDANCE_STATUS_CONFIG } from '@/types/team'
 import type { AttendanceLog, AttendanceStatus } from '@/types/team'
 
@@ -22,7 +23,7 @@ function getStatusForDate(date: string, logs: AttendanceLog[]): AttendanceStatus
 export default function AttendanceCalendar({ logs, month, year }: Props) {
   const firstDay = new Date(year, month - 1, 1)
   const daysInMonth = new Date(year, month, 0).getDate()
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayIST()
 
   // Monday=0 offset
   let startOffset = firstDay.getDay() - 1

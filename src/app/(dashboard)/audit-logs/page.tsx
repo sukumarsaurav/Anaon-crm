@@ -145,7 +145,7 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
               {(logs ?? []).map((log: any) => (
                 <tr key={log.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap font-mono">
-                    {new Date(log.created_at).toLocaleString('en-IN')}
+                    {new Date(log.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-sm font-medium text-slate-800">

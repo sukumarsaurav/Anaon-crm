@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Search, X, SlidersHorizontal } from 'lucide-react'
 import { STAGE_CONFIG, SOURCE_LABELS, STAGE_ORDER } from '@/types/leads'
 import type { LeadStage, LeadSource } from '@/types/leads'
@@ -34,6 +34,7 @@ export default function LeadFilters() {
   const setParam = useCallback(
     (key: string, value: string | null) => {
       const params = new URLSearchParams(searchParams.toString())
+      params.delete('page') // a new filter starts from page 1; page 3 of the old result may not exist
       if (value) {
         params.set(key, value)
       } else {
@@ -47,6 +48,7 @@ export default function LeadFilters() {
   const toggleArrayParam = useCallback(
     (key: string, value: string) => {
       const params = new URLSearchParams(searchParams.toString())
+      params.delete('page')
       const current = params.getAll(key)
       if (current.includes(value)) {
         params.delete(key)
@@ -60,6 +62,7 @@ export default function LeadFilters() {
   )
 
   const clearFilters = () => {
+    setSearch('')
     router.push(pathname)
   }
 
@@ -67,8 +70,31 @@ export default function LeadFilters() {
   const activeStages = searchParams.getAll('stage') as LeadStage[]
   const activeSources = searchParams.getAll('source') as LeadSource[]
   const activeTemps = searchParams.getAll('temperature')
-  const search = searchParams.get('search') || ''
-  const hasFilters = activeStages.length || activeSources.length || activeTemps.length || search
+  const urlSearch = searchParams.get('search') || ''
+
+  // Typing used to navigate on every keystroke: one server render and one history entry per
+  // character, and the box (bound to the URL) lagged behind fast typing. Keep the text local and
+  // write it to the URL once typing pauses, replacing the entry instead of pushing a new one.
+  const [search, setSearch] = useState(urlSearch)
+  const [seenUrlSearch, setSeenUrlSearch] = useState(urlSearch)
+  if (seenUrlSearch !== urlSearch) {
+    // Back/forward or "Clear filters" changed the URL: follow it.
+    setSeenUrlSearch(urlSearch)
+    setSearch(urlSearch)
+  }
+  useEffect(() => {
+    if (search.trim() === urlSearch.trim()) return
+    const t = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString())
+      if (search.trim()) params.set('search', search.trim())
+      else params.delete('search')
+      params.delete('page')
+      router.replace(`${pathname}?${params.toString()}`)
+    }, 350)
+    return () => clearTimeout(t)
+  }, [search, urlSearch, searchParams, router, pathname])
+
+  const hasFilters = activeStages.length || activeSources.length || activeTemps.length || urlSearch
 
   return (
     <div className="space-y-3">
@@ -98,12 +124,12 @@ export default function LeadFilters() {
           <input aria-label="Search name, phone..."
             type="text"
             value={search}
-            onChange={(e) => setParam('search', e.target.value || null)}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name, phone..."
             className="text-sm text-slate-700 placeholder:text-slate-400 outline-none bg-transparent w-full"
           />
           {search && (
-            <button onClick={() => setParam('search', null)}>
+            <button type="button" onClick={() => setSearch('')} aria-label="Clear search">
               <X size={14} className="text-slate-400 hover:text-slate-600" />
             </button>
           )}
@@ -153,9 +179,14 @@ export default function LeadFilters() {
         <select aria-label="Sort leads by"
           value={`${searchParams.get('sort_by') || 'created_at'}:${searchParams.get('sort_dir') || 'desc'}`}
           onChange={(e) => {
+            // One navigation: two setParam calls each built on the same old URL, so the second
+            // (sort_dir) dropped the first (sort_by) and "Highest Score" never sorted by score.
             const [by, dir] = e.target.value.split(':')
-            setParam('sort_by', by)
-            setParam('sort_dir', dir)
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('sort_by', by)
+            params.set('sort_dir', dir)
+            params.delete('page')
+            router.push(`${pathname}?${params.toString()}`)
           }}
           className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
         >

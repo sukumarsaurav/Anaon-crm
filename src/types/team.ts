@@ -202,7 +202,7 @@ export const ATTENDANCE_STATUS_CONFIG: Record<AttendanceStatus, { label: string;
   half_day: { label: 'Half Day', color: 'text-amber-700',  bg: 'bg-amber-100' },
   on_leave: { label: 'On Leave', color: 'text-blue-700',   bg: 'bg-blue-100' },
   holiday:  { label: 'Holiday',  color: 'text-purple-700', bg: 'bg-purple-100' },
-  weekend:  { label: 'Weekend',  color: 'text-gray-500',   bg: 'bg-gray-100' },
+  weekend:  { label: 'Weekend',  color: 'text-slate-500',   bg: 'bg-slate-100' },
 }
 
 export const ANNOUNCEMENT_TYPE_CONFIG: Record<AnnouncementType, { label: string; color: string; bg: string }> = {

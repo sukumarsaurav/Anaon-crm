@@ -120,7 +120,7 @@ export const COMMISSION_STATUS_CONFIG: Record<CommissionStatus, { label: string;
   pending:  { label: 'Pending',  color: 'text-amber-700',  bg: 'bg-amber-50'  },
   approved: { label: 'Approved', color: 'text-blue-700',   bg: 'bg-blue-50'   },
   paid:     { label: 'Paid',     color: 'text-green-700',  bg: 'bg-green-50'  },
-  voided:   { label: 'Voided',   color: 'text-gray-500',   bg: 'bg-gray-100'  },
+  voided:   { label: 'Voided',   color: 'text-slate-500',   bg: 'bg-slate-100'  },
 }
 
 export const REFERRED_BY_LABELS: Record<ReferredBySource, string> = {

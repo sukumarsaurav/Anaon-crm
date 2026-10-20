@@ -83,7 +83,7 @@ export const PLATFORM_CONFIG: Record<CampaignPlatform, { label: string; color: s
   portal99acres: { label: '99acres',       color: 'text-orange-700', bg: 'bg-orange-50' },
   magicbricks:   { label: 'MagicBricks',   color: 'text-red-700',    bg: 'bg-red-50' },
   housing:       { label: 'Housing.com',   color: 'text-purple-700', bg: 'bg-purple-50' },
-  other:         { label: 'Other',         color: 'text-gray-700',   bg: 'bg-gray-100' },
+  other:         { label: 'Other',         color: 'text-slate-700',   bg: 'bg-slate-100' },
 }
 
 export const CAMPAIGN_PLATFORMS: { value: CampaignPlatform; label: string }[] = [

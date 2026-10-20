@@ -1,5 +1,6 @@
 'use client'
 
+import { todayIST } from '@/lib/datetime'
 import { useState, useTransition } from 'react'
 import { applyLeave } from '@/lib/team/actions'
 import { LEAVE_TYPE_LABELS } from '@/types/team'
@@ -51,7 +52,7 @@ export default function LeaveApplyForm({ onClose }: Props) {
                 name="from_date"
                 type="date"
                 required
-                min={new Date().toISOString().split('T')[0]}
+                min={todayIST()}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
@@ -61,7 +62,7 @@ export default function LeaveApplyForm({ onClose }: Props) {
                 name="to_date"
                 type="date"
                 required
-                min={new Date().toISOString().split('T')[0]}
+                min={todayIST()}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
-import { istToIso } from '@/lib/datetime'
+import { istToIso, todayIST } from '@/lib/datetime'
 import { decideLeave } from '@/lib/hr/leave'
 
 async function requireRole(roles: string[]) {
@@ -50,7 +50,7 @@ export async function checkIn(lat?: number, lng?: number) {
   const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayIST()
   const now   = new Date().toISOString()
 
   const { error } = await supabase.from('attendance_logs').upsert({
@@ -73,7 +73,7 @@ export async function checkOut(lat?: number, lng?: number) {
   const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayIST()
   const now   = new Date().toISOString()
 
   const { error } = await supabase

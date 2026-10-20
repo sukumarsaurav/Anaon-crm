@@ -1,3 +1,4 @@
+import { istDayStart, todayIST } from '@/lib/datetime'
 import { createClient } from '@/lib/supabase/server'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -52,7 +53,8 @@ export async function getExecDashboard() {
 
 export async function getDailyLeadTrend(days = 30) {
   const supabase = await createClient()
-  const from = new Date(Date.now() - days * 86400000).toISOString().split('T')[0]
+  // Days are IST calendar days; bucketing by the UTC date put a lead created at 1 am IST on the previous day.
+  const from = istDayStart(new Date(), -(days - 1)).toISOString()
   const { data } = await supabase
     .from('leads')
     .select('created_at')
@@ -61,11 +63,11 @@ export async function getDailyLeadTrend(days = 30) {
 
   const counts: Record<string, number> = {}
   for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 86400000).toISOString().split('T')[0]
+    const d = todayIST(new Date(Date.now() - i * 86400000))
     counts[d] = 0
   }
   for (const r of data ?? []) {
-    const d = r.created_at.split('T')[0]
+    const d = todayIST(new Date(r.created_at))
     if (d in counts) counts[d]++
   }
   return Object.entries(counts).map(([date, count]) => ({ date, count }))
@@ -410,7 +412,7 @@ export async function getCollectionReport(from?: string, to?: string) {
 
 export async function getOutstandingReport() {
   const supabase = await createClient()
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayIST()
   const { data } = await supabase
     .from('payments')
     .select('*, client:clients(full_name, phone), booking:bookings(booking_number, project:projects(name))')

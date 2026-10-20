@@ -5,22 +5,30 @@ import { getProfile } from '@/lib/supabase/getProfile'
 import { getActiveProjectOptions } from '@/lib/cache/referenceData'
 import type { Lead, LeadActivity, LeadFilters, SiteVisit, DuplicateCheck } from '@/types/leads'
 import { computeSlaStatus } from '@/lib/utils'
+import { istDayBounds, istDayStart, istWeekStart } from '@/lib/datetime'
+import { searchOr } from '@/lib/supabase/search'
 
+/**
+ * Columns the list views (table, kanban, overdue) actually render, plus what the SLA badge needs.
+ * The lists are client components, so `*` (47 columns) was serialised into the page for every row:
+ * 277 KB of HTML for 33 leads. The detail page still loads the full row via getLeadById.
+ */
 const LEADS_SELECT = `
-  *,
-  assigned_profile:profiles!leads_assigned_to_fkey(id, full_name, phone, role, photo_url),
-  project:projects(id, name, city, type, status)
+  id, full_name, phone, email, city, source, stage, stage_changed_at, temperature, score,
+  budget_min, budget_max, project_id, assigned_to, next_followup_at, is_active, created_at,
+  assigned_profile:profiles!leads_assigned_to_fkey(id, full_name),
+  project:projects(id, name)
 `
+
+/** Columns the list may be sorted by. Anything else in the URL fell through to PostgREST and errored into an empty list. */
+const SORTABLE = new Set(['created_at', 'score', 'next_followup_at', 'full_name', 'stage_changed_at'])
 
 /** Lead ids with a site visit scheduled in the current week (for the visits_week view). */
 async function resolveVisitsWeekIds(
   supabase: Awaited<ReturnType<typeof createClient>>
 ): Promise<string[]> {
-  const weekStart = new Date()
-  weekStart.setHours(0, 0, 0, 0)
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay()) // Sunday
-  const weekEnd = new Date(weekStart)
-  weekEnd.setDate(weekEnd.getDate() + 7)
+  const weekStart = istWeekStart() // Sunday 00:00 IST; the server clock is UTC
+  const weekEnd = istDayStart(weekStart, 7)
 
   const { data: visits } = await supabase
     .from('site_visits')
@@ -56,14 +64,17 @@ function buildLeadsQuery(
   } else if (filters.view === 'hot') {
     query = query.gte('score', 80)
   } else if (filters.view === 'overdue') {
-    query = query.lt('next_followup_at', new Date().toISOString()).not('next_followup_at', 'is', null)
+    // Same rule as get_lead_stats' `overdue`, so the dashboard count matches the list it links to.
+    query = query
+      .lt('next_followup_at', new Date().toISOString())
+      .not('next_followup_at', 'is', null)
+      .not('stage', 'in', '(closed_won,not_interested)')
   } else if (filters.view === 'today') {
-    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
-    const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999)
-    query = query.gte('next_followup_at', todayStart.toISOString()).lte('next_followup_at', todayEnd.toISOString())
+    // The IST day, not the server's (UTC) day, which ran 05:30 → 05:29 IST.
+    const { start, end } = istDayBounds()
+    query = query.gte('next_followup_at', start.toISOString()).lt('next_followup_at', end.toISOString())
   } else if (filters.view === 'new_today') {
-    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
-    query = query.gte('created_at', todayStart.toISOString())
+    query = query.gte('created_at', istDayStart().toISOString())
   } else if (filters.view === 'ready_to_buy') {
     query = query.in('stage', ['negotiation', 'token_paid'])
   } else if (filters.view === 'future_buyers') {
@@ -86,13 +97,12 @@ function buildLeadsQuery(
   if (filters.budget_max != null) query = query.lte('budget_min', filters.budget_max)
   if (filters.date_from) query = query.gte('created_at', filters.date_from)
   if (filters.date_to) query = query.lte('created_at', filters.date_to)
-  if (filters.search) {
-    query = query.or(`full_name.ilike.%${filters.search}%,phone.ilike.%${filters.search}%,email.ilike.%${filters.search}%`)
-  }
+  const search = searchOr(filters.search, { text: ['full_name', 'email'], phone: ['phone'] })
+  if (search) query = query.or(search)
 
   if (!head) {
-    const sortBy = filters.sort_by || 'created_at'
-    query = query.order(sortBy, { ascending: filters.sort_dir === 'asc' })
+    const sortBy = filters.sort_by && SORTABLE.has(filters.sort_by) ? filters.sort_by : 'created_at'
+    query = query.order(sortBy, { ascending: filters.sort_dir === 'asc', nullsFirst: false })
   }
   return query
 }

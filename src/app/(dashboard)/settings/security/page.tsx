@@ -33,7 +33,7 @@ export default async function SecuritySettingsPage() {
           <span>Time:</span>
           <span className="text-slate-800 font-medium">
             {profile?.last_login_at
-              ? new Date(profile.last_login_at).toLocaleString('en-IN')
+              ? new Date(profile.last_login_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
               : 'Unknown'}
           </span>
           <span>IP Address:</span>

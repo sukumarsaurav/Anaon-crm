@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import { todayIST } from '@/lib/datetime'
 import { redirect } from 'next/navigation'
 import { getPortalSession } from '@/lib/portal/session'
 import { getPortalClientData } from '@/lib/portal/queries'
@@ -18,7 +19,7 @@ export default async function ClientPortalPaymentsPage() {
   const data = await getPortalClientData(session.client.id)
   const { payments, paymentSummary, booking } = data
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayIST()
 
   return (
     <div className="p-5 max-w-2xl mx-auto space-y-5">

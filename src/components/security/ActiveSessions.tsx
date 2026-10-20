@@ -47,8 +47,8 @@ export default function ActiveSessions({ sessions, currentUserId, targetUserId }
         <div className="space-y-3">
           {sessions.map(s => {
             const mobile = isMobile(s.device_info)
-            const lastActive = new Date(s.last_active_at).toLocaleString('en-IN')
-            const created = new Date(s.created_at).toLocaleString('en-IN')
+            const lastActive = new Date(s.last_active_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+            const created = new Date(s.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
             return (
               <div key={s.id} className="flex items-start justify-between gap-3 py-3 border-b border-slate-100 last:border-0">
                 <div className="flex items-start gap-3">

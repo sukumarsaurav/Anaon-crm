@@ -1,5 +1,6 @@
 'use server'
 
+import { todayIST } from '@/lib/datetime'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
@@ -102,7 +103,7 @@ export async function updateMilestoneProgress(milestoneId: string, projectId: st
   }
 
   if (status === 'completed' && completionPct === 100) {
-    updates.actual_completion_date = formData.get('completion_date') as string || new Date().toISOString().split('T')[0]
+    updates.actual_completion_date = formData.get('completion_date') as string || todayIST()
     updates.completed_by = user.id
   }
 

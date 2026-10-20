@@ -11,6 +11,8 @@ const RULES = [
   { name: 'gray/zinc/neutral palette', re: /\b(?:bg|text|border|ring|divide|from|to|via)-(?:gray|zinc|neutral)-\d+/, hint: 'use slate-*' },
   { name: 'rounded-2xl / rounded-3xl', re: /\brounded-(?:2xl|3xl)\b/, hint: 'use rounded-xl (surfaces) or rounded-lg (controls)', skip: /MessageBubble|\(auth\)|OtpLoginForm|client-portal\/page\.tsx/ },
   { name: 'sub-12px text', re: /text-\[(?:9|10|11)px\]/, hint: 'use text-xs' },
+  { name: 'UTC "today"', re: /new Date\(\)\.toISOString\(\)\.(?:split\('T'\)\[0\]|slice\(0, ?10\))/, hint: 'use todayIST() from lib/datetime (the server clock is UTC)', skip: /lib\/datetime\.ts$/ },
+  { name: 'date/time formatted without a time zone', re: /new Date\([^)]*\)[^;]*\.toLocale(?:Date|Time)?String\('en-IN'(?![^)]*timeZone)/, hint: "add timeZone: 'Asia/Kolkata' or use formatInIST() (server renders run in UTC)" },
   { name: 'hand-rolled modal overlay', re: /fixed inset-0[^"']*(?:items-center|justify-center)/, hint: 'use components/ui/Modal', skip: /ui\/Modal|CommandPalette|DashboardLayout|Sidebar|ui\/Toast/ },
 ]
 
@@ -20,7 +22,7 @@ const walk = (d) => {
     if (n === 'graphify-out' || n === 'node_modules') continue
     const p = join(d, n)
     if (statSync(p).isDirectory()) walk(p)
-    else if (p.endsWith('.tsx')) files.push(p)
+    else if (p.endsWith('.tsx') || p.endsWith('.ts')) files.push(p)
   }
 }
 walk(ROOT)

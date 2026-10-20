@@ -1,3 +1,4 @@
+import { todayIST } from '@/lib/datetime'
 import { after } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import type { TriggerEvent, AutomationContext, Automation, AutomationCondition } from '@/types/automation'
@@ -343,7 +344,7 @@ async function fireAutomationsNow(
       if (isImmediate) {
         // Reference = AgencyX idempotency key. Per day for the daily triggers (next year's
         // birthday must still send); per record otherwise.
-        const day = ONCE_PER_DAY.includes(trigger) ? `_${new Date().toISOString().slice(0, 10)}` : ''
+        const day = ONCE_PER_DAY.includes(trigger) ? `_${todayIST()}` : ''
         await runAutomation(automation, ctx, recordType, recordId,
           recordId ? `auto_${automation.id}_${trigger}_${recordId}${ctx.milestone?.id ? `_${ctx.milestone.id}` : ''}${day}`.slice(0, 200) : null)
       } else {

@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import { todayIST } from '@/lib/datetime'
 import Link from 'next/link'
 import { getAttendanceLogs } from '@/lib/hr/queries'
 import { formatDate } from '@/lib/utils'
@@ -7,7 +8,7 @@ import { ArrowLeft, Clock, MapPin } from 'lucide-react'
 
 function formatTime(ts: string | null) {
   if (!ts) return '—'
-  return new Date(ts).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+  return new Date(ts).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })
 }
 
 function duration(checkIn: string | null, checkOut: string | null) {
@@ -18,7 +19,7 @@ function duration(checkIn: string | null, checkOut: string | null) {
 }
 
 export default async function AttendancePage() {
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayIST()
   const logs = await getAttendanceLogs(today)
 
   const present = logs.filter(l => l.status === 'present').length

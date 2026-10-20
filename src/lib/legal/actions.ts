@@ -1,5 +1,6 @@
 'use server'
 
+import { todayIST } from '@/lib/datetime'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
@@ -61,7 +62,7 @@ export async function markQuarterlyReportSubmitted(projectId: string) {
   nextDue.setMonth(nextDue.getMonth() + 3)
 
   const { error } = await auth.supabase.from('projects').update({
-    quarterly_report_last_submitted: new Date().toISOString().split('T')[0],
+    quarterly_report_last_submitted: todayIST(),
     quarterly_report_due_date:       nextDue.toISOString().split('T')[0],
     updated_at:                      new Date().toISOString(),
   }).eq('id', projectId)

@@ -17,7 +17,7 @@ export default function CheckInWidget({ todayLog }: Props) {
 
   function formatTime(iso: string | null) {
     if (!iso) return '--:--'
-    return new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+    return new Date(iso).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })
   }
 
   async function getLocation(): Promise<{ lat: number; lng: number } | null> {

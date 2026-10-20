@@ -1,3 +1,4 @@
+import { todayIST } from '@/lib/datetime'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getAuditLogs } from '@/lib/security/audit'
@@ -51,7 +52,7 @@ export async function GET(req: NextRequest) {
     metadata: { rows: rows.length, filters: params },
   })
 
-  const filename = `audit-log-${new Date().toISOString().split('T')[0]}.csv`
+  const filename = `audit-log-${todayIST()}.csv`
   return new NextResponse(csv, {
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',

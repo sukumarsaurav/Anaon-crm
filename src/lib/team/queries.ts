@@ -1,5 +1,6 @@
 'use server'
 
+import { todayIST } from '@/lib/datetime'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { calculateAchievementPct, isAtRisk } from './commission'
@@ -193,7 +194,7 @@ export async function getTeamPerformanceSummary(
   branchId?: string
 ): Promise<MemberPerformanceSummary[]> {
   const members = await getTeamMembers(branchId)
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayIST()
 
   const summaries = await Promise.all(
     members
@@ -240,7 +241,7 @@ export async function getTeamPerformanceSummary(
 
 async function getTodayAttendance(userId: string): Promise<AttendanceLog | null> {
   const supabase = await createClient()
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayIST()
   const { data } = await supabase
     .from('attendance_logs')
     .select('*')

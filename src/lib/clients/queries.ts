@@ -1,5 +1,6 @@
 'use server'
 
+import { todayIST } from '@/lib/datetime'
 import { decryptPii } from '@/lib/security/pii'
 import { createClient } from '@/lib/supabase/server'
 import { formatCurrency } from '@/lib/utils'
@@ -98,7 +99,7 @@ export async function getClientPayments(clientId: string): Promise<Payment[]> {
 
 export async function getPaymentSummary(bookingId: string): Promise<PaymentSummary> {
   const payments = await getBookingPayments(bookingId)
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayIST()
 
   // A waived installment is forgiven: it neither counts as due nor as outstanding.
   const payable     = payments.filter((p) => p.status !== 'waived')

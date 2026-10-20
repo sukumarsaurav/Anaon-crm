@@ -1,5 +1,6 @@
 'use client'
 
+import { todayIST } from '@/lib/datetime'
 import { useState, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { addDisbursementTranche, updateDisbursementStatus } from '@/lib/loans/actions'
@@ -88,7 +89,7 @@ export default function DisbursementManager({ loanId, disbursements, milestones 
                     </div>
                     <div>
                       <label htmlFor="disbursementmanager-actual-date" className="block text-xs text-slate-500 mb-1">Date Received</label>
-                      <input id="disbursementmanager-actual-date" type="date" name="actual_date" defaultValue={new Date().toISOString().split('T')[0]} required
+                      <input id="disbursementmanager-actual-date" type="date" name="actual_date" defaultValue={todayIST()} required
                         className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary-500" />
                     </div>
                     <div>

@@ -1,5 +1,6 @@
 'use client'
 
+import { todayIST } from '@/lib/datetime'
 import { useState, useTransition } from 'react'
 import { formatDate } from '@/lib/utils'
 import { schedulePriceEscalation } from '@/lib/inventory/actions'
@@ -50,7 +51,7 @@ export default function PriceEscalationPanel({ projectId, escalations, canManage
             <div>
               <label htmlFor="priceescalationpanel-escalation-date" className="block text-xs font-medium text-slate-600 mb-1">Escalation Date *</label>
               <input id="priceescalationpanel-escalation-date" name="escalation_date" type="date" required
-                min={new Date().toISOString().split('T')[0]}
+                min={todayIST()}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>

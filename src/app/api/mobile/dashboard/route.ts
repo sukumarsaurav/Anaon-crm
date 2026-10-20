@@ -1,3 +1,4 @@
+import { todayIST } from '@/lib/datetime'
 import { NextRequest, NextResponse } from 'next/server'
 import { getMobileUser } from '@/lib/mobile/auth'
 
@@ -6,7 +7,7 @@ export async function GET(req: NextRequest) {
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { user, profile, supabase } = auth
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = todayIST()
 
   const [followUps, overdueLeads, myLeads, myLeadsMonth, attendance, recentLeads] = await Promise.all([
     supabase.from('leads')

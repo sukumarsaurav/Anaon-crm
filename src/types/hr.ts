@@ -146,7 +146,7 @@ export interface PayrollSlip {
 }
 
 export const CANDIDATE_STAGES: { value: CandidateStage; label: string; color: string; bg: string }[] = [
-  { value: 'applied',              label: 'Applied',             color: 'text-gray-700',   bg: 'bg-gray-100' },
+  { value: 'applied',              label: 'Applied',             color: 'text-slate-700',   bg: 'bg-slate-100' },
   { value: 'shortlisted',          label: 'Shortlisted',         color: 'text-blue-700',   bg: 'bg-blue-50' },
   { value: 'interview_scheduled',  label: 'Interview Scheduled', color: 'text-amber-700',  bg: 'bg-amber-50' },
   { value: 'interview_done',       label: 'Interview Done',      color: 'text-purple-700', bg: 'bg-purple-50' },

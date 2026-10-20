@@ -1,5 +1,6 @@
 'use server'
 
+import { todayIST } from '@/lib/datetime'
 import { createClient } from '@/lib/supabase/server'
 import type { PortalClientData, ConstructionUpdate, PaymentExtensionRequest } from '@/types/portal'
 import type { Client, Payment, ClientDocument, Complaint } from '@/types/clients'
@@ -63,7 +64,7 @@ export async function getPortalClientData(clientId: string): Promise<PortalClien
   const paidTotal    = payments.reduce((s, p) => s + (p.amount_paid ?? 0), 0)
   const totalDue     = payments.reduce((s, p) => s + p.amount_due, 0)
   const overdueCount = payments.filter(
-    (p) => p.status === 'pending' && p.due_date < new Date().toISOString().split('T')[0]
+    (p) => p.status === 'pending' && p.due_date < todayIST()
   ).length
   const pending = payments
     .filter((p) => p.status === 'pending')

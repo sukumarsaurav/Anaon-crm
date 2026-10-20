@@ -1,5 +1,6 @@
 'use client'
 
+import { todayIST } from '@/lib/datetime'
 import { useState, startTransition, useId } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateCandidateStage, scheduleInterview, submitInterviewFeedback, makeOffer } from '@/lib/hr/actions'
@@ -61,7 +62,7 @@ export default function CandidateStageActions({ candidateId, stage, interviewers
     })
   }
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayIST()
 
   return (
     <div className="space-y-2">

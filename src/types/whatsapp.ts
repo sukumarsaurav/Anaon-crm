@@ -260,5 +260,5 @@ export const CONVERSATION_STATUS_CONFIG: Record<WaConversationStatus, { label: s
   in_progress: { label: 'In Progress', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' },
   waiting_reply: { label: 'Waiting Reply', color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-200' },
   resolved: { label: 'Resolved', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200' },
-  closed: { label: 'Closed', color: 'text-gray-600', bg: 'bg-gray-100', border: 'border-gray-200' },
+  closed: { label: 'Closed', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200' },
 }

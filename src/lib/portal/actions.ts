@@ -1,5 +1,6 @@
 'use server'
 
+import { todayIST } from '@/lib/datetime'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
@@ -183,7 +184,7 @@ export async function createConstructionUpdate(formData: FormData) {
     description:         formData.get('description') as string || null,
     milestone:           formData.get('milestone') as string || null,
     percentage_complete: parseFloat(formData.get('percentage_complete') as string) || 0,
-    update_date:         formData.get('update_date') as string || new Date().toISOString().split('T')[0],
+    update_date:         formData.get('update_date') as string || todayIST(),
     is_published:        formData.get('is_published') === 'true',
     posted_by:           user.id,
     created_at:          new Date().toISOString(),

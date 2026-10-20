@@ -29,27 +29,37 @@ interface LeadDetailPageProps {
 
 export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
   const { id } = await params
-  const [lead, activities, siteVisits, projects] = await Promise.all([
-    getLeadById(id),
+
+  // One wave of queries: the advisors list only needs the viewer's branch and the duplicate
+  // check only needs the lead, so each starts as soon as its input arrives instead of after
+  // everything else (they used to be two extra sequential round-trips).
+  const sessionP = getProfile()
+  const leadP = getLeadById(id)
+  const advisorsP = sessionP.then((s) => getActiveAdvisors(s?.profile?.branch_id ?? undefined))
+  const duplicatesP = Promise.all([leadP, sessionP]).then(async ([l, s]) => {
+    const canMerge = ['admin', 'manager'].includes(s?.profile?.role ?? '')
+    if (!l || !canMerge) return []
+    return (await checkDuplicate(l.phone, l.email ?? undefined, l.id)).leads
+  })
+
+  const [lead, activities, siteVisits, projects, session, advisors, duplicates] = await Promise.all([
+    leadP,
     getLeadActivities(id),
     getSiteVisits(id),
     getProjects(),
+    sessionP,
+    advisorsP,
+    duplicatesP,
   ])
 
   // Soft-deleted leads must not stay reachable by URL.
   if (!lead || lead.is_active === false) notFound()
 
-  const user = (await getProfile())?.user
+  const user = session?.user
   if (!user) return null
 
-  const profile = (await getProfile())?.profile
-
-  const advisors = await getActiveAdvisors(profile?.branch_id ?? undefined)
-
+  const profile = session?.profile
   const canMerge = ['admin', 'manager'].includes(profile?.role ?? '')
-  const duplicates = canMerge
-    ? (await checkDuplicate(lead.phone, lead.email ?? undefined, lead.id)).leads
-    : []
 
   const currentStageIndex = STAGE_ORDER.indexOf(lead.stage)
 

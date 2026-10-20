@@ -189,7 +189,7 @@ export const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { label: string; color
   pending: { label: 'Pending', color: 'text-amber-700', bg: 'bg-amber-50',  border: 'border-amber-200' },
   paid:    { label: 'Paid',    color: 'text-green-700', bg: 'bg-green-50',  border: 'border-green-200' },
   overdue: { label: 'Overdue', color: 'text-red-700',   bg: 'bg-red-50',    border: 'border-red-200'   },
-  waived:  { label: 'Waived',  color: 'text-gray-500',  bg: 'bg-gray-100',  border: 'border-gray-200'  },
+  waived:  { label: 'Waived',  color: 'text-slate-500',  bg: 'bg-slate-100',  border: 'border-slate-200'  },
 }
 
 export const COMPLAINT_STATUS_CONFIG: Record<ComplaintStatus, { label: string; color: string; bg: string }> = {
@@ -200,7 +200,7 @@ export const COMPLAINT_STATUS_CONFIG: Record<ComplaintStatus, { label: string; c
 }
 
 export const COMPLAINT_PRIORITY_CONFIG: Record<ComplaintPriority, { label: string; color: string }> = {
-  low:    { label: 'Low',    color: 'text-gray-500'  },
+  low:    { label: 'Low',    color: 'text-slate-500'  },
   normal: { label: 'Normal', color: 'text-blue-600'  },
   high:   { label: 'High',   color: 'text-amber-600' },
   urgent: { label: 'Urgent', color: 'text-red-600'   },

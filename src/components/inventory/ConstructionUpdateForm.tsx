@@ -1,5 +1,6 @@
 'use client'
 
+import { todayIST } from '@/lib/datetime'
 import { useState, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createConstructionUpdate } from '@/lib/portal/actions'
@@ -79,7 +80,7 @@ export default function ConstructionUpdateForm({ projectId }: Props) {
 
         <div>
           <label htmlFor="constructionupdateform-update-date" className="block text-sm font-medium text-slate-700 mb-1">Update Date</label>
-          <input id="constructionupdateform-update-date" name="update_date" type="date" defaultValue={new Date().toISOString().split('T')[0]}
+          <input id="constructionupdateform-update-date" name="update_date" type="date" defaultValue={todayIST()}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
 

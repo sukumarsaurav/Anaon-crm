@@ -82,7 +82,7 @@ export default async function SharedAlbumPage({ params }: PageProps) {
               {project.expected_completion_date && (
                 <span className="flex items-center gap-1.5 text-slate-600">
                   <CalendarClock size={14} className="text-slate-400" />
-                  Possession {new Date(project.expected_completion_date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                  Possession {new Date(project.expected_completion_date).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', year: 'numeric' })}
                 </span>
               )}
               {project.rera_number && (

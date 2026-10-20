@@ -1,5 +1,6 @@
 'use client'
 
+import { todayIST } from '@/lib/datetime'
 import { useEffect, useState } from 'react'
 import { X, UserCheck, Download, GitBranch, MessageSquare } from 'lucide-react'
 import Button from '@/components/ui/Button'
@@ -87,15 +88,15 @@ export default function BulkActionsBar({ selectedIds, advisors, onClear }: BulkA
         l.temperature,
         l.score,
         l.source,
-        l.next_followup_at ? new Date(l.next_followup_at).toLocaleDateString('en-IN') : '',
-        new Date(l.created_at).toLocaleDateString('en-IN'),
+        l.next_followup_at ? new Date(l.next_followup_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
+        new Date(l.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }),
       ])
       const csv = [headers, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `leads-export-${new Date().toISOString().slice(0, 10)}.csv`
+      a.download = `leads-export-${todayIST()}.csv`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)

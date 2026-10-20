@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getMobileUser } from '@/lib/mobile/auth'
+import { searchOr } from '@/lib/supabase/search'
 
 export async function GET(req: NextRequest) {
   const auth = await getMobileUser(req)
@@ -19,10 +20,9 @@ export async function GET(req: NextRequest) {
     .limit(100)
 
   if (myOnly) q = q.eq('assigned_to', user.id)
-  // Commas, parentheses and dots are PostgREST filter syntax; letting them through lets
-  // the caller append conditions of their own.
-  const term = search.replace(/[^\p{L}\p{N}\s+@-]/gu, '').trim()
-  if (term) q = q.or(`full_name.ilike.%${term}%,phone.ilike.%${term}%`)
+  // searchOr quotes the term, so PostgREST filter syntax in it is matched literally.
+  const filter = searchOr(search, { text: ['full_name'], phone: ['phone'] })
+  if (filter) q = q.or(filter)
 
   const { data, error } = await q
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

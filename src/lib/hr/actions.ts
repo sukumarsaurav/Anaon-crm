@@ -1,5 +1,6 @@
 'use server'
 
+import { todayIST } from '@/lib/datetime'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
@@ -170,7 +171,7 @@ export async function deactivateEmployee(employeeId: string, reason: string) {
       .from('profiles')
       .update({
         is_active:           false,
-        termination_date:    new Date().toISOString().split('T')[0],
+        termination_date:    todayIST(),
         termination_reason:  reason,
         updated_at:          new Date().toISOString(),
       })

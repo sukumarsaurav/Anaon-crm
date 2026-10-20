@@ -114,7 +114,7 @@ export default async function AdminSecurityPage() {
                       }
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-500">
-                      {p.last_login_at ? new Date(p.last_login_at).toLocaleString('en-IN') : '—'}
+                      {p.last_login_at ? new Date(p.last_login_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '—'}
                     </td>
                   </tr>
                 )
@@ -154,7 +154,7 @@ export default async function AdminSecurityPage() {
                     {log.ip_address && <span className="text-xs text-slate-400 font-mono">{String(log.ip_address)}</span>}
                   </div>
                   <span className="text-xs text-slate-400">
-                    {new Date(log.created_at).toLocaleString('en-IN')}
+                    {new Date(log.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
                   </span>
                 </div>
               )

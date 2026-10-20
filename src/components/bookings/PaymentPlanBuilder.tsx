@@ -1,5 +1,6 @@
 'use client'
 
+import { todayIST } from '@/lib/datetime'
 import { useState, useTransition } from 'react'
 import { addBookingInstallment, deleteBookingInstallment } from '@/lib/bookings/actions'
 import { formatCurrency, formatDate } from '@/lib/utils'
@@ -118,7 +119,7 @@ export default function PaymentPlanBuilder({ bookingId, clientId, totalValue, pa
           <EmptyState title="No installments scheduled yet" className="py-6" />
         )}
         {payments.map((p) => {
-          const today = new Date().toISOString().split('T')[0]
+          const today = todayIST()
           const isOverdue = p.status === 'pending' && p.due_date < today
           const key = isOverdue ? 'overdue' : p.status
           const cfg = PAYMENT_STATUS_CONFIG[key as keyof typeof PAYMENT_STATUS_CONFIG] ?? PAYMENT_STATUS_CONFIG.pending

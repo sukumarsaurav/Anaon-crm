@@ -1,5 +1,6 @@
 'use client'
 
+import { todayIST } from '@/lib/datetime'
 import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBooking } from '@/lib/bookings/actions'
@@ -158,7 +159,7 @@ export default function BookingCreateForm({ clients, projects, advisors, brokers
           <div>
             <label htmlFor="bookingcreateform-booking-date" className="block text-xs font-medium text-slate-600 mb-1">Booking Date *</label>
             <input id="bookingcreateform-booking-date" name="booking_date" type="date" required
-              defaultValue={new Date().toISOString().split('T')[0]}
+              defaultValue={todayIST()}
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>

@@ -1,5 +1,6 @@
 'use server'
 
+import { todayIST } from '@/lib/datetime'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
@@ -61,7 +62,7 @@ export async function createBooking(formData: FormData) {
     broker_id:               brokerId,
     broker_commission_pct:   brokerPct,
     broker_commission_amount: brokerAmount,
-    booking_date:            formData.get('booking_date') as string || new Date().toISOString().split('T')[0],
+    booking_date:            formData.get('booking_date') as string || todayIST(),
     agreement_date:          formData.get('agreement_date') as string || null,
     expected_possession_date: formData.get('expected_possession_date') as string || null,
     referred_by_source:      formData.get('referred_by_source') as string || null,
@@ -120,7 +121,7 @@ export async function approveBooking(bookingId: string, notes?: string) {
     held_by:             null,
     held_until:          null,
     booked_by_client_id: booking.client_id,
-    booking_date:        new Date().toISOString().split('T')[0],
+    booking_date:        todayIST(),
     updated_at:          new Date().toISOString(),
   }).eq('id', booking.plot_id)
   if (plotError) {
@@ -162,7 +163,7 @@ export async function approveBooking(bookingId: string, notes?: string) {
   // Fire booking_created automation
   const { data: clientData } = await auth.supabase.from('clients').select('full_name, phone').eq('id', booking.client_id).single()
   fireAutomations('booking_created', {
-    booking: { id: bookingId, booking_date: new Date().toISOString().split('T')[0], project_id: booking.project_id },
+    booking: { id: bookingId, booking_date: todayIST(), project_id: booking.project_id },
     client: clientData ? { id: booking.client_id, full_name: clientData.full_name, phone: clientData.phone } : undefined,
   }, 'booking', bookingId)
 
@@ -198,7 +199,7 @@ export async function rejectBooking(bookingId: string, reason: string) {
   const { error } = await auth.supabase.from('bookings').update({
     status:             'cancelled',
     cancellation_reason: reason,
-    cancellation_date:  new Date().toISOString().split('T')[0],
+    cancellation_date:  todayIST(),
     approved_by:        auth.userId,
     approved_at:        new Date().toISOString(),
     approval_notes:     reason,
@@ -248,7 +249,7 @@ export async function cancelBooking(bookingId: string, formData: FormData) {
   const { error } = await auth.supabase.from('bookings').update({
     status:               'cancelled',
     cancellation_reason:  formData.get('reason') as string,
-    cancellation_date:    new Date().toISOString().split('T')[0],
+    cancellation_date:    todayIST(),
     cancellation_charges: parseFloat(formData.get('cancellation_charges') as string) || null,
     updated_at:           new Date().toISOString(),
   }).eq('id', bookingId)
@@ -325,7 +326,7 @@ export async function uploadAgreement(bookingId: string, url: string, signed: bo
   const { error } = await auth.supabase.from('bookings').update({
     agreement_url:    url,
     agreement_signed: signed,
-    agreement_date:   signed ? new Date().toISOString().split('T')[0] : null,
+    agreement_date:   signed ? todayIST() : null,
     updated_at:       new Date().toISOString(),
   }).eq('id', bookingId)
 

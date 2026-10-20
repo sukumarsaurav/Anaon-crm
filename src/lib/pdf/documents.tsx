@@ -12,7 +12,7 @@ function inr(n: number | null | undefined): string {
 }
 function fmtDate(d: string | null | undefined): string {
   if (!d) return '—'
-  return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+  return new Date(d).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 const C = { ink: '#1e293b', muted: '#64748b', line: '#e2e8f0', gold: '#a87e26' }

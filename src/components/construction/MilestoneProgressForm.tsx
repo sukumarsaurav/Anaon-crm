@@ -1,5 +1,6 @@
 'use client'
 
+import { todayIST } from '@/lib/datetime'
 import { useState, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateMilestoneProgress } from '@/lib/construction/actions'
@@ -76,7 +77,7 @@ export default function MilestoneProgressForm({ milestone, projectId, onClose }:
         <div>
           <label htmlFor="milestoneprogressform-completion-date" className="block text-xs font-medium text-slate-600 mb-1">Completion Date</label>
           <input id="milestoneprogressform-completion-date" type="date" name="completion_date"
-            defaultValue={milestone.actual_completion_date ?? new Date().toISOString().split('T')[0]}
+            defaultValue={milestone.actual_completion_date ?? todayIST()}
             className="w-full text-sm rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
         </div>
       )}

@@ -1,5 +1,6 @@
 'use client'
 
+import { todayIST } from '@/lib/datetime'
 import { useState, useTransition } from 'react'
 import { recordPayment, addPaymentInstallment, waivePayment } from '@/lib/clients/actions'
 import { formatCurrency, formatDate } from '@/lib/utils'
@@ -51,7 +52,7 @@ function RecordPaymentModal({
             <div>
               <label htmlFor="paymentschedule-paid-date" className="block text-xs font-medium text-slate-600 mb-1">Payment Date *</label>
               <input id="paymentschedule-paid-date" name="paid_date" type="date" required
-                defaultValue={new Date().toISOString().split('T')[0]}
+                defaultValue={todayIST()}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
@@ -200,7 +201,7 @@ export default function PaymentSchedule({ bookingId, clientId, payments, summary
       <div className="space-y-2">
         {payments.map((p) => {
           const cfg = PAYMENT_STATUS_CONFIG[p.status]
-          const isOverdue = p.status === 'pending' && p.due_date < new Date().toISOString().split('T')[0]
+          const isOverdue = p.status === 'pending' && p.due_date < todayIST()
           const effectiveStatus = isOverdue ? 'overdue' : p.status
           const effectiveCfg = PAYMENT_STATUS_CONFIG[effectiveStatus]
 

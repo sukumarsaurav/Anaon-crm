@@ -43,11 +43,15 @@ export default async function DashboardHome() {
   const role = profile?.role ?? 'sales_advisor'
   const branchId = profile?.branch_id ?? undefined
 
+  const isManager = ['admin', 'manager'].includes(role)
+
+  // The bookings/loans/approvals sections only render for managers; advisors and telecallers
+  // were paying for five queries (incl. a full booking join) whose results were thrown away.
   const [leadStats, bookingStats, loanStats, pendingApprovals] = await Promise.all([
     getLeadStats(user.id, role, branchId),
-    getBookingStats(),
-    getLoanStats(),
-    getPendingApprovals(),
+    isManager ? getBookingStats() : null,
+    isManager ? getLoanStats() : null,
+    isManager ? getPendingApprovals() : [],
   ])
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'there'
@@ -56,8 +60,6 @@ export default async function DashboardHome() {
   const today = formatInIST(now, { weekday: 'long', day: 'numeric', month: 'long' })
   const hour = Number(formatInIST(now, { hour: 'numeric', hourCycle: 'h23' }))
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-
-  const isManager = ['admin', 'manager'].includes(role)
 
   return (
     <div className="p-6 space-y-6">
@@ -110,7 +112,7 @@ export default async function DashboardHome() {
       </div>
 
       {/* Booking + Loan stats — managers only */}
-      {isManager && (
+      {isManager && bookingStats && loanStats && (
         <div>
           <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Sales & Finance</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

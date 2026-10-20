@@ -163,7 +163,7 @@ export const PROJECT_STATUS_CONFIG: Record<ProjectStatus, { label: string; color
   launched:          { label: 'Launched',           color: 'text-blue-700',   bg: 'bg-blue-50',   border: 'border-blue-200' },
   under_construction:{ label: 'Under Construction', color: 'text-amber-700',  bg: 'bg-amber-50',  border: 'border-amber-200' },
   ready_to_move:     { label: 'Ready to Move',      color: 'text-green-700',  bg: 'bg-green-50',  border: 'border-green-200' },
-  sold_out:          { label: 'Sold Out',            color: 'text-gray-600',   bg: 'bg-gray-100',  border: 'border-gray-200' },
+  sold_out:          { label: 'Sold Out',            color: 'text-slate-600',   bg: 'bg-slate-100',  border: 'border-slate-200' },
 }
 
 export const PLOT_STATUS_CONFIG: Record<PlotStatus, { label: string; color: string; bg: string; mapColor: string }> = {
@@ -171,8 +171,8 @@ export const PLOT_STATUS_CONFIG: Record<PlotStatus, { label: string; color: stri
   soft_hold:    { label: 'Soft Hold',    color: 'text-amber-700',  bg: 'bg-amber-50',   mapColor: 'bg-amber-400 hover:bg-amber-500' },
   booked:       { label: 'Booked',       color: 'text-red-700',    bg: 'bg-red-50',     mapColor: 'bg-red-400 hover:bg-red-500' },
   registered:   { label: 'Registered',   color: 'text-red-700',    bg: 'bg-red-50',     mapColor: 'bg-red-500 hover:bg-red-600' },
-  sold:         { label: 'Sold',         color: 'text-gray-700',   bg: 'bg-gray-100',   mapColor: 'bg-gray-500 hover:bg-gray-600' },
-  not_for_sale: { label: 'Not for Sale', color: 'text-gray-500',   bg: 'bg-gray-50',    mapColor: 'bg-gray-300 cursor-not-allowed' },
+  sold:         { label: 'Sold',         color: 'text-slate-700',   bg: 'bg-slate-100',   mapColor: 'bg-slate-500 hover:bg-slate-600' },
+  not_for_sale: { label: 'Not for Sale', color: 'text-slate-500',   bg: 'bg-slate-50',    mapColor: 'bg-slate-300 cursor-not-allowed' },
 }
 
 export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {

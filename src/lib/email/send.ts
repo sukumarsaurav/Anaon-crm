@@ -1,3 +1,4 @@
+import { todayIST } from '@/lib/datetime'
 import { createServiceClient } from '@/lib/supabase/service'
 import { sendEmail, emailConfigured } from './client'
 import { receiptEmail } from './templates'
@@ -41,7 +42,7 @@ export async function sendReceiptEmail(paymentId: string): Promise<void> {
       bookingNumber: booking?.booking_number ?? '—',
       installment: payment.installment_number,
       amount: inr(payment.amount_paid),
-      date: payment.paid_date ?? new Date().toISOString().split('T')[0],
+      date: payment.paid_date ?? todayIST(),
       reference: ref,
     })
 

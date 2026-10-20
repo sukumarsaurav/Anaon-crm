@@ -90,7 +90,7 @@ export const BROKER_STATUS_CONFIG: Record<BrokerStatus, {
   pending:  { label: 'Pending',  color: 'text-amber-700', bg: 'bg-amber-50',  border: 'border-amber-200' },
   approved: { label: 'Approved', color: 'text-green-700', bg: 'bg-green-50',  border: 'border-green-200' },
   rejected: { label: 'Rejected', color: 'text-red-700',   bg: 'bg-red-50',    border: 'border-red-200'   },
-  inactive: { label: 'Inactive', color: 'text-gray-500',  bg: 'bg-gray-100',  border: 'border-gray-200'  },
+  inactive: { label: 'Inactive', color: 'text-slate-500',  bg: 'bg-slate-100',  border: 'border-slate-200'  },
 }
 
 export const LEAD_REG_STATUS_CONFIG: Record<BrokerLeadRegistration['status'], {
@@ -99,5 +99,5 @@ export const LEAD_REG_STATUS_CONFIG: Record<BrokerLeadRegistration['status'], {
   registered: { label: 'Registered', color: 'text-blue-700',   bg: 'bg-blue-50'   },
   duplicate:  { label: 'Duplicate',  color: 'text-amber-700',  bg: 'bg-amber-50'  },
   converted:  { label: 'Converted',  color: 'text-green-700',  bg: 'bg-green-50'  },
-  lost:       { label: 'Lost',       color: 'text-gray-500',   bg: 'bg-gray-100'  },
+  lost:       { label: 'Lost',       color: 'text-slate-500',   bg: 'bg-slate-100'  },
 }

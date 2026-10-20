@@ -52,7 +52,7 @@ export interface ConstructionDashboardData {
 export const MILESTONE_STATUS_CONFIG: Record<MilestoneStatus, {
   label: string; color: string; bg: string; border: string; dot: string
 }> = {
-  pending:     { label: 'Pending',      color: 'text-gray-500',  bg: 'bg-gray-50',   border: 'border-gray-200', dot: 'bg-gray-300'   },
+  pending:     { label: 'Pending',      color: 'text-slate-500',  bg: 'bg-slate-50',   border: 'border-slate-200', dot: 'bg-slate-300'   },
   in_progress: { label: 'In Progress',  color: 'text-blue-700',  bg: 'bg-blue-50',   border: 'border-blue-200', dot: 'bg-blue-500'   },
   completed:   { label: 'Completed',    color: 'text-green-700', bg: 'bg-green-50',  border: 'border-green-200',dot: 'bg-green-500'  },
   delayed:     { label: 'Delayed',      color: 'text-red-700',   bg: 'bg-red-50',    border: 'border-red-200',  dot: 'bg-red-500'    },

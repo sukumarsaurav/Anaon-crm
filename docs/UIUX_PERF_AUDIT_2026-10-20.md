@@ -21,7 +21,28 @@
   - The leads table had a hidden cause: an absolutely positioned `sr-only` header label escaped the table's scroll box and widened the page to 497px. The `LeadsTable` and `DataTable` wrappers are now `relative` to contain it.
   - Re-measured at 375px with the same classes applied to the live pages: /leads 591→370, /team 434→370, /reports/* 507→370, /settings 502→375.
 - **#10:** the dashboard date also moved to IST.
-- **#1:** takes effect on the next deploy. Then re-measure TTFB and check that `x-vercel-id` shows `bom1::bom1`.
+- **#1:** deployed in `506408f`. `x-vercel-id` is now `bom1::bom1`, and warm TTFB dropped from 0.5–1.1 s to 0.13–0.2 s.
+
+**Batch 2 done (2026-10-20):** #5, #6, #8, #9, #11, #17.
+- **#5:**
+  - New helpers in `lib/datetime.ts`: `todayIST`, `istDayStart`, `istDayBounds`, `istWeekStart`.
+  - 33 files moved off UTC "today".
+  - `timeZone: 'Asia/Kolkata'` added to 14 date/time displays, including the site-visit reminder text, which printed the visit time in UTC.
+  - The daily lead trend is now bucketed by IST date.
+  - `npm run lint:ui` now also scans `.ts` and bans both patterns. Scanning `.ts` also surfaced 14 leftover `gray-*` badge colours in `src/types`, now `slate-*`.
+- **#6:**
+  - `lib/supabase/search.ts` `searchOr()` double-quotes values (checked against live PostgREST: the old form returned `PGRST100`) and matches phones on digits. Used by leads, brokers, the mobile leads API and ⌘K.
+  - `sort_by` is allow-listed.
+  - Found and fixed while doing this:
+    - The sort dropdown made two navigations and dropped `sort_by`, so "Highest Score" never sorted by score.
+    - Search navigated on every keystroke; it is now debounced and uses `router.replace`.
+    - Changing a filter now resets `page`.
+  - The `view=overdue` list now excludes closed-won and not-interested leads, like the dashboard count. It was 27 vs 26.
+- **#8:** lead detail runs in one query wave.
+- **#9:** the list select has 17 columns instead of 47.
+- **#11:** the manager-only dashboard queries are skipped for other roles.
+- **#17:** ⌘K ignores stale responses and shows an error state.
+- **Correction to #15:** kanban cards already have a stage menu. Only drag-and-drop is missing.
 
 ## Summary
 
@@ -165,7 +186,7 @@ Every tab, history entry and bookmark reads "ANON INDIA CRM". Only 1 of 99 pages
 - **Copy:** "1 conversations" needs pluralising.
 
 ### 15. Kanban
-- **No drag-and-drop:** [LeadsKanban.tsx](../src/components/leads/LeadsKanban.tsx) can't change a stage, which is the main reason to have a kanban view. Add drag-and-drop with a keyboard alternative (a stage menu on each card) that calls `changeLeadStage`, using an optimistic move.
+- **No drag-and-drop:** [LeadsKanban.tsx](../src/components/leads/LeadsKanban.tsx) changes a stage through a per-card menu only. Add drag-and-drop on top of it, calling `changeLeadStage` with an optimistic move. The menu stays as the keyboard path.
 - **Silent cap:** kanban loads `getLeads` with a silent 200-row cap ([leads/queries.ts:115](../src/lib/leads/queries.ts:115)). Above 200 leads, columns quietly miss cards. Show "Showing 200 of N" or load each column separately.
 
 ### 16. Settings still advertises two-factor authentication

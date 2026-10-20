@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import { todayIST } from '@/lib/datetime'
 import { createClient } from '@/lib/supabase/server'
 import { Smartphone, MapPin, Clock, CheckCircle2, AlertCircle } from 'lucide-react'
 import PageHeader from '@/components/ui/PageHeader'
@@ -29,12 +30,12 @@ const AGENT_STATUS_CONFIG = {
 
 function fmt(t: string | null) {
   if (!t) return '—'
-  return new Date(t).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+  return new Date(t).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })
 }
 
 export default async function MobileAdminPage() {
   const supabase = await createClient()
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = todayIST()
 
   const { data: profiles } = await supabase
     .from('profiles')
@@ -91,7 +92,7 @@ export default async function MobileAdminPage() {
       {/* Header */}
       <PageHeader
         title={<><Smartphone size={20} /> Mobile Team Tracker</>}
-        subtitle={`Real-time field agent activity — ${new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}`}
+        subtitle={`Real-time field agent activity — ${new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', day: 'numeric', month: 'long' })}`}
       />
 
       {/* Summary cards */}

@@ -1,5 +1,6 @@
 'use client'
 
+import { todayIST } from '@/lib/datetime'
 import { useState, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { deleteMilestone } from '@/lib/construction/actions'
@@ -90,7 +91,7 @@ export default function MilestoneTimeline({ milestones, projectId }: Props) {
             const cfg  = MILESTONE_STATUS_CONFIG[m.status as MilestoneStatus]
             const isOpen  = expanded === m.id
             const isOverdue = m.status !== 'completed' && m.expected_date &&
-              m.expected_date < new Date().toISOString().split('T')[0]
+              m.expected_date < todayIST()
 
             return (
               <div key={m.id} className="relative z-10">

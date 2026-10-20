@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { searchOr } from '@/lib/supabase/search'
 import type { Broker, BrokerStats, BrokerLeadRegistration, BrokerCommissionRow, BrokerWithStats } from '@/types/brokers'
 
 // ── Admin queries ──────────────────────────────────────────────────
@@ -19,7 +20,8 @@ export async function getBrokers(filters: {
     .order('created_at', { ascending: false })
 
   if (filters.status) query = query.eq('status', filters.status)
-  if (filters.search) query = query.or(`full_name.ilike.%${filters.search}%,firm_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`)
+  const search = searchOr(filters.search, { text: ['full_name', 'firm_name', 'email'] })
+  if (search) query = query.or(search)
 
   const limit  = filters.limit  ?? 20
   const offset = filters.offset ?? 0

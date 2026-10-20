@@ -1,3 +1,4 @@
+import { todayIST } from '@/lib/datetime'
 import { createClient } from '@/lib/supabase/server'
 import type { Candidate, HREmployee, LeaveRequest, LeaveBalance, AttendanceLog, PayrollRun, PayrollSlip } from '@/types/hr'
 
@@ -88,7 +89,7 @@ export async function getLeaveBalances(userId?: string): Promise<LeaveBalance[]>
 
 export async function getAttendanceLogs(date?: string, userId?: string): Promise<AttendanceLog[]> {
   const supabase = await createClient()
-  const target = date ?? new Date().toISOString().split('T')[0]
+  const target = date ?? todayIST()
   let q = supabase
     .from('attendance_logs')
     .select('*, employee:profiles!attendance_logs_user_id_fkey(full_name, designation)')
@@ -123,7 +124,7 @@ export async function getPayrollSlips(runId: string): Promise<PayrollSlip[]> {
 
 export async function getHRStats() {
   const supabase = await createClient()
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayIST()
   const [employees, candidates, pendingLeaves, todayAttendance] = await Promise.all([
     supabase.from('profiles').select('id, is_active, joining_date').eq('is_active', true),
     supabase.from('career_applications').select('id, stage'),

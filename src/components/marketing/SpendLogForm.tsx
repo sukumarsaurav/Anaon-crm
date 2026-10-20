@@ -1,5 +1,6 @@
 'use client'
 
+import { todayIST } from '@/lib/datetime'
 import { useState, startTransition, useId } from 'react'
 import { useRouter } from 'next/navigation'
 import { logCampaignSpend } from '@/lib/marketing/actions'
@@ -18,7 +19,7 @@ export default function SpendLogForm({ campaignId, campaignName }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayIST()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()

@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import { todayIST } from '@/lib/datetime'
 import { notFound } from 'next/navigation'
 import { getBookingById, getBookingPayments, getBookingCommission } from '@/lib/bookings/queries'
 import { getProfile } from '@/lib/supabase/getProfile'
@@ -58,7 +59,7 @@ export default async function BookingDetailPage({ params }: PageProps) {
 
   const paidTotal    = payments.reduce((s, p) => s + (p.amount_paid ?? 0), 0)
   const pendingTotal = payments.reduce((s, p) => p.status === 'pending' ? s + p.amount_due : s, 0)
-  const overdueCount = payments.filter((p) => p.status === 'pending' && p.due_date < new Date().toISOString().split('T')[0]).length
+  const overdueCount = payments.filter((p) => p.status === 'pending' && p.due_date < todayIST()).length
 
   return (
     <div className="p-6 space-y-6">
