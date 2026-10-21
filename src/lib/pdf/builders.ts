@@ -52,8 +52,12 @@ export async function buildReceiptForPayment(paymentId: string): Promise<BuiltPd
   return { buffer, url, filename }
 }
 
-/** Allotment letter for a booking. Persists bookings.allotment_letter_url. */
-export async function buildAllotmentForBooking(bookingId: string): Promise<BuiltPdf | null> {
+/**
+ * Allotment letter for a booking. With `store` (the default, used when it is emailed) the PDF is saved
+ * and bookings.allotment_letter_url — the link the client portal shows — is updated. A staff download
+ * passes `store: false`: viewing a draft must not publish it to the client or rewrite the stored copy.
+ */
+export async function buildAllotmentForBooking(bookingId: string, opts: { store?: boolean } = {}): Promise<BuiltPdf | null> {
   const supabase = createServiceClient()
   const { data: booking } = await supabase.from('bookings').select(BOOKING_SELECT).eq('id', bookingId).single()
   if (!booking) return null
@@ -61,14 +65,15 @@ export async function buildAllotmentForBooking(bookingId: string): Promise<Built
   const data: AllotmentLetterData = { booking: booking as BookingFull, generated_at: new Date().toISOString() }
   const buffer = await renderPdfBuffer(React.createElement(AllotmentLetterDoc, { data }))
   const filename = `Allotment-${(booking as any).booking_number}.pdf`
+  if (opts.store === false) return { buffer, url: '', filename }
   const url = await uploadPdf(`allotment/${bookingId}.pdf`, buffer)
 
   await supabase.from('bookings').update({ allotment_letter_url: url }).eq('id', bookingId)
   return { buffer, url, filename }
 }
 
-/** Demand letter for an installment. */
-export async function buildDemandForPayment(paymentId: string): Promise<BuiltPdf | null> {
+/** Demand letter for an installment. `store: false` (a staff download) renders without saving a copy. */
+export async function buildDemandForPayment(paymentId: string, opts: { store?: boolean } = {}): Promise<BuiltPdf | null> {
   const supabase = createServiceClient()
   const { data: payment } = await supabase.from('payments').select('*').eq('id', paymentId).single()
   if (!payment) return null
@@ -86,6 +91,7 @@ export async function buildDemandForPayment(paymentId: string): Promise<BuiltPdf
   }
   const buffer = await renderPdfBuffer(React.createElement(DemandLetterDoc, { data }))
   const filename = `Demand-${(booking as any).booking_number}-I${payment.installment_number}.pdf`
+  if (opts.store === false) return { buffer, url: '', filename }
   const url = await uploadPdf(`demand/${paymentId}.pdf`, buffer)
   return { buffer, url, filename }
 }
