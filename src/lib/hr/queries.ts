@@ -24,12 +24,12 @@ export async function getCandidateById(id: string): Promise<Candidate | null> {
   return data as Candidate | null
 }
 
-export async function getEmployees(): Promise<HREmployee[]> {
+export async function getEmployees(opts: { inactive?: boolean } = {}): Promise<HREmployee[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
-    .eq('is_active', true)
+    .eq('is_active', !opts.inactive)
     // Broker portal logins have profiles too; they are not employees.
     .in('role', ['admin', 'manager', 'sales_advisor', 'telecaller'])
     .order('full_name')
@@ -48,8 +48,8 @@ export async function getEmployees(): Promise<HREmployee[]> {
 
 export async function getEmployeeById(id: string): Promise<HREmployee | null> {
   const supabase = await createClient()
-  const { data } = await supabase.from('profiles').select('*').eq('id', id).single()
-  if (!data) return null
+  const { data } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle()
+  if (!data || data.role === 'broker') return null
 
   const employee = data as HREmployee
   if (employee.reporting_manager_id) {
@@ -128,16 +128,16 @@ export async function getHRStats() {
   const supabase = await createClient()
   const today = todayIST()
   const [employees, candidates, pendingLeaves, todayAttendance] = await Promise.all([
-    supabase.from('profiles').select('id, is_active, joining_date').eq('is_active', true),
+    supabase.from('profiles').select('id').eq('is_active', true).in('role', ['admin', 'manager', 'sales_advisor', 'telecaller']),
     supabase.from('career_applications').select('id, stage'),
     supabase.from('leave_requests').select('id').eq('status', 'pending'),
     supabase.from('attendance_logs').select('id, status').eq('date', today),
   ])
 
   const active = (employees.data ?? []).length
-  const openPositions = (candidates.data ?? []).filter(c => !['joined', 'rejected'].includes(c.stage)).length
+  const activeCandidates = (candidates.data ?? []).filter(c => !['joined', 'rejected'].includes(c.stage)).length
   const pending = (pendingLeaves.data ?? []).length
-  const todayPresent = (todayAttendance.data ?? []).filter(a => a.status === 'present').length
+  const todayPresent = (todayAttendance.data ?? []).filter(a => a.status === 'present' || a.status === 'half_day').length
 
-  return { active, openPositions, pending, todayPresent }
+  return { active, activeCandidates, pending, todayPresent }
 }

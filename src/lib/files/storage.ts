@@ -10,7 +10,7 @@
 export const FILES_BUCKET = 'crm-files'
 
 /** Top-level folders, and who may read them through /api/files. */
-export const FILE_FOLDERS = ['clients', 'projects', 'bookings', 'construction', 'legal', 'whatsapp'] as const
+export const FILE_FOLDERS = ['clients', 'projects', 'bookings', 'construction', 'legal', 'whatsapp', 'hr'] as const
 export type FileFolder = (typeof FILE_FOLDERS)[number]
 
 export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024
@@ -26,4 +26,12 @@ export const ALLOWED_UPLOAD_TYPES = [
 
 export function fileUrl(path: string): string {
   return `/api/files/${path.split('/').map(encodeURIComponent).join('/')}`
+}
+
+/** The bucket path behind an `/api/files/…` link, or null for any other URL. */
+export function filePathFromUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  const i = url.indexOf('/api/files/')
+  if (i < 0) return null
+  return url.slice(i + '/api/files/'.length).split('?')[0].split('/').map(decodeURIComponent).join('/')
 }

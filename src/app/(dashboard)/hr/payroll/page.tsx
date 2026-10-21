@@ -11,13 +11,24 @@ import { getProfile } from '@/lib/supabase/getProfile'
 
 export const metadata = { title: 'Payroll' }
 
-export default async function PayrollPage() {
+export default async function PayrollPage({ searchParams }: { searchParams: Promise<{ run?: string }> }) {
+  // Salaries are admin-only (RLS too); managers used to get full read/write through the API.
+  if ((await getProfile())?.profile?.role !== 'admin') {
+    return (
+      <div className="p-6">
+        <p className="text-sm text-slate-600 bg-white border border-slate-200 rounded-xl px-4 py-6 text-center">
+          Payroll is managed by admins. Your own payslips are under Team → Attendance.
+        </p>
+      </div>
+    )
+  }
+  const { run: runParam } = await searchParams
   const runs = await getPayrollRuns()
-  const latestRun = runs[0] ?? null
+  const latestRun = runs.find((r) => r.id === runParam) ?? runs[0] ?? null
   const latestSlips = latestRun ? await getPayrollSlips(latestRun.id) : []
 
   const existingMonths = runs.map(r => ({ year: r.year, month: r.month }))
-  const canAdjust = (await getProfile())?.profile?.role === 'admin' && latestRun?.status !== 'completed'
+  const canAdjust = latestRun?.status !== 'completed'
 
   return (
     <div className="p-6 space-y-6">
@@ -155,8 +166,8 @@ export default async function PayrollPage() {
             <h2 className="font-semibold text-slate-900 text-sm">Payroll History</h2>
           </div>
           <div className="divide-y divide-slate-100">
-            {runs.slice(1).map(run => (
-              <div key={run.id} className="flex items-center justify-between px-4 py-3">
+            {runs.filter((r) => r.id !== latestRun?.id).map(run => (
+              <Link key={run.id} href={`/hr/payroll?run=${run.id}`} className="flex items-center justify-between px-4 py-3 hover:bg-slate-50">
                 <div>
                   <p className="text-sm font-medium text-slate-900">{MONTH_NAMES[run.month]} {run.year}</p>
                   <p className="text-xs text-slate-400">{run.total_employees} employees · {formatDate(run.created_at)}</p>
@@ -167,7 +178,7 @@ export default async function PayrollPage() {
                     {run.status}
                   </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

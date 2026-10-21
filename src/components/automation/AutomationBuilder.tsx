@@ -183,7 +183,7 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
         </div>
         <div>
           <label htmlFor="automationbuilder-action-type" className="block text-xs text-slate-600 mb-1">Action Type</label>
-          <select id="automationbuilder-action-type" value={action} onChange={e => { const a = e.target.value as ActionType; setAction(a); setPayload(a === 'send_whatsapp' ? { recipient: 'lead' } : {}) }} className={selectCls}>
+          <select id="automationbuilder-action-type" value={action} onChange={e => { const a = e.target.value as ActionType; setAction(a); setPayload(a === 'send_whatsapp' ? { recipient: 'lead' } : a === 'send_email' ? { email_recipient: 'lead' } : a === 'send_notification' ? { notify_assignee: true } : {}) }} className={selectCls}>
             {ACTION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </div>
@@ -196,6 +196,9 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
               {whatsappTemplates.length > 0 ? (
                 <select id="automationbuilder-whatsapp-template" value={payload.template_name ?? ''} onChange={e => setPayload(p => ({ ...p, template_name: e.target.value }))} className={selectCls}>
                   <option value="">Select template</option>
+                  {payload.template_name && !whatsappTemplates.some(t => t.name === payload.template_name) && (
+                    <option value={payload.template_name}>{payload.template_name} (not approved)</option>
+                  )}
                   {whatsappTemplates.map(t => <option key={t.name} value={t.name}>{t.name}{t.category ? ` (${t.category})` : ''}</option>)}
                 </select>
               ) : (
@@ -210,6 +213,11 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
                 <option value="client">Client</option>
               </select>
             </div>
+            {payload.template_name && whatsappTemplates.length > 0 && !whatsappTemplates.some(t => t.name === payload.template_name) && (
+              <p role="alert" className="col-span-2 text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+                “{payload.template_name}” is not an approved template, so every run would fail. Choose an approved one.
+              </p>
+            )}
             <p className="col-span-2 text-xs text-slate-500">
               Marketing templates skip contacts who replied STOP; utility templates (payment reminders, booking updates) still reach them.
             </p>
@@ -224,14 +232,20 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
                 placeholder="e.g. New Lead Assigned" className={inputCls} />
             </div>
             <div>
-              <label htmlFor="automationbuilder-message-use" className="block text-xs text-slate-600 mb-1">Message (use {'{{lead_name}}'}, {'{{client_name}}'})</label>
+              <label htmlFor="automationbuilder-message-use" className="block text-xs text-slate-600 mb-1">Message (use {'{{lead_name}}'}, {'{{client_name}}'}, {'{{amount}}'}, {'{{days}}'})</label>
               <textarea id="automationbuilder-message-use" value={payload.notification_body ?? ''} onChange={e => setPayload(p => ({ ...p, notification_body: e.target.value }))}
                 rows={2} placeholder="e.g. You have a new lead: {{lead_name}}" className={inputCls} />
             </div>
             <div>
-              <span id="automationbuilder-notify-roles" className="block text-xs text-slate-600 mb-1">Notify Roles</span>
+              <span id="automationbuilder-notify-roles" className="block text-xs text-slate-600 mb-1">Notify (a role means everyone with that role)</span>
               <div role="group" aria-labelledby="automationbuilder-notify-roles" className="flex gap-3 flex-wrap">
-                {['admin', 'manager', 'sales_advisor', 'hr'].map(role => (
+                <label className="flex items-center gap-1.5 text-sm text-slate-700">
+                  <input type="checkbox" checked={!!payload.notify_assignee}
+                    onChange={e => setPayload(p => ({ ...p, notify_assignee: e.target.checked }))}
+                    className="rounded text-primary-600" />
+                  the lead&apos;s advisor
+                </label>
+                {['admin', 'manager', 'sales_advisor', 'telecaller'].map(role => (
                   <label key={role} className="flex items-center gap-1.5 text-sm text-slate-700">
                     <input type="checkbox" checked={(payload.notify_roles ?? []).includes(role)}
                       onChange={e => setPayload(p => ({
@@ -298,6 +312,24 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
 
         {action === 'send_email' && (
           <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="automationbuilder-email-recipient" className="block text-xs text-slate-600 mb-1">Send to</label>
+                <select id="automationbuilder-email-recipient" value={payload.email_recipient ?? 'lead'}
+                  onChange={e => setPayload(p => ({ ...p, email_recipient: e.target.value as 'lead' | 'client' | 'custom' }))} className={selectCls}>
+                  <option value="lead">The lead</option>
+                  <option value="client">The client</option>
+                  <option value="custom">A fixed address</option>
+                </select>
+              </div>
+              {payload.email_recipient === 'custom' && (
+                <div>
+                  <label htmlFor="automationbuilder-email-to" className="block text-xs text-slate-600 mb-1">Email address</label>
+                  <input id="automationbuilder-email-to" type="email" value={payload.email_to ?? ''}
+                    onChange={e => setPayload(p => ({ ...p, email_to: e.target.value }))} placeholder="sales@anonindia.com" className={inputCls} />
+                </div>
+              )}
+            </div>
             <div>
               <label htmlFor="automationbuilder-subject" className="block text-xs text-slate-600 mb-1">Subject</label>
               <input id="automationbuilder-subject" value={payload.email_subject ?? ''} onChange={e => setPayload(p => ({ ...p, email_subject: e.target.value }))}

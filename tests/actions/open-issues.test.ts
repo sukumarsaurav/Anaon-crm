@@ -24,9 +24,10 @@ describe('payroll: approved unpaid leave is loss of pay', () => {
     await createPayrollRun(fd({ year: '2026', month: '10' }))
     const s1 = world.db.rows('payroll_slips').find((s) => s.user_id === 'p1')!
     const s2 = world.db.rows('payroll_slips').find((s) => s.user_id === 'p2')!
-    expect(s1).toMatchObject({ lop_days: 4, present_days: 22 })
-    expect(s2).toMatchObject({ lop_days: 0, present_days: 26 })
-    expect(s2.net_pay - s1.net_pay).toBe(Math.round((52000 / 26) * 4)) // 8000
+    // October 2026 has 27 working days; the four unpaid days are all weekdays.
+    expect(s1).toMatchObject({ lop_days: 4, present_days: 23, working_days: 27 })
+    expect(s2).toMatchObject({ lop_days: 0, present_days: 27 })
+    expect(s2.net_pay - s1.net_pay).toBe(52000 - Math.round((52000 * 23) / 27)) // PF is capped, so only pay differs
     expect(world.db.rows('payroll_runs')[0].total_net).toBe(s1.net_pay + s2.net_pay)
   })
 })

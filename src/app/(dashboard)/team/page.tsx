@@ -6,7 +6,9 @@ import MemberCard from '@/components/team/MemberCard'
 import AnnouncementFeed from '@/components/team/AnnouncementFeed'
 import PageHeader from '@/components/ui/PageHeader'
 import Button from '@/components/ui/Button'
+import EmptyState from '@/components/ui/EmptyState'
 import Link from 'next/link'
+import { istMonthYear } from '@/lib/datetime'
 
 export const metadata = { title: 'Sales Team' }
 
@@ -15,14 +17,13 @@ export const dynamic = 'force-dynamic'
 export default async function TeamPage() {
   const profile = (await getProfile())?.profile
 
-  const now = new Date()
-  const month = now.getMonth() + 1
-  const year  = now.getFullYear()
+  const { month, year } = istMonthYear()
 
   const isManager = profile?.role === 'admin' || profile?.role === 'manager'
 
   const [summaries, announcements] = await Promise.all([
-    isManager ? getTeamPerformanceSummary(month, year, profile?.branch_id ?? undefined) : Promise.resolve([]),
+    // Who appears is decided by the team chain (RLS), not the viewer's branch.
+    isManager ? getTeamPerformanceSummary(month, year) : Promise.resolve([]),
     getAnnouncements(profile?.branch_id ?? undefined),
   ])
 
@@ -30,7 +31,7 @@ export default async function TeamPage() {
     <div className="p-6 space-y-6">
       <PageHeader
         title="Sales Team"
-        subtitle={`${new Date(year, month - 1).toLocaleString('default', { month: 'long', year: 'numeric' })} performance`}
+        subtitle={`${new Date(Date.UTC(year, month - 1, 1)).toLocaleString('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' })} performance`}
         actions={isManager ? (
           <>
             <Button href="/team/targets" variant="secondary" size="sm">
@@ -45,6 +46,18 @@ export default async function TeamPage() {
           </>
         ) : undefined}
       />
+
+      {!isManager && profile && (
+        <div className="flex flex-wrap gap-2">
+          <Button href={`/team/${profile.id}`} variant="secondary" size="sm">My performance &amp; check-in</Button>
+          <Button href="/team/attendance" variant="secondary" size="sm"><CalendarDays size={14} /> My attendance</Button>
+        </div>
+      )}
+
+      {isManager && summaries.length === 0 && (
+        <EmptyState title="No team members to show"
+          description="The leaderboard lists the sales advisors and telecallers in the teams you lead. An admin can make you a team leader under Team → Teams." />
+      )}
 
       {isManager && summaries.length > 0 && (
         <>
@@ -73,6 +86,8 @@ export default async function TeamPage() {
         <AnnouncementFeed
           announcements={announcements.slice(0, 5)}
           canManage={isManager}
+          viewerId={profile?.id}
+          isAdmin={profile?.role === 'admin'}
         />
       </div>
     </div>

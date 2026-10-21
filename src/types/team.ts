@@ -1,6 +1,7 @@
 import type { UserRole } from './leads'
 
-export type LeaveType = 'casual' | 'sick' | 'earned' | 'unpaid' | 'comp_off'
+// One list for Team (apply) and HR (balances); must match leave_requests / hr_leave_balances CHECKs.
+export type LeaveType = 'casual' | 'sick' | 'earned' | 'unpaid' | 'comp_off' | 'maternity' | 'paternity'
 export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'cancelled'
 export type AttendanceStatus = 'present' | 'absent' | 'half_day' | 'on_leave' | 'holiday' | 'weekend'
 export type AnnouncementType = 'announcement' | 'shoutout' | 'alert' | 'project_launch'
@@ -194,6 +195,8 @@ export const LEAVE_TYPE_LABELS: Record<LeaveType, string> = {
   earned: 'Earned Leave',
   unpaid: 'Unpaid Leave',
   comp_off: 'Comp Off',
+  maternity: 'Maternity Leave',
+  paternity: 'Paternity Leave',
 }
 
 export const ATTENDANCE_STATUS_CONFIG: Record<AttendanceStatus, { label: string; color: string; bg: string }> = {

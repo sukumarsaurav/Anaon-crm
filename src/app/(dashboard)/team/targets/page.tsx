@@ -1,135 +1,50 @@
-'use client'
+import { redirect } from 'next/navigation'
+import { getProfile } from '@/lib/supabase/getProfile'
+import { getTeamMembers, getMonthlyTargets } from '@/lib/team/queries'
+import { istMonthYear } from '@/lib/datetime'
+import { MONTH_NAMES } from '@/types/hr'
+import TargetsTable from '@/components/team/TargetsTable'
 
-import { useState, useEffect, useTransition } from 'react'
-import { getTeamMembers, getMonthlyTarget } from '@/lib/team/queries'
-import SetTargetModal from '@/components/team/SetTargetModal'
-import type { TeamMember, TeamTarget } from '@/types/team'
-import { formatCurrency } from '@/lib/utils'
-import EmptyState from '@/components/ui/EmptyState'
+export const metadata = { title: 'Monthly Targets' }
 
-export default function TargetsPage() {
-  const now = new Date()
-  const [month, setMonth] = useState(now.getMonth() + 1)
-  const [year, setYear] = useState(now.getFullYear())
-  const [members, setMembers] = useState<TeamMember[]>([])
-  const [targets, setTargets] = useState<Record<string, TeamTarget | null>>({})
-  const [selected, setSelected] = useState<TeamMember | null>(null)
-  const [, startTransition] = useTransition()
+export const dynamic = 'force-dynamic'
 
-  useEffect(() => {
-    startTransition(async () => {
-      const mems = await getTeamMembers()
-      const advisors = mems.filter((m) => m.role === 'sales_advisor' || m.role === 'telecaller')
-      setMembers(advisors)
-      const tgtMap: Record<string, TeamTarget | null> = {}
-      await Promise.all(
-        advisors.map(async (m) => {
-          tgtMap[m.id] = await getMonthlyTarget(m.id, month, year)
-        })
-      )
-      setTargets(tgtMap)
-    })
-  }, [month, year])
+interface Props { searchParams: Promise<{ month?: string; year?: string; member?: string }> }
 
-  const monthLabel = new Date(year, month - 1).toLocaleString('default', { month: 'long', year: 'numeric' })
+export default async function TargetsPage({ searchParams }: Props) {
+  const session = await getProfile()
+  const role = session?.profile?.role
+  if (role !== 'admin' && role !== 'manager') redirect('/team')
+
+  const sp = await searchParams
+  const current = istMonthYear()
+  const m = parseInt(sp.month ?? '', 10), y = parseInt(sp.year ?? '', 10)
+  const month = m >= 1 && m <= 12 ? m : current.month
+  const year = y >= 2020 && y <= 2100 ? y : current.year
+
+  // Your own target is set by your manager, so you are not listed here.
+  const members = (await getTeamMembers())
+    .filter((mem) => (mem.role === 'sales_advisor' || mem.role === 'telecaller') && mem.id !== session?.user?.id)
+  const targets = await getMonthlyTargets(members.map((mem) => mem.id), month, year)
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Monthly Targets</h1>
-          <p className="text-sm text-slate-500 mt-1">{monthLabel}</p>
+          <p className="text-sm text-slate-500 mt-1">{MONTH_NAMES[month]} {year}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <select aria-label="Month"
-            value={month}
-            onChange={(e) => setMonth(parseInt(e.target.value))}
-            className="text-sm border border-slate-300 rounded-lg px-2 py-1.5"
-          >
-            {Array.from({ length: 12 }, (_, i) => (
-              <option key={i + 1} value={i + 1}>
-                {new Date(2025, i).toLocaleString('default', { month: 'long' })}
-              </option>
-            ))}
+        <form method="GET" className="flex items-center gap-2">
+          <select aria-label="Month" name="month" defaultValue={month}
+            className="text-sm border border-slate-300 rounded-lg px-2 py-1.5">
+            {MONTH_NAMES.slice(1).map((name, i) => <option key={name} value={i + 1}>{name}</option>)}
           </select>
-          <input aria-label="Year"
-            type="number"
-            value={year}
-            onChange={(e) => setYear(parseInt(e.target.value))}
-            className="w-20 text-sm border border-slate-300 rounded-lg px-2 py-1.5"
-          />
-        </div>
+          <input aria-label="Year" name="year" type="number" min={2020} max={2100} defaultValue={year}
+            className="w-20 text-sm border border-slate-300 rounded-lg px-2 py-1.5" />
+          <button type="submit" className="text-sm px-3 py-1.5 border border-slate-300 rounded-lg hover:bg-slate-50">Show</button>
+        </form>
       </div>
-
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto"><table className="w-full text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th scope="col" className="text-left px-4 py-3 font-medium text-slate-700">Advisor</th>
-              <th scope="col" className="text-right px-4 py-3 font-medium text-slate-700">Revenue Target</th>
-              <th scope="col" className="text-right px-4 py-3 font-medium text-slate-700">Bookings</th>
-              <th scope="col" className="text-right px-4 py-3 font-medium text-slate-700">Site Visits</th>
-              <th scope="col" className="text-right px-4 py-3 font-medium text-slate-700">Calls</th>
-              <th scope="col" className="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {members.length === 0 && (
-              <tr>
-                <td colSpan={6} className="p-0"><EmptyState title="No advisors found" description="Add team members first, then set their monthly targets." className="py-8" /></td>
-              </tr>
-            )}
-            {members.map((m) => {
-              const t = targets[m.id]
-              return (
-                <tr key={m.id} className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-slate-900">{m.full_name}</div>
-                    <div className="text-xs text-slate-500 capitalize">{m.role.replace('_', ' ')}</div>
-                  </td>
-                  <td className="px-4 py-3 text-right text-slate-700">
-                    {t ? formatCurrency(t.target_revenue) : <span className="text-slate-300">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-right text-slate-700">
-                    {t?.target_bookings ?? <span className="text-slate-300">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-right text-slate-700">
-                    {t?.target_site_visits ?? <span className="text-slate-300">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-right text-slate-700">
-                    {t?.target_calls ?? <span className="text-slate-300">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => setSelected(m)}
-                      className="text-xs px-3 py-1.5 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 font-medium"
-                    >
-                      {t ? 'Edit' : 'Set Target'}
-                    </button>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table></div>
-      </div>
-
-      {selected && (
-        <SetTargetModal
-          member={selected}
-          existingTarget={targets[selected.id] ?? null}
-          month={month}
-          year={year}
-          onClose={() => {
-            setSelected(null)
-            // Re-fetch targets for this member
-            startTransition(async () => {
-              const t = await getMonthlyTarget(selected.id, month, year)
-              setTargets((prev) => ({ ...prev, [selected.id]: t }))
-            })
-          }}
-        />
-      )}
+      <TargetsTable key={`${month}-${year}`} members={members} targets={targets} month={month} year={year} initialMemberId={sp.member} />
     </div>
   )
 }

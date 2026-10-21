@@ -6,8 +6,8 @@ import { getProjectRERADetail } from '@/lib/legal/queries'
 import { RERA_CHECKLIST_ITEMS } from '@/types/legal'
 import { DOCUMENT_CATEGORY_LABELS } from '@/types/inventory'
 import RERAEditForm from '@/components/legal/RERAEditForm'
-async function uploadDoc(fd: FormData) { 'use server'; const { addProjectDocument } = await import('@/lib/inventory/actions'); await addProjectDocument(fd) }
-import { ChevronLeft, CheckCircle2, XCircle, AlertTriangle, Upload, ExternalLink, Clock } from 'lucide-react'
+import ComplianceDocUpload from '@/components/legal/ComplianceDocUpload'
+import { ChevronLeft, CheckCircle2, XCircle, AlertTriangle, ExternalLink, Clock } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 export const metadata = { title: 'Project Compliance' }
@@ -99,25 +99,8 @@ export default async function ProjectRERAPage({ params }: Props) {
             {/* Upload doc form */}
             <div className="mt-5 pt-4 border-t border-slate-100">
               <p className="text-xs font-medium text-slate-600 mb-2">Upload a document</p>
-              <form action={uploadDoc}>
-                <input type="hidden" name="project_id" value={projectId} />
-                <div className="space-y-2">
-                  <input aria-label="Document name" name="name" placeholder="Document name" required
-                    className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500" />
-                  <select aria-label="Document category" name="category" required
-                    className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500">
-                    {RERA_CHECKLIST_ITEMS.map(item => (
-                      <option key={item.key} value={item.key}>{item.label}</option>
-                    ))}
-                  </select>
-                  <input aria-label="File URL (uploaded to storage)" type="url" name="file_url" placeholder="File URL (uploaded to storage)" required
-                    className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500" />
-                  <button type="submit"
-                    className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white text-xs font-medium rounded-lg hover:bg-primary-700">
-                    <Upload size={11} /> Upload Document
-                  </button>
-                </div>
-              </form>
+              <ComplianceDocUpload projectId={projectId}
+                categories={RERA_CHECKLIST_ITEMS.map((i) => ({ key: i.key, label: i.label }))} />
             </div>
           </div>
 

@@ -327,6 +327,8 @@ export async function addProjectDocument(formData: FormData) {
 
   if (error) return { success: false, error: error.message }
   revalidatePath(`/inventory/${formData.get('project_id')}`)
+  revalidatePath(`/legal/${formData.get('project_id')}`)
+  revalidatePath('/legal')
   return { success: true }
 }
 

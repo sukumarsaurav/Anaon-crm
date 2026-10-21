@@ -18,15 +18,13 @@ export default async function AutomationDetailPage({ params }: Props) {
 
   const supabase = await createClient()
   const { data: templates } = await supabase.from('whatsapp_templates').select('name, category').eq('status', 'approved').order('name')
-  const [automation, advisors, logsAll] = await Promise.all([
+  const [automation, advisors, logs] = await Promise.all([
     getAutomationById(id),
     supabase.from('profiles').select('id, full_name').in('role', ['sales_advisor', 'manager']).eq('is_active', true).order('full_name'),
-    getAutomationLogs(50),
+    getAutomationLogs(20, id),
   ])
 
   if (!automation) notFound()
-
-  const logs = logsAll.filter(l => (l as any).automation_id === id || l.automation?.name === automation.name)
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-8">

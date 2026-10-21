@@ -16,6 +16,7 @@ interface RERAData {
   total_approved_units: number | null
   quarterly_report_last_submitted: string | null
   quarterly_report_due_date: string | null
+  rera_disclosures?: Record<string, string> | null
 }
 
 interface Props { projectId: string; data: RERAData }
@@ -121,10 +122,29 @@ export default function RERAEditForm({ projectId, data }: Props) {
             )}
             <button type="button" onClick={handleMarkReport} disabled={markingReport}
               className="px-3 py-2 text-xs bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 disabled:opacity-50">
-              {markingReport ? 'Marking...' : 'Mark Report Submitted (sets next due +3 months)'}
+              {markingReport ? 'Marking...' : 'Mark Report Submitted (sets the next quarter’s due date)'}
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Disclosures */}
+      <div>
+        <h3 className="text-sm font-semibold text-slate-700 mb-3 pb-2 border-b border-slate-100">Other Disclosures</h3>
+        {data.rera_disclosures && Object.keys(data.rera_disclosures).length > 0 && (
+          <dl className="mb-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm">
+            {Object.entries(data.rera_disclosures).map(([k, v]) => (
+              <div key={k} className="flex gap-2"><dt className="text-slate-500">{k}:</dt><dd className="text-slate-800">{v}</dd></div>
+            ))}
+          </dl>
+        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input aria-label="Disclosure name" name="disclosure_key" placeholder="e.g. Open area %"
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+          <input aria-label="Disclosure value" name="disclosure_value" placeholder="e.g. 35%"
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+        </div>
+        <p className="text-xs text-slate-500 mt-1">Adds or updates one disclosure each time you save.</p>
       </div>
 
       {/* Legal contact */}

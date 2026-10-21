@@ -4,6 +4,8 @@ import { useState, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateDeletionRequestStatus } from '@/lib/legal/actions'
 import type { DeletionRequestStatus } from '@/types/legal'
+import { useToast } from '@/components/ui/Toast'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
 
 interface Props { id: string; currentStatus: DeletionRequestStatus }
 
@@ -12,12 +14,23 @@ export default function DeletionRequestActions({ id, currentStatus }: Props) {
   const [loading, setLoading] = useState(false)
   const [notes, setNotes] = useState('')
   const [showNotes, setShowNotes] = useState(false)
+  const toast = useToast()
+  const askConfirm = useConfirm()
 
-  function handle(status: DeletionRequestStatus) {
+  async function handle(status: DeletionRequestStatus) {
+    if (status === 'completed' && !(await askConfirm({
+      title: 'Erase this person’s data?',
+      message: 'Their name, contact details, KYC files, WhatsApp chats and notes are deleted or anonymised now. Bookings and payments are kept for legal retention. This cannot be undone.',
+      confirmLabel: 'Erase data',
+    }))) return
+    if (status === 'rejected' && !notes.trim()) { setShowNotes(true); toast.error('Add a note saying why the request is rejected'); return }
     setLoading(true)
     startTransition(async () => {
-      await updateDeletionRequestStatus(id, status, notes || undefined)
+      // The result used to be ignored, so a failed erasure looked like nothing happened.
+      const res = await updateDeletionRequestStatus(id, status, notes || undefined)
       setLoading(false)
+      if (!res.success) { toast.error(res.error ?? 'Could not update the request'); return }
+      toast.success(status === 'completed' ? 'Data erased' : 'Request updated')
       setShowNotes(false)
       router.refresh()
     })
@@ -49,7 +62,7 @@ export default function DeletionRequestActions({ id, currentStatus }: Props) {
         </button>
         <button onClick={() => handle('completed')} disabled={loading}
           className="px-3 py-1 text-xs bg-green-50 text-green-700 rounded-lg hover:bg-green-100 disabled:opacity-50">
-          {loading ? '...' : 'Mark Completed'}
+          {loading ? '...' : 'Erase & complete'}
         </button>
         <button onClick={() => handle('rejected')} disabled={loading}
           className="px-3 py-1 text-xs bg-red-50 text-red-700 rounded-lg hover:bg-red-100 disabled:opacity-50">

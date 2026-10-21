@@ -1,8 +1,10 @@
+import { LEAVE_TYPE_LABELS, type LeaveType } from './team'
+
 export type CandidateStage =
   | 'applied' | 'shortlisted' | 'interview_scheduled'
   | 'interview_done' | 'offer' | 'joined' | 'rejected'
 
-export type LeaveType = 'casual' | 'sick' | 'earned' | 'maternity' | 'paternity' | 'unpaid'
+export type { LeaveType }
 export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'cancelled'
 export type PayrollStatus = 'draft' | 'processing' | 'completed' | 'cancelled'
 export type EmploymentType = 'full_time' | 'part_time' | 'contract' | 'intern'
@@ -155,14 +157,8 @@ export const CANDIDATE_STAGES: { value: CandidateStage; label: string; color: st
   { value: 'rejected',             label: 'Rejected',            color: 'text-red-700',    bg: 'bg-red-50' },
 ]
 
-export const LEAVE_TYPES: { value: LeaveType; label: string }[] = [
-  { value: 'casual',     label: 'Casual Leave' },
-  { value: 'sick',       label: 'Sick Leave' },
-  { value: 'earned',     label: 'Earned Leave' },
-  { value: 'maternity',  label: 'Maternity Leave' },
-  { value: 'paternity',  label: 'Paternity Leave' },
-  { value: 'unpaid',     label: 'Unpaid Leave' },
-]
+export const LEAVE_TYPES: { value: LeaveType; label: string }[] =
+  (Object.keys(LEAVE_TYPE_LABELS) as LeaveType[]).map((value) => ({ value, label: LEAVE_TYPE_LABELS[value] }))
 
 export const MONTH_NAMES = [
   '', 'January', 'February', 'March', 'April', 'May', 'June',

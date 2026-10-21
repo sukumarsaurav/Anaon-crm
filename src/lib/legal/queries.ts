@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { fetchAll } from '@/lib/supabase/fetchAll'
 import type { LegalDocumentTemplate, DataDeletionRequest, ConsentLog, RERAComplianceStatus } from '@/types/legal'
 import type { DocumentCategory } from '@/types/inventory'
 
@@ -22,17 +23,30 @@ export async function getDataDeletionRequests(): Promise<DataDeletionRequest[]> 
   return (data ?? []) as DataDeletionRequest[]
 }
 
-export async function getConsentStats() {
+/** Rows ordered oldest → newest, every page (the 1,000-row cap applied before). */
+async function allConsentRows() {
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('consent_logs')
-    .select('consent_type, consented')
-  const logs = data ?? []
+  return fetchAll<{ entity_type: string; entity_id: string; consent_type: string; consented: boolean }>((a, b) =>
+    supabase.from('consent_logs').select('id, entity_type, entity_id, consent_type, consented, created_at')
+      .order('created_at', { ascending: true }).order('id').range(a, b))
+}
+
+/**
+ * Current state per person and consent type: the latest log row wins. Counting every event made a
+ * STOP followed by START show as one opt-in and one opt-out.
+ */
+function currentConsent(rows: { entity_type: string; entity_id: string; consent_type: string; consented: boolean }[]) {
+  const latest = new Map<string, { consent_type: string; consented: boolean }>()
+  for (const r of rows) latest.set(`${r.entity_type}:${r.entity_id}:${r.consent_type}`, r)
+  return [...latest.values()]
+}
+
+export async function getConsentStats() {
   const byType: Record<string, { total: number; opted_in: number }> = {}
-  for (const log of logs) {
-    if (!byType[log.consent_type]) byType[log.consent_type] = { total: 0, opted_in: 0 }
-    byType[log.consent_type].total++
-    if (log.consented) byType[log.consent_type].opted_in++
+  for (const c of currentConsent(await allConsentRows())) {
+    if (!byType[c.consent_type]) byType[c.consent_type] = { total: 0, opted_in: 0 }
+    byType[c.consent_type].total++
+    if (c.consented) byType[c.consent_type].opted_in++
   }
   return byType
 }
@@ -51,19 +65,19 @@ export async function getConsentLogs(entityType?: 'lead' | 'client', limit = 50)
 
 export async function getPrivacyStats() {
   const supabase = await createClient()
-  const [deletionRes, consentRes] = await Promise.all([
+  const [deletionRes, rows] = await Promise.all([
     supabase.from('data_deletion_requests').select('status'),
-    supabase.from('consent_logs').select('consent_type, consented'),
+    allConsentRows(),
   ])
   const requests = deletionRes.data ?? []
-  const logs = consentRes.data ?? []
+  const current = currentConsent(rows)
   return {
     totalRequests:  requests.length,
     pendingRequests: requests.filter(r => r.status === 'pending').length,
     completedRequests: requests.filter(r => r.status === 'completed').length,
-    totalConsentLogs: logs.length,
-    optedIn: logs.filter(l => l.consented).length,
-    optedOut: logs.filter(l => !l.consented).length,
+    totalConsentLogs: rows.length,
+    optedIn: current.filter(l => l.consented).length,
+    optedOut: current.filter(l => !l.consented).length,
   }
 }
 

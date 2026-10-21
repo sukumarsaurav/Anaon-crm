@@ -12,6 +12,7 @@ export default function InstallTemplateButton({ templateKey }: Props) {
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [warning, setWarning] = useState<string | null>(null)
 
   function handleInstall() {
     setLoading(true)
@@ -19,15 +20,18 @@ export default function InstallTemplateButton({ templateKey }: Props) {
     startTransition(async () => {
       const result = await installTemplate(templateKey)
       setLoading(false)
-      if (result.success) { setDone(true); router.refresh() }
+      if (result.success) { setDone(true); setWarning(('warning' in result && result.warning) || null); router.refresh() }
       else setError(result.error ?? 'Failed')
     })
   }
 
   if (done) return (
-    <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-green-700 bg-green-50 rounded-lg">
-      <Check size={12} /> Installed
-    </span>
+    <div>
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-green-700 bg-green-50 rounded-lg">
+        <Check size={12} /> Installed (off)
+      </span>
+      {warning && <p className="text-xs text-amber-700 mt-1 max-w-xs">{warning}</p>}
+    </div>
   )
 
   return (

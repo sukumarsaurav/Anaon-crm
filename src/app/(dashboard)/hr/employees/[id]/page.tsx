@@ -8,6 +8,7 @@ import EmployeeForm from '@/components/hr/EmployeeForm'
 import ActionButton from '@/components/ui/ActionButton'
 import { deactivateEmployee, reactivateEmployee } from '@/lib/hr/actions'
 import { decryptPii } from '@/lib/security/pii'
+import { getProfile } from '@/lib/supabase/getProfile'
 
 export const metadata = { title: 'Employee' }
 
@@ -17,11 +18,14 @@ interface PageProps {
 
 export default async function EmployeeDetailPage({ params }: PageProps) {
   const { id } = await params
-  const [employee, allEmployees] = await Promise.all([
+  const [employee, allEmployees, session] = await Promise.all([
     getEmployeeById(id),
     getEmployees(),
+    getProfile(),
   ])
   if (!employee) notFound()
+  const isAdmin = session?.profile?.role === 'admin'
+  const isSelf = session?.user?.id === id
 
   async function deactivate(reason?: string) {
     'use server'
@@ -55,7 +59,7 @@ export default async function EmployeeDetailPage({ params }: PageProps) {
             {employee.employee_id && ` · ${employee.employee_id}`}
           </p>
         </div>
-        {employee.is_active ? (
+        {isSelf ? null : employee.is_active ? (
           <div className="ml-auto">
             <ActionButton label="Deactivate employee" tone="danger"
               promptLabel="Reason for deactivating (recorded as the termination reason):"
@@ -70,7 +74,13 @@ export default async function EmployeeDetailPage({ params }: PageProps) {
           </div>
         )}
       </div>
-      <EmployeeForm employee={editable} managers={managers} />
+      {isSelf && !isAdmin ? (
+        <p className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+          Your own HR record is updated by an admin.
+        </p>
+      ) : (
+        <EmployeeForm employee={editable} managers={managers.filter((m) => m.id !== id)} payLocked={!isAdmin} />
+      )}
     </div>
   )
 }

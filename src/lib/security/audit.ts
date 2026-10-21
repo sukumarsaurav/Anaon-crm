@@ -18,6 +18,7 @@ export type AuditAction =
   | 'payment_recorded' | 'payment_waived' | 'payment_deleted'
   | 'plot_updated' | 'commission_approved' | 'commission_paid'
   | 'kyc_updated' | 'client_updated' | 'account_unlocked'
+  | 'data_erased'
 
 export async function writeAuditLog({
   userId,

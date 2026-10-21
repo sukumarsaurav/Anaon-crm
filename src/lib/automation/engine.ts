@@ -9,11 +9,13 @@ import { sendEmail, emailConfigured } from '@/lib/email/client'
 import { genericEmail } from '@/lib/email/templates'
 import { notifyUsers } from '@/lib/notifications/notify'
 
-function fillTokens(text: string, ctx: AutomationContext): string {
+function fillTokens(text: string, ctx: AutomationContext, fallbackName = 'there'): string {
+  // Global and whitespace-tolerant: String.replace with a string only changed the first token.
   return (text ?? '')
-    .replace(/\{\{\s*lead_name\s*\}\}/g, ctx.lead?.full_name ?? 'there')
-    .replace(/\{\{\s*client_name\s*\}\}/g, ctx.client?.full_name ?? 'there')
-    .replace(/\{\{\s*amount\s*\}\}/g, String(ctx.payment?.amount_due ?? ''))
+    .replace(/\{\{\s*lead_name\s*\}\}/g, ctx.lead?.full_name ?? fallbackName)
+    .replace(/\{\{\s*client_name\s*\}\}/g, ctx.client?.full_name ?? fallbackName)
+    .replace(/\{\{\s*amount\s*\}\}/g, ctx.payment?.amount_due != null ? Number(ctx.payment.amount_due).toLocaleString('en-IN') : '')
+    .replace(/\{\{\s*days\s*\}\}/g, String(ctx.extra?.daysOverdue ?? ''))
 }
 
 // ── Condition evaluation ──────────────────────────────────────────────────────
@@ -32,8 +34,9 @@ function checkCondition(cond: AutomationCondition, ctx: AutomationContext): bool
   const val = getContextValue(ctx, cond.field)
   if (val === null) return false
   switch (cond.operator) {
-    case 'equals':       return val === cond.value
-    case 'not_equals':   return val !== cond.value
+    // Case-insensitive: "Facebook" and "facebook" are the same source.
+    case 'equals':       return val.trim().toLowerCase() === String(cond.value ?? '').trim().toLowerCase()
+    case 'not_equals':   return val.trim().toLowerCase() !== String(cond.value ?? '').trim().toLowerCase()
     case 'contains':     return val.toLowerCase().includes(cond.value.toLowerCase())
     case 'greater_than': return parseFloat(val) > parseFloat(cond.value)
     case 'less_than':    return parseFloat(val) < parseFloat(cond.value)
@@ -128,42 +131,42 @@ async function executeAction(
     }
 
     case 'send_notification': {
-      // Create in-app notifications for specified roles
-      const roles = payload.notify_roles ?? ['admin']
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id')
-        .in('role', roles)
-        .eq('is_active', true)
+      // In-app (and push, where enabled) to staff in the chosen roles and/or the lead's advisor.
+      const roles = payload.notify_roles ?? (payload.notify_assignee ? [] : ['admin'])
+      const ids = new Set<string>()
+      if (roles.length) {
+        const { data: profiles } = await supabase.from('profiles').select('id').in('role', roles).eq('is_active', true)
+        for (const p of profiles ?? []) ids.add(p.id)
+      }
+      if (payload.notify_assignee && ctx.lead?.assigned_to) ids.add(ctx.lead.assigned_to)
+      if (!ids.size) return { success: false, error: payload.notify_assignee ? 'The lead has no assigned advisor' : 'Nobody to notify' }
 
-      // Global, whitespace-tolerant: String.replace with a string only changed the FIRST token, so a
-      // body mentioning {{lead_name}} twice kept the second one as raw text.
-      const body = (payload.notification_body ?? '')
-        .replace(/\{\{\s*lead_name\s*\}\}/g, ctx.lead?.full_name ?? 'Unknown')
-        .replace(/\{\{\s*client_name\s*\}\}/g, ctx.client?.full_name ?? 'Unknown')
-        .replace(/\{\{\s*amount\s*\}\}/g, String(ctx.payment?.amount_due ?? ''))
-
-      const userIds = (profiles ?? []).map(p => p.id)
+      const userIds = [...ids]
       await notifyUsers(userIds, {
-        title: payload.notification_title ?? automation.name,
-        message: body,
+        title: fillTokens(payload.notification_title ?? automation.name, ctx, 'Unknown'),
+        message: fillTokens(payload.notification_body ?? '', ctx, 'Unknown'),
         type: 'automation',
         related_type: ctx.lead ? 'lead' : ctx.booking ? 'booking' : null,
         related_id: ctx.lead?.id ?? ctx.booking?.id ?? null,
+        action_url: ctx.lead?.id ? `/leads/${ctx.lead.id}` : undefined,
       })
       return { success: true, result: { notified: userIds.length } }
     }
 
     case 'create_followup': {
+      // Follow-ups live on the lead (next_followup_at, picked up by the follow-up reminder cron).
+      // This used to insert a lead_activities row of type 'follow_up', which the table rejects; the
+      // error was ignored, so the run was logged as a success and nothing was scheduled.
       if (!ctx.lead?.id) return { success: false, error: 'No lead in context' }
-      const hours = payload.followup_hours ?? 24
+      const hours = Number(payload.followup_hours) > 0 ? Number(payload.followup_hours) : 24
       const scheduledAt = new Date(Date.now() + hours * 3600000).toISOString()
+      const { error } = await supabase.from('leads')
+        .update({ next_followup_at: scheduledAt, followup_reminder_sent_at: null, updated_at: new Date().toISOString() })
+        .eq('id', ctx.lead.id)
+      if (error) return { success: false, error: error.message }
       await supabase.from('lead_activities').insert({
-        lead_id: ctx.lead.id,
-        type: 'follow_up',
-        notes: payload.followup_note ?? `Auto follow-up from: ${automation.name}`,
-        scheduled_at: scheduledAt,
-        performed_by: null,
+        lead_id: ctx.lead.id, type: 'system', scheduled_at: scheduledAt,
+        notes: payload.followup_note?.trim() ? `Follow-up scheduled: ${fillTokens(payload.followup_note, ctx)}` : `Follow-up scheduled by automation "${automation.name}"`,
       })
       return { success: true, result: { scheduled_at: scheduledAt } }
     }
@@ -187,14 +190,16 @@ async function executeAction(
       let advisorId = payload.advisor_id ?? null
 
       if (payload.assignment_mode === 'round_robin' || !advisorId) {
-        const { data: advisors } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('role', 'sales_advisor')
-          .eq('is_active', true)
-        if (advisors && advisors.length > 0) {
-          const { count } = await supabase.from('leads').select('*', { count: 'exact', head: true })
-          advisorId = advisors[(count ?? 0) % advisors.length].id
+        // Least-loaded active advisor (fewest open leads). "count of all leads % advisors" picked
+        // the same person for a burst of leads and ignored how busy anyone was.
+        const { data: advisors } = await supabase.from('profiles').select('id').eq('role', 'sales_advisor').eq('is_active', true)
+        if (advisors?.length) {
+          const loads = await Promise.all(advisors.map(async (a) => {
+            const { count } = await supabase.from('leads').select('id', { count: 'exact', head: true })
+              .eq('assigned_to', a.id).eq('is_active', true).not('stage', 'in', '(closed_won,not_interested)')
+            return { id: a.id, open: count ?? 0 }
+          }))
+          advisorId = loads.sort((x, y) => x.open - y.open)[0].id
         }
       }
 
@@ -215,10 +220,17 @@ async function executeAction(
     }
 
     case 'send_email': {
-      const to = payload.recipient === 'lead' ? ctx.lead?.email
-        : payload.recipient === 'client' ? ctx.client?.email
-        : payload.email_to ?? null
-      if (!to) return { success: false, error: 'No email address in context' }
+      // The builder never asked for a recipient and no trigger context carries an email, so this
+      // action always failed with "No email address in context". The address is looked up now.
+      const who = payload.email_recipient ?? (payload.recipient === 'client' ? 'client' : payload.recipient === 'lead' ? 'lead' : payload.email_to ? 'custom' : ctx.lead ? 'lead' : 'client')
+      let to: string | null = null
+      if (who === 'custom') to = payload.email_to?.trim() || null
+      else if (who === 'lead' && ctx.lead?.id) {
+        to = ctx.lead.email ?? (await supabase.from('leads').select('email').eq('id', ctx.lead.id).maybeSingle()).data?.email ?? null
+      } else if (who === 'client' && ctx.client?.id) {
+        to = ctx.client.email ?? (await supabase.from('clients').select('email').eq('id', ctx.client.id).maybeSingle()).data?.email ?? null
+      }
+      if (!to) return { success: false, error: who === 'custom' ? 'No email address set on the automation' : `The ${who} has no email address` }
       if (!emailConfigured()) return { success: false, error: 'Email not configured' }
 
       const subject = fillTokens(payload.email_subject ?? 'A message from ANON INDIA', ctx)

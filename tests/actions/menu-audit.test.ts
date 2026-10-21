@@ -119,7 +119,8 @@ describe('payroll slip adjustment', () => {
     const f = fd({ working_days: '26', present_days: '24', incentives: '0' })
     await updatePayrollSlip('s1', f)
     await updatePayrollSlip('s1', f)
-    expect(world.db.rows('payroll_slips')[0]).toMatchObject({ lop_days: 2, gross: 24000, net_pay: 22240 })
+    // 24/26 of 26,000; PF 12% of the earned basic (12,000) = 1,440; PT 200.
+    expect(world.db.rows('payroll_slips')[0]).toMatchObject({ lop_days: 2, gross: 24000, total_deductions: 1640, net_pay: 22360 })
   })
   it('refuses a finalized run', async () => {
     run('completed')

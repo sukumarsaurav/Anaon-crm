@@ -8,9 +8,11 @@ import type { HREmployee } from '@/types/hr'
 interface Props {
   employee: HREmployee
   managers: { id: string; full_name: string }[]
+  /** Managers can't change pay, bank or login fields (the server refuses too). */
+  payLocked?: boolean
 }
 
-export default function EmployeeForm({ employee, managers }: Props) {
+export default function EmployeeForm({ employee, managers, payLocked = false }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -39,38 +41,38 @@ export default function EmployeeForm({ employee, managers }: Props) {
           <div>
             <label htmlFor="employeeform-full-name" className="block text-sm font-medium text-slate-700 mb-1">Full Name <span className="text-red-500">*</span></label>
             <input id="employeeform-full-name" name="full_name" required defaultValue={employee.full_name ?? ''}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 disabled:bg-slate-50 disabled:text-slate-500" />
           </div>
           <div>
             <label htmlFor="employeeform-phone" className="block text-sm font-medium text-slate-700 mb-1">Phone <span className="text-red-500">*</span></label>
             <input id="employeeform-phone" name="phone" required defaultValue={employee.phone ?? ''}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 disabled:bg-slate-50 disabled:text-slate-500" />
           </div>
           <div>
             <label htmlFor="employeeform-email" className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-            <input id="employeeform-email" name="email" type="email" defaultValue={employee.email ?? ''}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+            <input id="employeeform-email" name="email" disabled={payLocked} title={payLocked ? 'Only an admin can change this' : undefined} type="email" defaultValue={employee.email ?? ''}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 disabled:bg-slate-50 disabled:text-slate-500" />
           </div>
           <div>
             <label htmlFor="employeeform-aadhar-number" className="block text-sm font-medium text-slate-700 mb-1">Aadhar Number</label>
-            <input id="employeeform-aadhar-number" name="aadhar_number" defaultValue={employee.aadhar_number ?? ''}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+            <input id="employeeform-aadhar-number" name="aadhar_number" inputMode="numeric" pattern="[0-9 ]{12,14}" title="12-digit Aadhaar number" defaultValue={employee.aadhar_number ?? ''}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 disabled:bg-slate-50 disabled:text-slate-500" />
           </div>
           <div>
             <label htmlFor="employeeform-pan-number" className="block text-sm font-medium text-slate-700 mb-1">PAN Number</label>
-            <input id="employeeform-pan-number" name="pan_number" defaultValue={employee.pan_number ?? ''}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+            <input id="employeeform-pan-number" name="pan_number" pattern="[A-Za-z]{5}[0-9]{4}[A-Za-z]" title="PAN like ABCDE1234F" defaultValue={employee.pan_number ?? ''}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 disabled:bg-slate-50 disabled:text-slate-500" />
           </div>
           <div>
             <label htmlFor="employeeform-emergency-contact" className="block text-sm font-medium text-slate-700 mb-1">Emergency Contact</label>
             <input id="employeeform-emergency-contact" name="emergency_contact" placeholder="Name – Phone"
               defaultValue={employee.emergency_contact ?? ''}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 disabled:bg-slate-50 disabled:text-slate-500" />
           </div>
           <div className="sm:col-span-2">
             <label htmlFor="employeeform-address" className="block text-sm font-medium text-slate-700 mb-1">Address</label>
             <textarea id="employeeform-address" name="address" rows={2} defaultValue={employee.address ?? ''}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 disabled:bg-slate-50 disabled:text-slate-500" />
           </div>
         </div>
       </div>
@@ -82,17 +84,17 @@ export default function EmployeeForm({ employee, managers }: Props) {
           <div>
             <label htmlFor="employeeform-employee-id" className="block text-sm font-medium text-slate-700 mb-1">Employee ID</label>
             <input id="employeeform-employee-id" name="employee_id" defaultValue={employee.employee_id ?? ''}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 disabled:bg-slate-50 disabled:text-slate-500" />
           </div>
           <div>
             <label htmlFor="employeeform-designation" className="block text-sm font-medium text-slate-700 mb-1">Designation</label>
             <input id="employeeform-designation" name="designation" defaultValue={employee.designation ?? ''}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 disabled:bg-slate-50 disabled:text-slate-500" />
           </div>
           <div>
             <label htmlFor="employeeform-department" className="block text-sm font-medium text-slate-700 mb-1">Department</label>
             <input id="employeeform-department" name="department" defaultValue={employee.department ?? ''}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 disabled:bg-slate-50 disabled:text-slate-500" />
           </div>
           <div>
             <label htmlFor="employeeform-employment-type" className="block text-sm font-medium text-slate-700 mb-1">Employment Type</label>
@@ -107,12 +109,12 @@ export default function EmployeeForm({ employee, managers }: Props) {
           <div>
             <label htmlFor="employeeform-joining-date" className="block text-sm font-medium text-slate-700 mb-1">Joining Date</label>
             <input id="employeeform-joining-date" name="joining_date" type="date" defaultValue={employee.joining_date ?? ''}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 disabled:bg-slate-50 disabled:text-slate-500" />
           </div>
           <div>
             <label htmlFor="employeeform-probation-end-date" className="block text-sm font-medium text-slate-700 mb-1">Probation End Date</label>
             <input id="employeeform-probation-end-date" name="probation_end_date" type="date" defaultValue={employee.probation_end_date ?? ''}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 disabled:bg-slate-50 disabled:text-slate-500" />
           </div>
           <div>
             <label htmlFor="employeeform-reporting-manager-id" className="block text-sm font-medium text-slate-700 mb-1">Reporting Manager</label>
@@ -126,8 +128,8 @@ export default function EmployeeForm({ employee, managers }: Props) {
           </div>
           <div>
             <label htmlFor="employeeform-base-salary" className="block text-sm font-medium text-slate-700 mb-1">Monthly Base Salary (₹)</label>
-            <input id="employeeform-base-salary" name="base_salary" type="number" min="0" defaultValue={employee.base_salary ?? ''}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+            <input id="employeeform-base-salary" name="base_salary" disabled={payLocked} title={payLocked ? 'Only an admin can change this' : undefined} type="number" min="0" defaultValue={employee.base_salary ?? ''}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 disabled:bg-slate-50 disabled:text-slate-500" />
           </div>
         </div>
       </div>
@@ -138,18 +140,18 @@ export default function EmployeeForm({ employee, managers }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="employeeform-bank-name" className="block text-sm font-medium text-slate-700 mb-1">Bank Name</label>
-            <input id="employeeform-bank-name" name="bank_name" defaultValue={employee.bank_name ?? ''}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+            <input id="employeeform-bank-name" name="bank_name" disabled={payLocked} title={payLocked ? 'Only an admin can change this' : undefined} defaultValue={employee.bank_name ?? ''}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 disabled:bg-slate-50 disabled:text-slate-500" />
           </div>
           <div>
             <label htmlFor="employeeform-bank-account" className="block text-sm font-medium text-slate-700 mb-1">Account Number</label>
-            <input id="employeeform-bank-account" name="bank_account" defaultValue={employee.bank_account ?? ''}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+            <input id="employeeform-bank-account" name="bank_account" disabled={payLocked} title={payLocked ? 'Only an admin can change this' : undefined} defaultValue={employee.bank_account ?? ''}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 disabled:bg-slate-50 disabled:text-slate-500" />
           </div>
           <div>
             <label htmlFor="employeeform-bank-ifsc" className="block text-sm font-medium text-slate-700 mb-1">IFSC Code</label>
-            <input id="employeeform-bank-ifsc" name="bank_ifsc" defaultValue={employee.bank_ifsc ?? ''}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
+            <input id="employeeform-bank-ifsc" name="bank_ifsc" pattern="[A-Za-z]{4}0[A-Za-z0-9]{6}" disabled={payLocked} title={payLocked ? 'Only an admin can change this' : undefined} defaultValue={employee.bank_ifsc ?? ''}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400 disabled:bg-slate-50 disabled:text-slate-500" />
           </div>
         </div>
       </div>

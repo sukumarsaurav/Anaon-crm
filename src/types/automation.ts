@@ -43,6 +43,8 @@ export interface AutomationActionPayload {
   notification_title?: string
   notification_body?: string
   notify_roles?: string[]  // ['admin','manager']
+  /** Also (or only) notify the advisor the lead is assigned to. */
+  notify_assignee?: boolean
   // create_followup
   followup_note?: string
   followup_hours?: number
@@ -55,6 +57,8 @@ export interface AutomationActionPayload {
   email_subject?: string
   email_body?: string
   email_to?: string
+  /** send_email recipient: the lead, the client, or a fixed address (email_to). */
+  email_recipient?: 'lead' | 'client' | 'custom'
 }
 
 export interface Automation {
@@ -167,7 +171,7 @@ export const AUTOMATION_TEMPLATES: Omit<Automation, 'id' | 'created_by' | 'creat
     conditions: [{ field: 'utm_source', operator: 'equals', value: 'facebook' }],
     delay_value: 0, delay_unit: 'minutes',
     action_type: 'send_whatsapp',
-    action_payload: { template_name: 'welcome_lead', recipient: 'lead' },
+    action_payload: { template_name: 'lead_welcome', recipient: 'lead' },
     is_active: false, is_template: true, template_key: 'welcome_facebook',
   },
   {
@@ -177,7 +181,7 @@ export const AUTOMATION_TEMPLATES: Omit<Automation, 'id' | 'created_by' | 'creat
     conditions: [{ field: 'utm_source', operator: 'equals', value: 'google' }],
     delay_value: 0, delay_unit: 'minutes',
     action_type: 'send_whatsapp',
-    action_payload: { template_name: 'welcome_lead', recipient: 'lead' },
+    action_payload: { template_name: 'lead_welcome', recipient: 'lead' },
     is_active: false, is_template: true, template_key: 'welcome_google',
   },
   {
@@ -187,7 +191,7 @@ export const AUTOMATION_TEMPLATES: Omit<Automation, 'id' | 'created_by' | 'creat
     conditions: [],
     delay_value: 0, delay_unit: 'minutes',
     action_type: 'send_notification',
-    action_payload: { notification_title: 'New Lead Assigned', notification_body: 'You have a new lead: {{lead_name}}', notify_roles: ['sales_advisor'] },
+    action_payload: { notification_title: 'New Lead Assigned', notification_body: 'You have a new lead: {{lead_name}}', notify_roles: [], notify_assignee: true },
     is_active: false, is_template: true, template_key: 'notify_advisor_new_lead',
   },
   {
@@ -197,7 +201,7 @@ export const AUTOMATION_TEMPLATES: Omit<Automation, 'id' | 'created_by' | 'creat
     conditions: [],
     delay_value: 0, delay_unit: 'hours',
     action_type: 'send_notification',
-    action_payload: { notification_title: 'Follow-up Overdue', notification_body: '{{lead_name}} has not been followed up in 48 hours', notify_roles: ['sales_advisor', 'manager'] },
+    action_payload: { notification_title: 'Follow-up Overdue', notification_body: '{{lead_name}} has not been followed up in 48 hours', notify_roles: ['manager'], notify_assignee: true },
     is_active: false, is_template: true, template_key: 'followup_overdue',
   },
   {
@@ -207,7 +211,7 @@ export const AUTOMATION_TEMPLATES: Omit<Automation, 'id' | 'created_by' | 'creat
     conditions: [],
     delay_value: 0, delay_unit: 'minutes',
     action_type: 'send_whatsapp',
-    action_payload: { template_name: 'site_visit_reminder', recipient: 'lead' },
+    action_payload: { template_name: 'site_visit_confirmation', recipient: 'lead' },
     is_active: false, is_template: true, template_key: 'site_visit_reminder_lead',
   },
   {
@@ -227,7 +231,7 @@ export const AUTOMATION_TEMPLATES: Omit<Automation, 'id' | 'created_by' | 'creat
     conditions: [],
     delay_value: 0, delay_unit: 'minutes',
     action_type: 'send_whatsapp',
-    action_payload: { template_name: 'booking_confirmation', recipient: 'client' },
+    action_payload: { template_name: 'booking_congratulations', recipient: 'client' },
     is_active: false, is_template: true, template_key: 'booking_confirmation',
   },
   {
@@ -237,7 +241,7 @@ export const AUTOMATION_TEMPLATES: Omit<Automation, 'id' | 'created_by' | 'creat
     conditions: [],
     delay_value: 0, delay_unit: 'days',
     action_type: 'send_whatsapp',
-    action_payload: { template_name: 'payment_reminder_7days', recipient: 'client' },
+    action_payload: { template_name: 'payment_reminder', recipient: 'client' },
     is_active: false, is_template: true, template_key: 'payment_due_7days',
   },
   {

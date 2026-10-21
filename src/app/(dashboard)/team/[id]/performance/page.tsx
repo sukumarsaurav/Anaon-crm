@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { istMonthYear } from '@/lib/datetime'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { getMemberProfile, getMonthlyKPI, getMonthlyTarget } from '@/lib/team/queries'
 import { formatCurrency } from '@/lib/utils'
@@ -27,9 +28,10 @@ export default async function MemberPerformancePage({ params, searchParams }: Pr
   const canView = isOwn || currentProfile?.role === 'admin' || currentProfile?.role === 'manager'
   if (!canView) notFound()
 
-  const now = new Date()
-  const month = parseInt(sp.month ?? String(now.getMonth() + 1), 10)
-  const year  = parseInt(sp.year ?? String(now.getFullYear()), 10)
+  const current = istMonthYear()
+  const m = parseInt(sp.month ?? '', 10), y = parseInt(sp.year ?? '', 10)
+  const month = m >= 1 && m <= 12 ? m : current.month
+  const year  = y >= 2020 && y <= 2100 ? y : current.year
 
   // Last 6 months for the history chart
   const monthsHistory = Array.from({ length: 6 }, (_, i) => {

@@ -22,13 +22,15 @@ export async function getAutomationById(id: string): Promise<Automation | null> 
   return data as Automation | null
 }
 
-export async function getAutomationLogs(limit = 50): Promise<AutomationLog[]> {
+export async function getAutomationLogs(limit = 50, automationId?: string): Promise<AutomationLog[]> {
   const supabase = await createClient()
-  const { data } = await supabase
+  let q = supabase
     .from('automation_logs')
     .select('*, automation:automations(name, action_type)')
     .order('executed_at', { ascending: false })
     .limit(limit)
+  if (automationId) q = q.eq('automation_id', automationId)
+  const { data } = await q
   return (data ?? []) as AutomationLog[]
 }
 

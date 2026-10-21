@@ -77,7 +77,7 @@ export class FakeDb {
       updateUserById: async (id: string, patch: any) => { const u = this.users.find((x) => x.id === id); if (u) u.banned = patch.ban_duration && patch.ban_duration !== 'none'; return { data: { user: u }, error: null } },
     },
   }
-  storage = { from: () => ({ remove: async () => ({ error: null }), upload: async () => ({ error: null }), createSignedUrls: async () => ({ data: [] }) }) }
+  storage = { from: () => ({ remove: async () => ({ error: null }), upload: async () => ({ error: null }), createSignedUrls: async () => ({ data: [] }), list: async () => ({ data: [], error: null }) }) }
 }
 
 class Query implements PromiseLike<Result> {
@@ -123,6 +123,42 @@ class Query implements PromiseLike<Result> {
   lte(c: string, v: any) { this.filters.push((r) => r[c] != null && r[c] <= v); return this }
   like(c: string, p: string) { this.filters.push((r) => like(r[c], p, false)); return this }
   ilike(c: string, p: string) { this.filters.push((r) => like(r[c], p, true)); return this }
+  /** PostgREST `or=(a.eq.1,b.in.(x,y),c.ilike."%t%")`, for eq / neq / gt(e) / lt(e) / is / in / like / ilike. */
+  or(expr: string) {
+    const parts: string[] = []
+    let depth = 0, quoted = false, cur = ''
+    for (const ch of expr) {
+      if (ch === '"') quoted = !quoted
+      if (!quoted && ch === '(') depth++
+      if (!quoted && ch === ')') depth--
+      if (!quoted && depth === 0 && ch === ',') { parts.push(cur); cur = ''; continue }
+      cur += ch
+    }
+    if (cur) parts.push(cur)
+    const tests = parts.map((p) => {
+      const [col, op, ...rest] = p.split('.')
+      const raw = rest.join('.')
+      const val = raw.replace(/^"|"$/g, '').replace(/\\"/g, '"')
+      return (r: Row): boolean => {
+        const v = r[col]
+        switch (op) {
+          case 'eq': return String(v) === val
+          case 'neq': return String(v) !== val
+          case 'gt': return v != null && v > val
+          case 'gte': return v != null && v >= val
+          case 'lt': return v != null && v < val
+          case 'lte': return v != null && v <= val
+          case 'is': return val === 'null' ? v == null : String(v) === val
+          case 'in': return raw.replace(/[()"]/g, '').split(',').includes(String(v))
+          case 'like': return like(v, val, false)
+          case 'ilike': return like(v, val, true)
+          default: return false
+        }
+      }
+    })
+    this.filters.push((r) => tests.some((t) => t(r)))
+    return this
+  }
   order(c: string, o?: { ascending?: boolean }) { this.orderBy.push({ col: c, asc: o?.ascending !== false }); return this }
   limit(n: number) { this.max = n; return this }
   range() { return this }

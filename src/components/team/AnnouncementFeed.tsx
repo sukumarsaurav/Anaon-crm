@@ -1,6 +1,9 @@
 'use client'
 
 import { useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import { useToast } from '@/components/ui/Toast'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { Pin, Trash2, Megaphone, Trophy, AlertTriangle, Rocket } from 'lucide-react'
 import RelativeTime from '@/components/ui/RelativeTime'
 import { pinAnnouncement, deleteAnnouncement } from '@/lib/team/actions'
@@ -17,10 +20,24 @@ const TYPE_ICONS = {
 interface Props {
   announcements: Announcement[]
   canManage?: boolean
+  /** Delete is for the author or an admin (RLS); pinning is for any manager. */
+  viewerId?: string
+  isAdmin?: boolean
 }
 
-export default function AnnouncementFeed({ announcements, canManage }: Props) {
+export default function AnnouncementFeed({ announcements, canManage, viewerId, isAdmin }: Props) {
   const [, startTransition] = useTransition()
+  const router = useRouter()
+  const toast = useToast()
+  const askConfirm = useConfirm()
+
+  function run(fn: () => Promise<{ success: boolean; error?: string }>) {
+    startTransition(async () => {
+      const res = await fn()
+      if (!res.success) { toast.error(res.error ?? 'Something went wrong'); return }
+      router.refresh()
+    })
+  }
 
   if (announcements.length === 0) {
     return (
@@ -68,19 +85,21 @@ export default function AnnouncementFeed({ announcements, canManage }: Props) {
               {canManage && (
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
-                    onClick={() => startTransition(async () => { await pinAnnouncement(a.id, !a.is_pinned) })}
+                    onClick={() => run(() => pinAnnouncement(a.id, !a.is_pinned))}
                     title={a.is_pinned ? 'Unpin' : 'Pin'}
                     className="p-1.5 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
                   >
                     <Pin size={14} />
                   </button>
-                  <button
-                    onClick={() => startTransition(async () => { await deleteAnnouncement(a.id) })}
-                    title="Delete"
-                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  {(isAdmin || a.author_id === viewerId) && (
+                    <button
+                      onClick={async () => { if (await askConfirm('Delete this announcement?')) run(() => deleteAnnouncement(a.id)) }}
+                      title="Delete"
+                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               )}
             </div>

@@ -7,7 +7,7 @@ import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
-import { addJunior, reparentTeam } from '@/lib/team/teams'
+import { addJunior, reparentTeam, setTeamLeader } from '@/lib/team/teams'
 import type { TeamsData, TeamRow, MemberRow } from '@/types/team'
 import { getInitials, cn } from '@/lib/utils'
 
@@ -71,7 +71,10 @@ export default function TeamTree({ data }: { data: TeamsData }) {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {viewer.role === 'admin' && (
-                <MoveTeamSelect team={team} teams={teams} childrenOf={childrenOf} />
+                <>
+                  <LeaderSelect team={team} members={members} />
+                  <MoveTeamSelect team={team} teams={teams} childrenOf={childrenOf} />
+                </>
               )}
               {canManage && (
                 <Button size="sm" variant="secondary" onClick={() => setAddFor(team)}>
@@ -239,6 +242,38 @@ function MoveTeamSelect({ team, teams, childrenOf }: { team: TeamRow; teams: Tea
       >
         <option value="">Top level</option>
         {teams.filter((t) => !blocked.has(t.id)).map((t) => <option key={t.id} value={t.id}>Under {t.name}</option>)}
+      </select>
+      {error && <span role="alert" className="text-xs text-red-600">{error}</span>}
+    </div>
+  )
+}
+
+/** Admin: who leads this team (managers need a team to see anyone in the chain-scoped screens). */
+function LeaderSelect({ team, members }: { team: TeamRow; members: MemberRow[] }) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+  const eligible = members.filter((m) => m.role !== 'broker')
+
+  return (
+    <div className="flex items-center gap-1">
+      <select
+        aria-label={`Leader of ${team.name}`}
+        className="h-8 rounded-lg border border-slate-300 bg-white px-2 text-xs text-slate-700"
+        value={team.leader_id ?? ''}
+        disabled={isPending}
+        onChange={(e) => {
+          const leader = e.target.value || null
+          setError(null)
+          startTransition(async () => {
+            const res = await setTeamLeader(team.id, leader)
+            if (!res.success) setError(res.error ?? 'Could not change the leader')
+            else router.refresh()
+          })
+        }}
+      >
+        <option value="">No leader</option>
+        {eligible.map((m) => <option key={m.id} value={m.id}>Led by {m.full_name}</option>)}
       </select>
       {error && <span role="alert" className="text-xs text-red-600">{error}</span>}
     </div>

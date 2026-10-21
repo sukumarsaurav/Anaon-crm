@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { fireAutomations } from '@/lib/automation/engine'
 import { writeAuditLog } from '@/lib/security/audit'
+import { reraExpired } from '@/lib/legal/rera'
 import { sendAllotmentEmail } from '@/lib/email/send'
 
 async function getAuth() {
@@ -30,8 +31,13 @@ export async function createBooking(formData: FormData) {
 
   // Validate plot is still available
   const { data: plot } = await auth.supabase
-    .from('plots').select('status, held_by').eq('id', plotId).single()
+    .from('plots').select('status, held_by, project:projects(name, rera_expiry_date)').eq('id', plotId).single()
   if (!plot) return { success: false, error: 'Plot not found' }
+  // Selling under a lapsed RERA registration is not allowed. Two live projects were past expiry.
+  const project = (Array.isArray(plot.project) ? plot.project[0] : plot.project) as { name: string; rera_expiry_date: string | null } | null
+  if (reraExpired(project?.rera_expiry_date, todayIST())) {
+    return { success: false, error: `${project?.name ?? 'This project'}'s RERA registration expired on ${project?.rera_expiry_date}. Renew it (Legal → project) before booking.` }
+  }
   if (!['available', 'soft_hold'].includes(plot.status)) {
     return { success: false, error: `Plot is not available (status: ${plot.status})` }
   }

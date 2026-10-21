@@ -106,6 +106,7 @@ export async function addJunior(
 
   // 2. Optionally create a junior team led by the new user.
   let teamForMembership = input.target_team_id
+  let createdTeamId: string | null = null
   if (input.mode === 'team') {
     const { data: newTeam, error: teamErr } = await svc
       .from('teams')
@@ -117,10 +118,13 @@ export async function addJunior(
       })
       .select('id')
       .single()
-    if (teamErr) return { success: false, error: teamErr.message }
+    if (teamErr) {
+      await svc.auth.admin.deleteUser(newUserId) // don't leave a login behind for a half-made account
+      return { success: false, error: teamErr.message }
+    }
     // The new leader is a *member* of the parent team (so the parent leader sees them).
     teamForMembership = input.target_team_id
-    void newTeam
+    createdTeamId = newTeam?.id ?? null
   }
 
   // 3. Configure the new user's profile (service client bypasses RLS).
@@ -137,7 +141,11 @@ export async function addJunior(
       is_active: true,
     })
     .eq('id', newUserId)
-  if (profErr) return { success: false, error: profErr.message }
+  if (profErr) {
+    if (createdTeamId) await svc.from('teams').delete().eq('id', createdTeamId)
+    await svc.auth.admin.deleteUser(newUserId)
+    return { success: false, error: profErr.message }
+  }
 
   await writeAuditLog({
     userId: session.user.id, action: 'user_created', tableName: 'profiles', recordId: newUserId,
@@ -159,5 +167,31 @@ export async function reparentTeam(
   const { error } = await supabase.from('teams').update({ parent_team_id: newParentId }).eq('id', teamId)
   if (error) return { success: false, error: error.message }
   revalidatePath('/team/teams')
+  return { success: true }
+}
+
+/** Set or clear a team's leader (admin only). The leader sees everyone in the team's subtree. */
+export async function setTeamLeader(
+  teamId: string,
+  leaderId: string | null,
+): Promise<{ success: boolean; error?: string }> {
+  const session = await getProfile()
+  if (session?.profile?.role !== 'admin') return { success: false, error: 'Admin only' }
+
+  const supabase = await createClient()
+  if (leaderId) {
+    const { data: leader } = await supabase.from('profiles').select('id, role, is_active').eq('id', leaderId).maybeSingle()
+    if (!leader || !leader.is_active || leader.role === 'broker') return { success: false, error: 'Choose an active staff member' }
+  }
+  const { data: before } = await supabase.from('teams').select('leader_id').eq('id', teamId).maybeSingle()
+  const { error } = await supabase.from('teams').update({ leader_id: leaderId }).eq('id', teamId)
+  if (error) return { success: false, error: error.message }
+
+  await writeAuditLog({
+    userId: session.user.id, action: 'user_updated', tableName: 'teams', recordId: teamId,
+    oldValues: { leader_id: before?.leader_id ?? null }, newValues: { leader_id: leaderId },
+  })
+  revalidatePath('/team/teams')
+  revalidatePath('/team')
   return { success: true }
 }

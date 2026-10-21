@@ -4,7 +4,8 @@ import { useState, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createPayrollRun, finalizePayrollRun } from '@/lib/hr/actions'
 import { MONTH_NAMES } from '@/types/hr'
-import { Play, CheckCircle2, Plus } from 'lucide-react'
+import { CheckCircle2, Plus } from 'lucide-react'
+import { useToast } from '@/components/ui/Toast'
 
 interface Props {
   existingMonths: { year: number; month: number }[]
@@ -12,6 +13,7 @@ interface Props {
 
 export default function PayrollRunActions({ existingMonths }: Props) {
   const router = useRouter()
+  const toast = useToast()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -28,8 +30,12 @@ export default function PayrollRunActions({ existingMonths }: Props) {
     startTransition(async () => {
       const result = await createPayrollRun(formData)
       setLoading(false)
-      if (!result.success) setError(result.error ?? 'Failed')
-      else { setOpen(false); router.refresh() }
+      if (!result.success) { setError(result.error ?? 'Failed'); return }
+      setOpen(false)
+      if (result.warning) toast.error(result.warning)
+      else toast.success('Payslips generated')
+      router.push(`/hr/payroll?run=${result.runId}`)
+      router.refresh()
     })
   }
 
@@ -81,6 +87,7 @@ export default function PayrollRunActions({ existingMonths }: Props) {
 
 export function FinalizeRunButton({ runId }: { runId: string }) {
   const router = useRouter()
+  const toast = useToast()
   const [loading, setLoading] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
 
@@ -88,8 +95,11 @@ export function FinalizeRunButton({ runId }: { runId: string }) {
     if (!confirmed) { setConfirmed(true); return }
     setLoading(true)
     startTransition(async () => {
-      await finalizePayrollRun(runId)
+      const res = await finalizePayrollRun(runId)
       setLoading(false)
+      setConfirmed(false)
+      if (!res.success) { toast.error(res.error ?? 'Could not finalize'); return }
+      toast.success('Payroll finalized — employees can now see their slips')
       router.refresh()
     })
   }

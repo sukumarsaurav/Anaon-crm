@@ -7,6 +7,9 @@ import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { eraseSubject } from '@/lib/legal/erasure'
 import type { LegalDocumentType, DeletionRequestStatus } from '@/types/legal'
+import { searchOr } from '@/lib/supabase/search'
+import { writeAuditLog } from '@/lib/security/audit'
+import { nextQuarterlyDue } from './rera'
 
 async function getAuth() {
   const supabase = await createClient()
@@ -24,27 +27,36 @@ export async function updateProjectRERA(projectId: string, formData: FormData) {
   const auth = await getAuth()
   if (!auth.ok || !isManager(auth.role)) return { success: false, error: 'Forbidden' }
 
-  const disclosures: Record<string, string> = {}
   const carpetArea = formData.get('carpet_area_sqft')
   const fsi = formData.get('fsi_approved')
   const units = formData.get('total_approved_units')
-  const extraDisclosureKey = formData.get('disclosure_key') as string
-  const extraDisclosureVal = formData.get('disclosure_value') as string
-  if (extraDisclosureKey && extraDisclosureVal) {
-    disclosures[extraDisclosureKey] = extraDisclosureVal
+  const expiry = (formData.get('rera_expiry_date') as string) || null
+  const registered = (formData.get('rera_registration_date') as string) || null
+  if (expiry && registered && expiry <= registered) return { success: false, error: 'The expiry date must be after the registration date' }
+  const website = (formData.get('rera_website_url') as string)?.trim() || null
+  if (website && !/^https?:\/\//i.test(website)) return { success: false, error: 'The RERA website must start with http:// or https://' }
+
+  // Extra disclosure (key → value). It was parsed and then never saved.
+  const extraKey = (formData.get('disclosure_key') as string)?.trim()
+  const extraVal = (formData.get('disclosure_value') as string)?.trim()
+  let disclosures: Record<string, string> | undefined
+  if (extraKey && extraVal) {
+    const { data: current } = await auth.supabase.from('projects').select('rera_disclosures').eq('id', projectId).maybeSingle()
+    disclosures = { ...((current?.rera_disclosures as Record<string, string> | null) ?? {}), [extraKey]: extraVal }
   }
 
   const { error } = await auth.supabase.from('projects').update({
     rera_number:               formData.get('rera_number') as string || null,
-    rera_registration_date:    formData.get('rera_registration_date') as string || null,
-    rera_expiry_date:          formData.get('rera_expiry_date') as string || null,
+    rera_registration_date:    registered,
+    rera_expiry_date:          expiry,
     rera_authority_name:       formData.get('rera_authority_name') as string || null,
-    rera_website_url:          formData.get('rera_website_url') as string || null,
+    rera_website_url:          website,
     legal_contact:             formData.get('legal_contact') as string || null,
     carpet_area_sqft:          carpetArea ? parseFloat(carpetArea as string) : null,
     fsi_approved:              fsi ? parseFloat(fsi as string) : null,
     total_approved_units:      units ? parseInt(units as string, 10) : null,
     quarterly_report_due_date: formData.get('quarterly_report_due_date') as string || null,
+    ...(disclosures ? { rera_disclosures: disclosures } : {}),
     updated_at:                new Date().toISOString(),
   }).eq('id', projectId)
 
@@ -58,13 +70,9 @@ export async function markQuarterlyReportSubmitted(projectId: string) {
   const auth = await getAuth()
   if (!auth.ok || !isManager(auth.role)) return { success: false, error: 'Forbidden' }
 
-  // Calculate next quarterly due date (3 months from now)
-  const nextDue = new Date()
-  nextDue.setMonth(nextDue.getMonth() + 3)
-
   const { error } = await auth.supabase.from('projects').update({
     quarterly_report_last_submitted: todayIST(),
-    quarterly_report_due_date:       nextDue.toISOString().split('T')[0],
+    quarterly_report_due_date:       nextQuarterlyDue(todayIST()),
     updated_at:                      new Date().toISOString(),
   }).eq('id', projectId)
 
@@ -127,14 +135,40 @@ export async function toggleLegalTemplate(id: string, isActive: boolean) {
 
 // ── Data deletion requests ────────────────────────────────────────────────
 
+/** Lead / client picker for a deletion request (the request must point at a record to be erasable). */
+export async function searchErasureSubjects(type: 'lead' | 'client', term: string) {
+  const auth = await getAuth()
+  if (!auth.ok || !isManager(auth.role)) return []
+  const or = searchOr(term, { text: ['full_name', 'email'], phone: ['phone'] })
+  if (!or) return []
+  const { data } = await auth.supabase
+    .from(type === 'lead' ? 'leads' : 'clients')
+    .select('id, full_name, phone, email')
+    .or(or)
+    .neq('full_name', '[Deleted]')
+    .order('full_name')
+    .limit(8)
+  return (data ?? []) as { id: string; full_name: string; phone: string | null; email: string | null }[]
+}
+
 export async function submitDeletionRequest(formData: FormData) {
   const auth = await getAuth()
   if (!auth.ok) return { success: false, error: 'Unauthorized' }
 
+  const requesterType = formData.get('requester_type') as string
+  if (requesterType !== 'lead' && requesterType !== 'client') return { success: false, error: 'Choose lead or client' }
+  const requesterId = (formData.get('requester_id') as string) || null
+  const name = (formData.get('requester_name') as string)?.trim()
+  if (!name) return { success: false, error: 'Enter the requester’s name' }
+  // Without a linked record "Mark completed" can never erase anything; check it exists now.
+  if (!requesterId) return { success: false, error: `Find and select the ${requesterType} the request is about` }
+  const { data: subject } = await auth.supabase.from(requesterType === 'lead' ? 'leads' : 'clients').select('id').eq('id', requesterId).maybeSingle()
+  if (!subject) return { success: false, error: `That ${requesterType} was not found` }
+
   const { error } = await auth.supabase.from('data_deletion_requests').insert({
-    requester_type:  formData.get('requester_type') as 'lead' | 'client',
-    requester_id:    formData.get('requester_id') as string || null,
-    requester_name:  formData.get('requester_name') as string,
+    requester_type:  requesterType,
+    requester_id:    requesterId,
+    requester_name:  name,
     requester_phone: formData.get('requester_phone') as string || null,
     requester_email: formData.get('requester_email') as string || null,
     reason:          formData.get('reason') as string || null,
@@ -158,6 +192,7 @@ export async function updateDeletionRequestStatus(
     processed_by: auth.userId,
   }
   if (notes) update.admin_notes = notes
+  if (status === 'completed' || status === 'rejected') update.completed_at = new Date().toISOString()
 
   const { data: req } = await auth.supabase
     .from('data_deletion_requests')
@@ -179,11 +214,16 @@ export async function updateDeletionRequestStatus(
     update.admin_notes = [notes, `Erased: ${result.summary.join('; ')}`].filter(Boolean).join('\n')
   }
 
+  if (status === 'rejected' && !notes?.trim()) return { success: false, error: 'Add a note saying why the request is rejected' }
+
   const { error } = await auth.supabase.from('data_deletion_requests')
     .update(update)
     .eq('id', id)
 
   if (error) return { success: false, error: error.message }
+  if (status === 'completed') {
+    await writeAuditLog({ userId: auth.userId, action: 'data_erased', tableName: req?.requester_type === 'client' ? 'clients' : 'leads', recordId: req?.requester_id ?? undefined, metadata: { request_id: id } })
+  }
 
   revalidatePath('/legal/privacy')
   return { success: true }

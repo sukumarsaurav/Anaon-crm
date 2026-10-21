@@ -83,10 +83,11 @@ const managerOnly: Call[] = [
   ['bookings.addBookingInstallment', () => bookings.addBookingInstallment(fd())],
   ['portal.reviewExtensionRequest', () => portal.reviewExtensionRequest('x', 'approved')],
   ['leads.mergeDuplicate', () => mergeDuplicate('a', 'b')],
+  // Managers may delete their own announcements (RLS: author or admin); below manager, never.
+  ['team.deleteAnnouncement', () => team.deleteAnnouncement('x')],
 ]
 const adminOnly: Call[] = [
   ['leads.deleteLead', () => deleteLead('x')],
-  ['team.deleteAnnouncement', () => team.deleteAnnouncement('x')],
   ['team.changeStaffAssignment', () => staff.changeStaffAssignment('x', { role: 'admin' })],
   ['hr.createPayrollRun', () => hr.createPayrollRun(fd())],
   ['hr.finalizePayrollRun', () => hr.finalizePayrollRun('x')],

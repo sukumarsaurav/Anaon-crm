@@ -7,6 +7,8 @@ import { formatDate, formatCurrency } from '@/lib/utils'
 import CandidateStageActions from '@/components/hr/CandidateStageActions'
 import { ArrowLeft, Star, Phone, Mail, Building2 } from 'lucide-react'
 import Link from 'next/link'
+import AddCandidateForm from '@/components/hr/AddCandidateForm'
+import { formatInIST } from '@/lib/datetime'
 
 export const metadata = { title: 'Recruitment' }
 
@@ -14,7 +16,8 @@ export default async function RecruitmentPage() {
   const supabase = await createClient()
   const [candidates, profilesRes] = await Promise.all([
     getCandidates(),
-    supabase.from('profiles').select('id, full_name').eq('is_active', true).order('full_name'),
+    supabase.from('profiles').select('id, full_name').eq('is_active', true)
+      .in('role', ['admin', 'manager', 'sales_advisor', 'telecaller']).order('full_name'),
   ])
   const interviewers = profilesRes.data ?? []
 
@@ -35,6 +38,7 @@ export default async function RecruitmentPage() {
           <h1 className="text-xl font-bold text-slate-900">Recruitment Pipeline</h1>
           <p className="text-sm text-slate-500">{activeCount} active candidates · {candidates.filter(c => c.stage === 'joined').length} joined</p>
         </div>
+        <div className="ml-auto"><AddCandidateForm /></div>
       </div>
 
       {/* Stage summary bar */}
@@ -87,7 +91,7 @@ export default async function RecruitmentPage() {
                         </div>
                         {c.interview_date && (
                           <p className="text-xs text-amber-600 mt-1">
-                            Interview: {formatDate(c.interview_date)}
+                            Interview: {formatInIST(c.interview_date, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}
                             {c.interview_mode && ` (${c.interview_mode.replace('_', ' ')})`}
                             {c.interviewer && ` · ${c.interviewer.full_name}`}
                           </p>
@@ -139,7 +143,7 @@ export default async function RecruitmentPage() {
 
         {candidates.length === 0 && (
           <div className="text-center py-16 text-slate-400 bg-white rounded-xl border border-dashed border-slate-200">
-            <p className="text-sm">No candidates yet. Applications from the careers page appear here.</p>
+            <p className="text-sm">No candidates yet. Use “Add candidate” for walk-ins, referrals and job-portal applicants.</p>
           </div>
         )}
       </div>

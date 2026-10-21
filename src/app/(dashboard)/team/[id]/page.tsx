@@ -1,4 +1,4 @@
-import { todayIST } from '@/lib/datetime'
+import { todayIST, istMonthYear } from '@/lib/datetime'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import ActionButton from '@/components/ui/ActionButton'
@@ -40,10 +40,8 @@ export default async function MemberProfilePage({ params }: Props) {
 
   if (!isOwn && !canManage) notFound()
 
-  const now = new Date()
-  const month = now.getMonth() + 1
-  const year  = now.getFullYear()
-  const today = todayIST(now)
+  const { month, year } = istMonthYear()
+  const today = todayIST()
 
   const [member, kpi, target, todayKPI, attendanceLogs, leaveRequests, slabs] = await Promise.all([
     getMemberProfile(id),

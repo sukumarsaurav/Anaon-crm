@@ -96,11 +96,14 @@ describe('actions', () => {
     expect(sent.notify[0].ids.sort()).toEqual(['adm', 'mgr'])
     expect(sent.notify[0].input.message).toBe('Ravi / Ravi owes 500')
   })
-  it('create_followup writes a scheduled activity', async () => {
-    await run(automation({ action_type: 'create_followup', action_payload: { followup_hours: 2 } }), { lead: lead() })
-    const a = world.db.rows('lead_activities')[0]
-    expect(a).toMatchObject({ type: 'follow_up', lead_id: 'L1' })
-    expect(new Date(a.scheduled_at).getTime() - Date.now()).toBeLessThan(2.1 * 3600_000)
+  it('create_followup schedules the lead\'s next follow-up (the reminder cron reads it)', async () => {
+    const r = await run(automation({ action_type: 'create_followup', action_payload: { followup_hours: 2 } }), { lead: lead() })
+    expect(r.success).toBe(true)
+    const l = world.db.rows('leads')[0]
+    expect(new Date(l.next_followup_at).getTime() - Date.now()).toBeLessThan(2.1 * 3600_000)
+    expect(l.followup_reminder_sent_at).toBeNull()
+    // 'follow_up' is not a lead_activities type; the timeline entry is a system note.
+    expect(world.db.rows('lead_activities')[0]).toMatchObject({ type: 'system', lead_id: 'L1' })
   })
   it('change_lead_stage updates and logs; refuses without a stage', async () => {
     expect((await run(automation({ action_type: 'change_lead_stage', action_payload: {} }), { lead: lead() })).success).toBe(false)
@@ -116,10 +119,39 @@ describe('actions', () => {
   })
   it('send_email: needs an address and configured email; escapes the body', async () => {
     const a = automation({ action_type: 'send_email', action_payload: { recipient: 'lead', email_subject: 'Hi {{lead_name}}', email_body: '<b>{{lead_name}}</b>' } })
-    expect((await run(a, { lead: lead() })).error).toBe('No email address in context')
+    expect((await run(a, { lead: lead() })).error).toBe('The lead has no email address')
     expect((await run(a, { lead: lead({ email: 'r@x.in' }) })).success).toBe(true)
     expect(sent.email[0].subject).toBe('Hi Ravi')
     expect(sent.email[0].html).not.toContain('<b>Ravi</b>')
+  })
+  it('send_notification can go to the lead\'s advisor only', async () => {
+    const a = automation({ action_type: 'send_notification', action_payload: { notify_roles: [], notify_assignee: true, notification_body: 'New: {{lead_name}}' } })
+    await run(a, { lead: lead({ assigned_to: 'a2' }) })
+    expect(sent.notify[0].ids).toEqual(['a2'])
+    expect(sent.notify[0].input.action_url).toBe('/leads/L1')
+    expect((await run(a, { lead: lead({ assigned_to: null }) })).success).toBe(false)
+  })
+  it('round robin picks the advisor with the fewest open leads', async () => {
+    world.db.tables.leads = [
+      { id: 'L1', stage: 'new_lead', is_active: true, assigned_to: null },
+      { id: 'x1', stage: 'contacted', is_active: true, assigned_to: 'a1' },
+      { id: 'x2', stage: 'contacted', is_active: true, assigned_to: 'a1' },
+      { id: 'x3', stage: 'closed_won', is_active: true, assigned_to: 'a2' },
+    ]
+    await run(automation({ action_type: 'assign_to_advisor', action_payload: { assignment_mode: 'round_robin' } }), { lead: lead() })
+    expect(world.db.rows('leads').find((l) => l.id === 'L1')?.assigned_to).toBe('a2')
+  })
+  it('send_email looks up the address, or uses a fixed one', async () => {
+    world.db.tables.leads = [{ id: 'L1', stage: 'new_lead', email: 'stored@x.in' }]
+    expect((await run(automation({ action_type: 'send_email', action_payload: { email_recipient: 'lead', email_body: 'Hi' } }), { lead: lead() })).success).toBe(true)
+    expect(sent.email[0].to).toBe('stored@x.in')
+    expect((await run(automation({ action_type: 'send_email', action_payload: { email_recipient: 'custom', email_to: 'sales@anon.in', email_body: 'Hi' } }), { lead: lead() })).success).toBe(true)
+    expect(sent.email[1].to).toBe('sales@anon.in')
+  })
+  it('equals / not_equals ignore case', async () => {
+    world.db.tables.automations = [automation({ conditions: [{ field: 'utm_source', operator: 'equals', value: 'Facebook' }] })]
+    await fireAutomations('lead_created', { lead: lead({ utm_source: 'facebook' }) }, 'lead', 'L1')
+    expect(world.db.rows('automation_logs')).toHaveLength(1)
   })
   it('an unknown action type fails and is logged as failed', async () => {
     const r = await run(automation({ action_type: 'teleport' }), { lead: lead() })

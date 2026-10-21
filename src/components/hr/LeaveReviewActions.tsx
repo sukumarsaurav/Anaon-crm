@@ -4,6 +4,7 @@ import { useState, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { approveLeave, rejectLeave } from '@/lib/hr/actions'
 import { CheckCircle2, XCircle } from 'lucide-react'
+import { useToast } from '@/components/ui/Toast'
 
 interface Props {
   leaveId: string
@@ -14,12 +15,15 @@ export default function LeaveReviewActions({ leaveId }: Props) {
   const [panel, setPanel] = useState<'reject' | null>(null)
   const [note, setNote] = useState('')
   const [loading, setLoading] = useState(false)
+  const toast = useToast()
 
   function handleApprove() {
     setLoading(true)
     startTransition(async () => {
-      await approveLeave(leaveId)
+      const res = await approveLeave(leaveId)
       setLoading(false)
+      if (!res.success) { toast.error(res.error ?? 'Could not approve'); return }
+      toast.success('Leave approved')
       router.refresh()
     })
   }
@@ -28,9 +32,11 @@ export default function LeaveReviewActions({ leaveId }: Props) {
     e.preventDefault()
     setLoading(true)
     startTransition(async () => {
-      await rejectLeave(leaveId, note)
+      const res = await rejectLeave(leaveId, note)
       setLoading(false)
+      if (!res.success) { toast.error(res.error ?? 'Could not reject'); return }
       setPanel(null)
+      toast.success('Leave rejected')
       router.refresh()
     })
   }

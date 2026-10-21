@@ -3,7 +3,9 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
-import { decideLeave } from './leave'
+import { decideLeave, leaveWorkingDates } from './leave'
+import { computeSlip, monthDays, salaryStructure } from './payroll'
+import { istToIso } from '@/lib/datetime'
 import { updateStaffProfile, setStaffActive } from '@/lib/team/staff'
 import type { CandidateStage } from '@/types/hr'
 
@@ -17,6 +19,35 @@ async function getAuthUser(allowedRoles = ['admin', 'manager']) {
 }
 
 // ── Recruitment ──────────────────────────────────────────────────────────────
+
+/** Walk-ins, referrals and job-portal candidates: the careers form is no longer wired up. */
+export async function addCandidate(formData: FormData) {
+  try {
+    await getAuthUser()
+    const supabase = await createClient()
+    const name = (formData.get('name') as string)?.trim()
+    const phone = (formData.get('phone') as string)?.trim()
+    if (!name || !phone) return { success: false, error: 'Name and phone are required' }
+    const num = (k: string) => { const v = parseFloat(formData.get(k) as string); return Number.isFinite(v) && v >= 0 ? v : null }
+    const { error } = await supabase.from('career_applications').insert({
+      name,
+      phone,
+      email: (formData.get('email') as string)?.trim() || null,
+      current_company: (formData.get('current_company') as string)?.trim() || null,
+      experience_years: num('experience_years'),
+      expected_ctc: num('expected_ctc'),
+      resume_url: (formData.get('resume_url') as string)?.trim() || null,
+      cover_letter: (formData.get('notes') as string)?.trim() || null,
+      stage: 'applied',
+    })
+    if (error) return { success: false, error: error.message }
+    revalidatePath('/hr/recruitment')
+    revalidatePath('/hr')
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+}
 
 export async function updateCandidateStage(candidateId: string, stage: CandidateStage, formData?: FormData) {
   try {
@@ -50,12 +81,13 @@ export async function scheduleInterview(candidateId: string, formData: FormData)
   try {
     const user = await getAuthUser()
     const supabase = await createClient()
+    if (!istToIso(formData.get('interview_date') as string)) return { success: false, error: 'Choose the interview date and time' }
 
     const { error } = await supabase
       .from('career_applications')
       .update({
         stage: 'interview_scheduled',
-        interview_date:   formData.get('interview_date') as string,
+        interview_date:   istToIso(formData.get('interview_date') as string),
         interviewer_id:   (formData.get('interviewer_id') as string) || null,
         interview_mode:   formData.get('interview_mode') as string,
         reviewed_by:      user.id,
@@ -108,7 +140,7 @@ export async function makeOffer(candidateId: string, formData: FormData) {
       .update({
         stage:       'offer',
         offer_ctc:   parseFloat(formData.get('offer_ctc') as string) || null,
-        offer_date:  formData.get('offer_date') as string,
+        offer_date:  (formData.get('offer_date') as string) || null,
         reviewed_by: user.id,
         reviewed_at: new Date().toISOString(),
         updated_at:  new Date().toISOString(),
@@ -193,7 +225,7 @@ export async function setLeaveBalance(formData: FormData) {
 
 export async function createPayrollRun(formData: FormData) {
   try {
-    const user = await getAuthUser(['admin'])
+    await getAuthUser(['admin'])
     const supabase = await createClient()
 
     const year = parseInt(formData.get('year') as string)
@@ -202,14 +234,47 @@ export async function createPayrollRun(formData: FormData) {
       return { success: false, error: 'Choose a valid month and year' }
     }
 
-    // Prevent duplicate
     const { data: existing } = await supabase
-      .from('payroll_runs')
-      .select('id')
-      .eq('year', year)
-      .eq('month', month)
-      .single()
+      .from('payroll_runs').select('id').eq('year', year).eq('month', month).maybeSingle()
     if (existing) return { success: false, error: 'Payroll run already exists for this month' }
+
+    const days = monthDays(year, month)
+    const monthStart = days[0].date
+    const monthEnd = days[days.length - 1].date
+    const workingDates = days.filter((d) => d.working).map((d) => d.date)
+
+    // Staff only (broker logins have profiles too). Includes people who left during the month — they
+    // are owed their days — and leaves out anyone joining after it.
+    const { data: staff } = await supabase
+      .from('profiles')
+      .select('id, full_name, base_salary, is_active, joining_date, termination_date')
+      .in('role', ['admin', 'manager', 'sales_advisor', 'telecaller'])
+      .or(`is_active.eq.true,termination_date.gte.${monthStart}`)
+    const employees = (staff ?? []).filter((e) => (!e.joining_date || e.joining_date <= monthEnd)
+      && (e.is_active || (e.termination_date && e.termination_date >= monthStart)))
+
+    const noSalary = employees.filter((e) => !(Number(e.base_salary) > 0)).map((e) => e.full_name)
+    const payable = employees.filter((e) => Number(e.base_salary) > 0)
+    if (!payable.length) {
+      return { success: false, error: noSalary.length ? `Set a base salary first (HR → Employees): ${noSalary.join(', ')}` : 'No employees to pay' }
+    }
+    const ids = payable.map((e) => e.id)
+
+    // Unpaid days: approved unpaid leave and days marked absent, on working days only.
+    const [{ data: unpaid }, { data: absent }] = await Promise.all([
+      supabase.from('leave_requests').select('user_id, from_date, to_date')
+        .eq('status', 'approved').eq('leave_type', 'unpaid').in('user_id', ids)
+        .lte('from_date', monthEnd).gte('to_date', monthStart),
+      supabase.from('attendance_logs').select('user_id, date')
+        .eq('status', 'absent').in('user_id', ids).gte('date', monthStart).lte('date', monthEnd),
+    ])
+    const unpaidDates = new Map<string, Set<string>>()
+    const mark = (uid: string, date: string) => {
+      if (!unpaidDates.has(uid)) unpaidDates.set(uid, new Set())
+      unpaidDates.get(uid)!.add(date)
+    }
+    for (const l of unpaid ?? []) for (const d of leaveWorkingDates(l.from_date, l.to_date)) if (d >= monthStart && d <= monthEnd) mark(l.user_id, d)
+    for (const a of absent ?? []) if (workingDates.includes(a.date)) mark(a.user_id, a.date)
 
     const { data: run, error } = await supabase
       .from('payroll_runs')
@@ -218,101 +283,53 @@ export async function createPayrollRun(formData: FormData) {
       .single()
     if (error) return { success: false, error: error.message }
 
-    // Auto-generate slips for all active employees
-    const { data: employees } = await supabase
-      .from('profiles')
-      .select('id, base_salary')
-      .eq('is_active', true)
-      // Staff only: broker logins have profiles too and must not appear on the payroll.
-      .in('role', ['admin', 'manager', 'sales_advisor', 'telecaller'])
-
-    if (employees && employees.length > 0) {
-      // Approved UNPAID leave in this month is loss of pay. (Every slip was 26/26 days, so unpaid
-      // leave never reduced anyone's pay unless an admin edited each slip by hand.)
-      const monthStart = new Date(Date.UTC(year, month - 1, 1))
-      const monthEnd = new Date(Date.UTC(year, month, 0))
-      const { data: unpaid } = await supabase
-        .from('leave_requests')
-        .select('user_id, from_date, to_date')
-        .eq('status', 'approved')
-        .eq('leave_type', 'unpaid')
-        .lte('from_date', monthEnd.toISOString().slice(0, 10))
-        .gte('to_date', monthStart.toISOString().slice(0, 10))
-      const lopByUser = new Map<string, number>()
-      for (const l of unpaid ?? []) {
-        const from = Math.max(Date.parse(`${l.from_date}T00:00:00Z`), monthStart.getTime())
-        const to = Math.min(Date.parse(`${l.to_date}T00:00:00Z`), monthEnd.getTime())
-        const days = Math.max(0, Math.round((to - from) / 86_400_000) + 1)
-        lopByUser.set(l.user_id, (lopByUser.get(l.user_id) ?? 0) + days)
+    const slips = payable.map((emp) => {
+      const employed = workingDates.filter((d) => (!emp.joining_date || d >= emp.joining_date)
+        && (!emp.termination_date || d <= emp.termination_date))
+      const off = unpaidDates.get(emp.id) ?? new Set<string>()
+      const presentDays = employed.filter((d) => !off.has(d)).length
+      return {
+        run_id: run.id,
+        user_id: emp.id,
+        ...computeSlip({ ...salaryStructure(Number(emp.base_salary)), workingDays: workingDates.length, presentDays }),
       }
+    })
 
-      const slips = employees.map(emp => {
-        const base = Number(emp.base_salary ?? 0)
-        const basic = Math.round(base * 0.5)
-        const hra = Math.round(base * 0.2)
-        const allowances = base - basic - hra
-        const gross = base
-        const pf = Math.round(basic * 0.12)
-        const prof_tax = 200
-        const workingDays = 26
-        const lop = Math.min(lopByUser.get(emp.id) ?? 0, workingDays)
-        const lopDeduction = lop > 0 ? Math.round((gross / workingDays) * lop) : 0
-        const total_deductions = pf + prof_tax
-        const net = gross - lopDeduction - total_deductions
-
-        return {
-          run_id: run.id,
-          user_id: emp.id,
-          working_days: workingDays,
-          present_days: workingDays - lop,
-          lop_days: lop,
-          basic,
-          hra,
-          allowances,
-          gross,
-          pf_employee: pf,
-          pf_employer: pf,
-          professional_tax: prof_tax,
-          total_deductions,
-          net_pay: Math.max(0, net),
-        }
-      })
-
-      const { error: slipError } = await supabase.from('payroll_slips').insert(slips)
-      if (slipError) {
-        // Don't leave a run behind that claims totals for slips that were never saved.
-        await supabase.from('payroll_runs').delete().eq('id', run.id)
-        return { success: false, error: `Could not generate the slips: ${slipError.message}` }
-      }
-
-      // Update run totals
-      const totals = slips.reduce((acc, s) => ({
-        gross: acc.gross + s.gross,
-        deductions: acc.deductions + s.total_deductions,
-        net: acc.net + s.net_pay,
-      }), { gross: 0, deductions: 0, net: 0 })
-
-      await supabase.from('payroll_runs').update({
-        total_gross: totals.gross,
-        total_deductions: totals.deductions,
-        total_net: totals.net,
-        total_employees: employees.length,
-        status: 'processing',
-      }).eq('id', run.id)
+    const { error: slipError } = await supabase.from('payroll_slips').insert(slips)
+    if (slipError) {
+      // Don't leave a run behind that claims totals for slips that were never saved.
+      await supabase.from('payroll_runs').delete().eq('id', run.id)
+      return { success: false, error: `Could not generate the slips: ${slipError.message}` }
     }
+    await updateRunTotals(supabase, run.id, { status: 'processing' })
 
     revalidatePath('/hr/payroll')
-    return { success: true, runId: run.id }
+    return {
+      success: true,
+      runId: run.id,
+      warning: noSalary.length ? `No slip for ${noSalary.join(', ')} — no base salary set.` : undefined,
+    }
   } catch (e) {
     return { success: false, error: (e as Error).message }
   }
+}
+
+async function updateRunTotals(supabase: Awaited<ReturnType<typeof createClient>>, runId: string, extra: Record<string, unknown> = {}) {
+  const { data: all } = await supabase.from('payroll_slips').select('gross, total_deductions, net_pay').eq('run_id', runId)
+  const totals = (all ?? []).reduce((t, r) => ({
+    gross: t.gross + Number(r.gross ?? 0), deductions: t.deductions + Number(r.total_deductions ?? 0), net: t.net + Number(r.net_pay ?? 0),
+  }), { gross: 0, deductions: 0, net: 0 })
+  await supabase.from('payroll_runs').update({
+    total_gross: totals.gross, total_deductions: totals.deductions, total_net: totals.net,
+    total_employees: (all ?? []).length, updated_at: new Date().toISOString(), ...extra,
+  }).eq('id', runId)
 }
 
 export async function finalizePayrollRun(runId: string) {
   try {
     const user = await getAuthUser(['admin'])
     const supabase = await createClient()
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('payroll_runs')
       .update({
         status:       'completed',
@@ -321,7 +338,10 @@ export async function finalizePayrollRun(runId: string) {
         updated_at:   new Date().toISOString(),
       })
       .eq('id', runId)
+      .neq('status', 'completed')
+      .select('id')
     if (error) return { success: false, error: error.message }
+    if (!data?.length) return { success: false, error: 'This run is already finalized' }
     revalidatePath('/hr/payroll')
     return { success: true }
   } catch (e) {
@@ -341,38 +361,23 @@ export async function updatePayrollSlip(slipId: string, formData: FormData) {
 
     const { data: slip } = await supabase
       .from('payroll_slips')
-      .select('run_id, basic, hra, allowances, total_deductions, run:payroll_runs!payroll_slips_run_id_fkey(status)')
+      .select('run_id, basic, hra, allowances, working_days, run:payroll_runs!payroll_slips_run_id_fkey(status)')
       .eq('id', slipId)
       .single()
     if (!slip) return { success: false, error: 'Slip not found' }
     const runStatus = (Array.isArray(slip.run) ? slip.run[0] : slip.run as { status?: string } | null)?.status
     if (runStatus === 'completed') return { success: false, error: 'This payroll run is finalized — slips can no longer be changed' }
 
-    const workingDays = parseInt(formData.get('working_days') as string) || 26
-    const presentDays = Math.min(workingDays, Math.max(0, parseInt(formData.get('present_days') as string) || 0))
-    const lopDays = workingDays - presentDays
-    const incentives = Math.max(0, parseFloat(formData.get('incentives') as string) || 0)
-
-    const structure = Number(slip.basic ?? 0) + Number(slip.hra ?? 0) + Number(slip.allowances ?? 0)
-    const lopDeduction = lopDays > 0 ? Math.round((structure / workingDays) * lopDays) : 0
-    const gross = Math.max(0, structure - lopDeduction + incentives)
-    const netPay = Math.max(0, gross - Number(slip.total_deductions ?? 0))
-
-    const { error } = await supabase
-      .from('payroll_slips')
-      .update({ present_days: presentDays, working_days: workingDays, lop_days: lopDays, incentives, gross, net_pay: netPay })
-      .eq('id', slipId)
+    const figures = computeSlip({
+      basic: Number(slip.basic ?? 0), hra: Number(slip.hra ?? 0), allowances: Number(slip.allowances ?? 0),
+      workingDays: parseInt(formData.get('working_days') as string) || Number(slip.working_days) || 26,
+      presentDays: parseInt(formData.get('present_days') as string) || 0,
+      incentives: parseFloat(formData.get('incentives') as string) || 0,
+    })
+    const { error } = await supabase.from('payroll_slips').update(figures).eq('id', slipId)
     if (error) return { success: false, error: error.message }
 
-    // Keep the run totals in step with its slips.
-    const { data: all } = await supabase.from('payroll_slips').select('gross, total_deductions, net_pay').eq('run_id', slip.run_id)
-    const totals = (all ?? []).reduce((t, r) => ({
-      gross: t.gross + Number(r.gross ?? 0), deductions: t.deductions + Number(r.total_deductions ?? 0), net: t.net + Number(r.net_pay ?? 0),
-    }), { gross: 0, deductions: 0, net: 0 })
-    await supabase.from('payroll_runs').update({
-      total_gross: totals.gross, total_deductions: totals.deductions, total_net: totals.net, updated_at: new Date().toISOString(),
-    }).eq('id', slip.run_id)
-
+    await updateRunTotals(supabase, slip.run_id)
     revalidatePath('/hr/payroll')
     return { success: true }
   } catch (e) {

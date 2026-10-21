@@ -6,6 +6,7 @@ import { getAttendanceLogs, getEmployees } from '@/lib/hr/queries'
 import MarkAttendanceForm from '@/components/hr/MarkAttendanceForm'
 import { formatDate } from '@/lib/utils'
 import { ArrowLeft, Clock, MapPin } from 'lucide-react'
+import { ATTENDANCE_STATUS_CONFIG, type AttendanceStatus } from '@/types/team'
 
 export const metadata = { title: 'Attendance' }
 
@@ -28,12 +29,16 @@ function isLateIST(ts: string | null): boolean {
   return h > 9 || (h === 9 && m > 30)
 }
 
-export default async function AttendancePage() {
+export default async function AttendancePage({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
   const today = todayIST()
-  const [logs, employees] = await Promise.all([getAttendanceLogs(today), getEmployees()])
+  const requested = (await searchParams).date
+  const day = requested && /^\d{4}-\d{2}-\d{2}$/.test(requested) && requested <= today ? requested : today
+  const [logs, employees] = await Promise.all([getAttendanceLogs(day), getEmployees()])
 
   const present = logs.filter(l => l.status === 'present').length
   const late = logs.filter(l => isLateIST(l.check_in_at)).length
+  const recorded = new Set(logs.map((l) => l.user_id))
+  const missing = employees.filter((e) => !recorded.has(e.id))
 
   return (
     <div className="p-6 space-y-6">
@@ -44,18 +49,23 @@ export default async function AttendancePage() {
         <div>
           <h1 className="text-xl font-bold text-slate-900">Attendance</h1>
           <p className="text-sm text-slate-500">
-            Today · {present} present{late > 0 && ` · ${late} late`} · {logs.length} records
+            {day === today ? 'Today' : formatDate(day)} · {present} present{late > 0 && ` · ${late} late`} · {logs.length} records
           </p>
         </div>
+        <form method="GET" className="ml-auto flex items-center gap-2">
+          <input type="date" name="date" defaultValue={day} max={today} aria-label="Date"
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
+          <button type="submit" className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Show</button>
+        </form>
       </div>
 
-      <MarkAttendanceForm employees={employees.map(e => ({ id: e.id, full_name: e.full_name }))} defaultDate={today} />
+      <MarkAttendanceForm employees={employees.map(e => ({ id: e.id, full_name: e.full_name }))} defaultDate={day} />
 
       <div className="flex gap-3">
         {[
           { label: 'Present', value: present, color: 'bg-green-50 text-green-700' },
           { label: 'Late Arrival', value: late, color: 'bg-amber-50 text-amber-700' },
-          { label: 'Total Records', value: logs.length, color: 'bg-slate-100 text-slate-700' },
+          { label: 'No record', value: missing.length, color: 'bg-red-50 text-red-700' },
         ].map(({ label, value, color }) => (
           <div key={label} className={`flex-1 rounded-xl p-4 ${color}`}>
             <p className="text-2xl font-bold">{value}</p>
@@ -66,12 +76,12 @@ export default async function AttendancePage() {
 
       {logs.length === 0 ? (
         <div className="text-center py-16 text-slate-400 text-sm bg-white rounded-xl border border-dashed border-slate-200">
-          No attendance records for today yet.
+          No attendance records for this day yet.
         </div>
       ) : (
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
           <div className="px-4 py-3 bg-slate-50 border-b border-slate-100">
-            <h2 className="font-semibold text-slate-900 text-sm">{formatDate(today)} — All Records</h2>
+            <h2 className="font-semibold text-slate-900 text-sm">{formatDate(day)} — All Records</h2>
           </div>
           <div className="divide-y divide-slate-100">
             {logs.map(log => {
@@ -84,6 +94,11 @@ export default async function AttendancePage() {
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-slate-900 text-sm">{log.employee?.full_name ?? 'Unknown'}</p>
                       {isLate && <span className="text-xs px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded">Late</span>}
+                      {log.status !== 'present' && (
+                        <span className={`text-xs px-1.5 py-0.5 rounded ${ATTENDANCE_STATUS_CONFIG[log.status as AttendanceStatus]?.bg ?? 'bg-slate-100'} ${ATTENDANCE_STATUS_CONFIG[log.status as AttendanceStatus]?.color ?? 'text-slate-600'}`}>
+                          {ATTENDANCE_STATUS_CONFIG[log.status as AttendanceStatus]?.label ?? log.status}
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-slate-400">{log.employee?.designation}</p>
                   </div>
@@ -102,6 +117,19 @@ export default async function AttendancePage() {
               )
             })}
           </div>
+        </div>
+      )}
+      {missing.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="px-4 py-3 bg-slate-50 border-b border-slate-100">
+            <h2 className="font-semibold text-slate-900 text-sm">No record ({missing.length})</h2>
+            <p className="text-xs text-slate-500">Not checked in and not marked. Use “Mark attendance” above to record absent or leave.</p>
+          </div>
+          <ul className="divide-y divide-slate-100">
+            {missing.map((e) => (
+              <li key={e.id} className="px-4 py-2.5 text-sm text-slate-700">{e.full_name}<span className="text-xs text-slate-400"> · {e.designation ?? e.role}</span></li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

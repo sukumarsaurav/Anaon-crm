@@ -1,5 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/service'
 import { lastTenDigits } from '@/lib/whatsapp/phone'
+import { FILES_BUCKET, filePathFromUrl } from '@/lib/files/storage'
 
 /**
  * DPDP erasure. Plain module (service client, no 'use server'): never callable from the browser.
@@ -25,7 +26,6 @@ export async function eraseSubject(type: 'lead' | 'client', id: string): Promise
   const errors: string[] = []
   const summary: string[] = []
   const now = new Date().toISOString()
-  const placeholderPhone = `deleted-${id.slice(0, 8)}`
 
   const check = (label: string, error: { message: string } | null | undefined, done?: string) => {
     if (error) errors.push(`${label}: ${error.message}`)
@@ -52,6 +52,12 @@ export async function eraseSubject(type: 'lead' | 'client', id: string): Promise
     if (data.lead_id) leadIds = [data.lead_id]
   }
   const tails = [...new Set(phones.map((p) => lastTenDigits(p)).filter((t): t is string => !!t && t.length >= 7))]
+
+  // Duplicate lead records for the same person (same phone) are erased too.
+  for (const t of tails) {
+    const { data } = await svc.from('leads').select('id').like('phone', `%${t}`)
+    for (const l of data ?? []) if (!leadIds.includes(l.id)) leadIds.push(l.id)
+  }
 
   // ── WhatsApp threads: messages, stored media, then the conversation itself ──
   const convIds = new Set<string>()
@@ -89,8 +95,10 @@ export async function eraseSubject(type: 'lead' | 'client', id: string): Promise
   // ── Client: KYC documents (rows + files), then the identity itself ──
   for (const cid of clientIds) {
     const { data: docs } = await svc.from('client_documents').select('id, file_url').eq('client_id', cid)
-    const storagePaths = (docs ?? [])
-      .map((d) => d.file_url as string | null)
+    const { data: client } = await svc.from('clients').select('photo_url').eq('id', cid).maybeSingle()
+    const urls = [...(docs ?? []).map((d) => d.file_url as string | null), client?.photo_url as string | null]
+    // Legacy public-bucket links …
+    const storagePaths = urls
       .filter((u): u is string => !!u && u.includes('/storage/v1/object/'))
       .map((u) => u.split('/storage/v1/object/')[1].replace(/^(public|sign|authenticated)\//, '').split('?')[0])
     for (const full of storagePaths) {
@@ -99,11 +107,20 @@ export async function eraseSubject(type: 'lead' | 'client', id: string): Promise
       const { error } = await svc.storage.from(bucket).remove([path])
       check(`document file ${path}`, error)
     }
+    // … and uploads in the private bucket (stored as /api/files/…), plus anything else filed under
+    // this client's folder. These used to be missed, so KYC files outlived the erasure.
+    const privatePaths = new Set(urls.map(filePathFromUrl).filter((p): p is string => !!p))
+    const { data: folder } = await svc.storage.from(FILES_BUCKET).list(`clients/${cid}`, { limit: 1000 })
+    for (const f of folder ?? []) privatePaths.add(`clients/${cid}/${f.name}`)
+    if (privatePaths.size) {
+      const { error } = await svc.storage.from(FILES_BUCKET).remove([...privatePaths])
+      check('private files', error, `${privatePaths.size} stored file(s) removed`)
+    }
     const { error: dErr } = await svc.from('client_documents').delete().eq('client_id', cid)
     check('client documents', dErr, `${docs?.length ?? 0} KYC document(s) deleted`)
 
     const { error: cErr } = await svc.from('clients').update({
-      full_name: DELETED, phone: placeholderPhone, alternate_phone: null, email: null,
+      full_name: DELETED, phone: `deleted-${cid.slice(0, 8)}`, alternate_phone: null, email: null,
       date_of_birth: null, permanent_address: null, communication_address: null, photo_url: null,
       occupation_type: null, company_name: null, monthly_income: null, annual_income: null,
       pan_encrypted: null, aadhar_encrypted: null,
@@ -127,14 +144,43 @@ export async function eraseSubject(type: 'lead' | 'client', id: string): Promise
       .update({ client_feedback: null, advisor_notes: null, notes: null, photos: [] }).eq('lead_id', lid)
     check('site visits', sErr)
     const { error: bErr } = await svc.from('broker_lead_registrations')
-      .update({ client_name: DELETED, client_phone: placeholderPhone, notes: null }).eq('crm_lead_id', lid)
+      .update({ client_name: DELETED, client_phone: `deleted-${lid.slice(0, 8)}`, notes: null }).eq('crm_lead_id', lid)
     check('broker registrations', bErr)
+    const { error: nErr } = await svc.from('notifications').delete().eq('related_record_type', 'lead').eq('related_record_id', lid)
+    check('notifications', nErr)
     const { error: lErr } = await svc.from('leads').update({
-      full_name: DELETED, phone: placeholderPhone, alternate_phone: null, email: null,
+      // One placeholder per record: several erased leads may share a unique phone column.
+      full_name: DELETED, phone: `deleted-${lid.slice(0, 8)}`, alternate_phone: null, email: null,
       city: null, locality: null, landing_page_url: null, whatsapp_opt_in: false,
       is_active: false, next_followup_at: null, updated_at: now,
     }).eq('id', lid)
     check('lead record', lErr, 'lead identity anonymised')
+  }
+
+  // ── Loan files: income and credit details (the loan amounts stay with the booking) ──
+  if (clientIds.length) {
+    const { error } = await svc.from('loan_applications')
+      .update({ monthly_income: null, existing_emis: null, credit_score: null, notes: null, updated_at: now })
+      .in('client_id', clientIds)
+    check('loan applications', error)
+  }
+
+  // ── Logs that copied the name or phone ──
+  const allIds = [...leadIds, ...clientIds]
+  if (allIds.length) {
+    const { error: aErr } = await svc.from('automation_logs')
+      .update({ lead_name: DELETED, lead_phone: null, context_snapshot: null }).in('trigger_record_id', allIds)
+    check('automation logs', aErr)
+    const { error: pErr } = await svc.from('automation_pending_executions')
+      .update({ status: 'cancelled', context_snapshot: {} }).in('trigger_record_id', allIds).eq('status', 'pending')
+    check('queued automations', pErr)
+    // The consent trail itself is kept (proof of what was agreed and withdrawn), without the name.
+    const { error: cErr } = await svc.from('consent_logs').update({ entity_name: DELETED }).in('entity_id', allIds)
+    check('consent log names', cErr)
+  }
+  for (const cid of clientIds) {
+    const { error } = await svc.from('notifications').delete().eq('related_record_type', 'client').eq('related_record_id', cid)
+    check('notifications', error)
   }
 
   return { ok: errors.length === 0, errors, summary }

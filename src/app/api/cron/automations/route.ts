@@ -48,7 +48,9 @@ export async function POST(req: NextRequest) {
   let overdueCount = 0
   for (const payment of overduePayments ?? []) {
     const client = (payment as any).clients
-    const daysOverdue = Math.floor((Date.now() - new Date(payment.due_date).getTime()) / 86400000)
+    // Whole IST days: computing from UTC midnight made it 0 shortly after IST midnight and 1 later the
+    // same day, so a client could get two "overdue" messages within hours.
+    const daysOverdue = Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${payment.due_date}T00:00:00Z`)) / 86400000)
     // Only fire on first overdue day or every 7 days after
     if (daysOverdue === 1 || daysOverdue % 7 === 0) {
       await fireAutomations('payment_overdue', {
@@ -113,7 +115,8 @@ export async function POST(req: NextRequest) {
     .eq('is_active', true)
     .not('stage', 'in', '(token_paid,closed_won,not_interested)')
     .lt('updated_at', fortyEightHoursAgo)
-    .limit(50)
+    .order('updated_at', { ascending: true }) // stalest first; unordered it was an arbitrary 50 every run
+    .limit(200)
 
   let followupCount = 0
   for (const lead of overdueLeads ?? []) {

@@ -79,7 +79,8 @@ describe('payroll', () => {
     const slips = world.db.rows('payroll_slips')
     expect(slips.map((s) => s.user_id).sort()).toEqual(['p1', 'p2'])
     const s = slips.find((x) => x.user_id === 'p1')!
-    expect(s).toMatchObject({ basic: 20000, hra: 8000, allowances: 12000, gross: 40000, pf_employee: 2400, professional_tax: 200, total_deductions: 2600, net_pay: 37400 })
+    // October 2026: 27 working days (Sundays off). PF is 12% of basic up to the ₹15,000 wage ceiling.
+    expect(s).toMatchObject({ basic: 20000, hra: 8000, allowances: 12000, gross: 40000, working_days: 27, present_days: 27, pf_employee: 1800, professional_tax: 200, total_deductions: 2000, net_pay: 38000 })
     expect(s.basic + s.hra + s.allowances).toBe(s.gross)
     expect(world.db.rows('payroll_runs')[0]).toMatchObject({ total_employees: 2, total_gross: 140000, status: 'processing' })
     expect(world.db.rows('payroll_runs')[0].total_net).toBe(slips.reduce((a, x) => a + x.net_pay, 0))
@@ -95,10 +96,33 @@ describe('payroll', () => {
     expect(r.success).toBe(false)
     expect(world.db.rows('payroll_runs')).toHaveLength(0)
   })
-  it('a zero salary never produces negative pay', async () => {
-    resetWorld({ profiles: [{ id: 'p', role: 'telecaller', is_active: true, base_salary: 0 }], payroll_runs: [], payroll_slips: [] }, {}, 'admin', 'adm')
+  it('no salary set: no ₹0 slip, the admin is told who is missing', async () => {
+    resetWorld({ profiles: [{ id: 'p', full_name: 'Asha', role: 'telecaller', is_active: true, base_salary: 0 }], payroll_runs: [], payroll_slips: [] }, {}, 'admin', 'adm')
+    const r: any = await createPayrollRun(fd({ year: '2026', month: '10' }))
+    expect(r.success).toBe(false)
+    expect(r.error).toMatch(/base salary.*Asha/)
+    expect(world.db.rows('payroll_slips')).toHaveLength(0)
+    expect(world.db.rows('payroll_runs')).toHaveLength(0)
+  })
+  it('pays a leaver for the days worked and prorates a joiner', async () => {
+    resetWorld({ profiles: [
+      { id: 'left', full_name: 'L', role: 'telecaller', is_active: false, base_salary: 27000, termination_date: '2026-10-15' },
+      { id: 'new', full_name: 'N', role: 'telecaller', is_active: true, base_salary: 27000, joining_date: '2026-10-19' },
+      { id: 'later', full_name: 'X', role: 'telecaller', is_active: true, base_salary: 27000, joining_date: '2026-11-02' },
+    ], payroll_runs: [], payroll_slips: [] }, {}, 'admin', 'adm')
     await createPayrollRun(fd({ year: '2026', month: '10' }))
-    expect(world.db.rows('payroll_slips')[0].net_pay).toBe(0)
+    const slips = world.db.rows('payroll_slips')
+    expect(slips.map((s) => s.user_id).sort()).toEqual(['left', 'new'])
+    // Oct 1–15 has 13 working days; Oct 19–31 has 12.
+    expect(slips.find((s) => s.user_id === 'left')).toMatchObject({ present_days: 13, gross: 13000 })
+    expect(slips.find((s) => s.user_id === 'new')).toMatchObject({ present_days: 12, gross: 12000 })
+  })
+  it('days marked absent are loss of pay', async () => {
+    resetWorld({ profiles: [{ id: 'p', full_name: 'P', role: 'telecaller', is_active: true, base_salary: 27000 }], payroll_runs: [], payroll_slips: [],
+      attendance_logs: [{ user_id: 'p', date: '2026-10-05', status: 'absent' }, { user_id: 'p', date: '2026-10-04', status: 'absent' }] }, {}, 'admin', 'adm')
+    await createPayrollRun(fd({ year: '2026', month: '10' }))
+    // Oct 4 is a Sunday: only Oct 5 counts.
+    expect(world.db.rows('payroll_slips')[0]).toMatchObject({ present_days: 26, lop_days: 1, gross: 26000 })
   })
   it('loss-of-pay deducts per absent day and incentives add on top', async () => {
     await createPayrollRun(fd({ year: '2026', month: '10' }))
@@ -106,7 +130,7 @@ describe('payroll', () => {
     await updatePayrollSlip(slip.id, fd({ present_days: '24', working_days: '26', incentives: '5000' }))
     const after = world.db.rows('payroll_slips').find((s) => s.user_id === 'p1')!
     expect(after).toMatchObject({ lop_days: 2, present_days: 24 })
-    expect(after.net_pay).toBe(Math.round(40000 - (40000 / 26) * 2) + 5000 - 2600) // 40000-3077+5000-2600
+    expect(after.net_pay).toBe(Math.round(40000 * 24 / 26) + 5000 - 2000) // earned + incentives − (PF 1800 + PT 200)
   })
   it('only an admin finalises, recording who and when', async () => {
     await createPayrollRun(fd({ year: '2026', month: '10' }))
@@ -134,7 +158,10 @@ describe('team admin', () => {
   })
   it('monthly targets are manager-set and stored per member', async () => {
     resetWorld({ profiles: [{ id: 'e' }], team_targets: [] }, {}, 'manager', 'mgr')
-    const r: any = await setMonthlyTarget(fd({ user_id: 'e', month: '2026-10-01', target_bookings: '3', target_revenue: '5000000' }))
+    const r: any = await setMonthlyTarget(fd({ user_id: 'e', month: '10', year: '2026', target_bookings: '3', target_revenue: '5000000' }))
     expect(r.success).toBe(true)
+    expect(world.db.rows('team_targets')[0]).toMatchObject({ user_id: 'e', month: 10, year: 2026, target_bookings: 3 })
+    // Nobody sets their own target.
+    expect(((await setMonthlyTarget(fd({ user_id: 'mgr', month: '10', year: '2026' }))) as any).success).toBe(false)
   })
 })

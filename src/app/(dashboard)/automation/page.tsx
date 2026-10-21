@@ -7,16 +7,22 @@ import { TRIGGER_OPTIONS, ACTION_OPTIONS } from '@/types/automation'
 import { formatDate } from '@/lib/utils'
 import AutomationToggle from '@/components/automation/AutomationToggle'
 import { Plus, Zap, CheckCircle2, XCircle, Clock, LayoutTemplate } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata = { title: 'Automations' }
 
 export default async function AutomationPage() {
-  const [automations, logs, stats, pending] = await Promise.all([
+  const supabase = await createClient()
+  const [automations, logs, stats, pending, approvedRes] = await Promise.all([
     getAutomations(),
     getAutomationLogs(30),
     getAutomationStats(),
     getPendingExecutions(),
+    supabase.from('whatsapp_templates').select('name').eq('status', 'approved'),
   ])
+  const approved = new Set((approvedRes.data ?? []).map((t) => t.name as string))
+  const unapproved = (a: (typeof automations)[number]) =>
+    a.action_type === 'send_whatsapp' && !!a.action_payload?.template_name && !approved.has(a.action_payload.template_name)
 
   const getTriggerLabel = (v: string) => TRIGGER_OPTIONS.find(t => t.value === v)?.label ?? v
   const getActionLabel = (v: string) => ACTION_OPTIONS.find(a => a.value === v)?.label ?? v
@@ -84,6 +90,11 @@ export default async function AutomationPage() {
                     </Link>
                     {auto.template_key && (
                       <span className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded">template</span>
+                    )}
+                    {unapproved(auto) && (
+                      <span className="text-xs px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded" title="Every run fails until the template is approved or replaced">
+                        WhatsApp template “{auto.action_payload.template_name}” not approved
+                      </span>
                     )}
                   </div>
                   {auto.description && <p className="text-xs text-slate-400 mb-1.5">{auto.description}</p>}

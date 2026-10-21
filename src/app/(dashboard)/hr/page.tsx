@@ -19,7 +19,7 @@ export default async function HRPage() {
       icon: UserCheck,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
-      stat: stats.openPositions,
+      stat: stats.activeCandidates,
       statLabel: 'active candidates',
       description: 'Manage job applications pipeline, schedule interviews, make offers.',
     },
@@ -70,7 +70,7 @@ export default async function HRPage() {
       <div>
         <h1 className="text-2xl font-bold text-slate-900">HR & Hiring</h1>
         <p className="text-sm text-slate-500 mt-0.5">
-          {stats.active} employees · {stats.openPositions} candidates in pipeline · {stats.pending} leave requests pending
+          {stats.active} employees · {stats.activeCandidates} candidates in pipeline · {stats.pending} leave requests pending
         </p>
       </div>
 

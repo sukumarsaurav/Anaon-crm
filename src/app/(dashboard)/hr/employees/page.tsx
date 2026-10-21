@@ -8,8 +8,9 @@ import Avatar from '@/components/ui/Avatar'
 
 export const metadata = { title: 'Employees' }
 
-export default async function EmployeesPage() {
-  const employees = await getEmployees()
+export default async function EmployeesPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
+  const inactive = (await searchParams).status === 'inactive'
+  const employees = await getEmployees({ inactive })
 
   const departments = Array.from(new Set(employees.map(e => e.department).filter(Boolean)))
 
@@ -21,13 +22,19 @@ export default async function EmployeesPage() {
         </Link>
         <div>
           <h1 className="text-xl font-bold text-slate-900">Employees</h1>
-          <p className="text-sm text-slate-500">{employees.length} active · {departments.length} departments</p>
+          <p className="text-sm text-slate-500">{employees.length} {inactive ? 'inactive' : 'active'} · {departments.length} departments</p>
+        </div>
+        <div className="ml-auto flex gap-1 text-sm" role="tablist" aria-label="Employee status">
+          <Link href="/hr/employees" role="tab" aria-selected={!inactive}
+            className={`px-3 py-1.5 rounded-lg ${!inactive ? 'bg-primary-50 text-primary-700 font-medium' : 'text-slate-500 hover:bg-slate-100'}`}>Active</Link>
+          <Link href="/hr/employees?status=inactive" role="tab" aria-selected={inactive}
+            className={`px-3 py-1.5 rounded-lg ${inactive ? 'bg-primary-50 text-primary-700 font-medium' : 'text-slate-500 hover:bg-slate-100'}`}>Inactive</Link>
         </div>
       </div>
 
       {employees.length === 0 ? (
         <div className="text-center py-16 text-slate-400 bg-white rounded-xl border border-dashed border-slate-200 text-sm">
-          No employees found. Create team members via Settings → Team.
+          {inactive ? 'No inactive employees.' : 'No employees found. Add people from Team → Teams (Add junior).'}
         </div>
       ) : (
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">

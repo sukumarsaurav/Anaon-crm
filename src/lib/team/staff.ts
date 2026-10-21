@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { writeAuditLog } from '@/lib/security/audit'
-import { encryptPii } from '@/lib/security/pii'
+import { encryptPii, decryptPii } from '@/lib/security/pii'
 import { todayIST } from '@/lib/datetime'
 
 /**
@@ -16,8 +16,13 @@ import { todayIST } from '@/lib/datetime'
  * or reactivate anyone. These actions check the caller, then write with the service role.
  *
  * Rules: an admin may manage anyone. A manager may manage staff in their own hierarchy (the people
- * RLS lets them see), never an admin, and may not change roles. Nobody deactivates themselves.
+ * RLS lets them see), never an admin, never their own record, and may not change roles, salary, bank
+ * details or the login email. Nobody deactivates themselves.
  */
+
+// Payroll and login fields: a manager could otherwise raise their team's (or route their salary to a
+// new bank account), or change someone's email and take over the account with a password reset.
+const ADMIN_ONLY_FIELDS = ['base_salary', 'bank_name', 'bank_account', 'bank_ifsc', 'email'] as const
 
 type Result = { success: boolean; error?: string }
 
@@ -25,7 +30,7 @@ const STAFF_ROLES = ['admin', 'manager', 'sales_advisor', 'telecaller'] as const
 type StaffRole = (typeof STAFF_ROLES)[number]
 
 async function authorize(targetId: string): Promise<
-  | { ok: true; actorId: string; actorRole: StaffRole; target: { id: string; role: string; full_name: string; is_active: boolean } }
+  | { ok: true; actorId: string; actorRole: StaffRole; target: { id: string; role: string; full_name: string; is_active: boolean; email: string | null; base_salary: number | null; bank_name: string | null; bank_account: string | null; bank_ifsc: string | null } }
   | { ok: false; error: string }
 > {
   const session = await getProfile()
@@ -36,7 +41,7 @@ async function authorize(targetId: string): Promise<
   // The caller's own client: a manager only "finds" people inside their hierarchy.
   const supabase = await createClient()
   const { data: target } = await supabase
-    .from('profiles').select('id, role, full_name, is_active').eq('id', targetId).maybeSingle()
+    .from('profiles').select('id, role, full_name, is_active, email, base_salary, bank_name, bank_account, bank_ifsc').eq('id', targetId).maybeSingle()
   if (!target) return { ok: false, error: 'Employee not found, or not in your team' }
   if (actorRole === 'manager' && target.role === 'admin') return { ok: false, error: 'Only an admin can manage an admin account' }
   if (target.role === 'broker') return { ok: false, error: 'Broker accounts are managed from Brokers' }
@@ -62,6 +67,21 @@ function revalidateStaff(id: string) {
 export async function updateStaffProfile(targetId: string, formData: FormData): Promise<Result> {
   const auth = await authorize(targetId)
   if (!auth.ok) return { success: false, error: auth.error }
+  if (auth.actorRole !== 'admin') {
+    if (targetId === auth.actorId) return { success: false, error: 'Your own HR record is updated by an admin' }
+    const current = (k: (typeof ADMIN_ONLY_FIELDS)[number]): string => {
+      const v = auth.target[k]
+      if (k === 'bank_account') return decryptPii(v as string | null) ?? ''
+      if (k === 'base_salary') return v == null ? '' : String(Number(v))
+      return String(v ?? '')
+    }
+    const sent = (k: (typeof ADMIN_ONLY_FIELDS)[number]): string => {
+      const v = ((formData.get(k) as string | null) ?? '').trim()
+      return k === 'base_salary' && v ? String(Number(v)) : v
+    }
+    const blocked = ADMIN_ONLY_FIELDS.filter((k) => formData.has(k) && sent(k).toLowerCase() !== current(k).toLowerCase())
+    if (blocked.length) return { success: false, error: `Only an admin can change ${blocked.map((k) => k.replace(/_/g, ' ')).join(', ')}` }
+  }
 
   const updates: Record<string, unknown> = {}
   for (const key of [
@@ -78,6 +98,23 @@ export async function updateStaffProfile(targetId: string, formData: FormData): 
     updates.base_salary = Number.isFinite(n) && n >= 0 ? n : null
   }
   if (updates.reporting_manager_id === targetId) return { success: false, error: 'Someone cannot report to themselves' }
+  if (typeof updates.email === 'string') {
+    const email = updates.email.toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { success: false, error: 'Enter a valid email' }
+    updates.email = email
+  }
+  if (updates.email === null) return { success: false, error: 'Email is required (it is the login)' }
+
+  const aadhaar = text(formData, 'aadhar_number')?.replace(/\s/g, '')
+  if (aadhaar && !/^\d{12}$/.test(aadhaar)) return { success: false, error: 'Aadhaar must be 12 digits' }
+  const pan = text(formData, 'pan_number')?.toUpperCase()
+  if (pan && !/^[A-Z]{5}\d{4}[A-Z]$/.test(pan)) return { success: false, error: 'PAN must look like ABCDE1234F' }
+  if (typeof updates.bank_ifsc === 'string') {
+    updates.bank_ifsc = updates.bank_ifsc.toUpperCase()
+    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(updates.bank_ifsc as string)) return { success: false, error: 'IFSC must look like SBIN0001234' }
+  }
+  if (aadhaar !== undefined) formData.set('aadhar_number', aadhaar ?? '')
+  if (pan !== undefined) formData.set('pan_number', pan ?? '')
 
   // Government IDs and the bank account are stored encrypted, like client PAN / Aadhaar.
   try {
@@ -92,7 +129,17 @@ export async function updateStaffProfile(targetId: string, formData: FormData): 
   if (!Object.keys(updates).length) return { success: true }
   updates.updated_at = new Date().toISOString()
 
-  const { error } = await createServiceClient().from('profiles').update(updates).eq('id', targetId)
+  const svc = createServiceClient()
+  // The email on the HR form is the login: change it in auth first, or the person keeps signing in
+  // with the old address while the CRM shows the new one.
+  if (typeof updates.email === 'string' && updates.email !== (auth.target.email ?? '').toLowerCase()) {
+    const { error: authErr } = await svc.auth.admin.updateUserById(targetId, { email: updates.email, email_confirm: true })
+    if (authErr) return { success: false, error: `Could not change the login email: ${authErr.message}` }
+  } else {
+    delete updates.email
+  }
+
+  const { error } = await svc.from('profiles').update(updates).eq('id', targetId)
   if (error) return { success: false, error: error.message }
 
   const logged = { ...updates }
@@ -164,16 +211,37 @@ export async function setStaffActive(targetId: string, active: boolean, reason?:
 
   const { error: banErr } = await svc.auth.admin.updateUserById(targetId, { ban_duration: active ? 'none' : '876000h' })
   if (banErr) console.error('[staff] auth ban update failed:', banErr.message)
+  let handedOver = 0
   if (!active) {
     await svc.from('user_sessions')
       .update({ is_active: false, revoked_at: new Date().toISOString(), revoked_by: auth.actorId })
       .eq('user_id', targetId).eq('is_active', true)
+    handedOver = await handOverTeams(svc, targetId)
   }
 
   await writeAuditLog({
     userId: auth.actorId, action: active ? 'user_updated' : 'user_deactivated', tableName: 'profiles', recordId: targetId,
-    oldValues: { is_active: !active }, newValues: { is_active: active, reason: reason ?? null },
+    oldValues: { is_active: !active }, newValues: { is_active: active, reason: reason ?? null, teams_handed_over: handedOver },
   })
   revalidateStaff(targetId)
   return { success: true }
+}
+
+/**
+ * Teams led by someone who is leaving go to the leader of the parent team (or stay leaderless at the
+ * top, for an admin to fill). Otherwise the subtree was led by an inactive login and only admins saw it.
+ */
+async function handOverTeams(svc: ReturnType<typeof createServiceClient>, leaderId: string): Promise<number> {
+  const { data: led } = await svc.from('teams').select('id, parent_team_id').eq('leader_id', leaderId)
+  let count = 0
+  for (const t of led ?? []) {
+    let next: string | null = null
+    if (t.parent_team_id) {
+      const { data: parent } = await svc.from('teams').select('leader_id').eq('id', t.parent_team_id).maybeSingle()
+      next = parent?.leader_id && parent.leader_id !== leaderId ? parent.leader_id : null
+    }
+    const { error } = await svc.from('teams').update({ leader_id: next, updated_at: new Date().toISOString() }).eq('id', t.id)
+    if (!error) count++
+  }
+  return count
 }

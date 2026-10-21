@@ -56,3 +56,17 @@ export function formatInIST(value: string | Date | null | undefined, opts: Intl.
   if (Number.isNaN(d.getTime())) return ''
   return new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', ...opts }).format(d)
 }
+
+/** [start, end) of an IST calendar month (1–12), as instants. */
+export function istMonthBounds(year: number, month: number): { start: Date; end: Date } {
+  return {
+    start: new Date(Date.UTC(year, month - 1, 1) - IST_OFFSET_MS),
+    end: new Date(Date.UTC(year, month, 1) - IST_OFFSET_MS),
+  }
+}
+
+/** The current month and year in India (the server clock is UTC: 00:00–05:30 IST on the 1st was last month). */
+export function istMonthYear(now: Date = new Date()): { month: number; year: number } {
+  const [y, m] = todayIST(now).split('-').map(Number)
+  return { month: m, year: y }
+}

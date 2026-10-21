@@ -1,24 +1,18 @@
-'use client'
-
-import { useState, useEffect, useTransition } from 'react'
+import { getProfile } from '@/lib/supabase/getProfile'
 import { getAnnouncements } from '@/lib/team/queries'
 import AnnouncementFeed from '@/components/team/AnnouncementFeed'
-import AnnouncementForm from '@/components/team/AnnouncementForm'
-import type { Announcement } from '@/types/team'
+import NewAnnouncementButton from '@/components/team/NewAnnouncementButton'
 
-export default function AnnouncementsPage() {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([])
-  const [showForm, setShowForm] = useState(false)
-  const [, startTransition] = useTransition()
+export const metadata = { title: 'Announcements' }
 
-  function load() {
-    startTransition(async () => {
-      const data = await getAnnouncements()
-      setAnnouncements(data)
-    })
-  }
+export const dynamic = 'force-dynamic'
 
-  useEffect(() => { load() }, [])
+export default async function AnnouncementsPage() {
+  const session = await getProfile()
+  const role = session?.profile?.role
+  const isManager = role === 'admin' || role === 'manager'
+  // Same audience rule as the Team overview: company-wide plus the viewer's branch.
+  const announcements = await getAnnouncements(session?.profile?.branch_id ?? undefined)
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
@@ -27,24 +21,11 @@ export default function AnnouncementsPage() {
           <h1 className="text-2xl font-bold text-slate-900">Announcements</h1>
           <p className="text-sm text-slate-500 mt-1">Team-wide updates, shoutouts, and alerts</p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700"
-        >
-          + New Announcement
-        </button>
+        {isManager && <NewAnnouncementButton />}
       </div>
 
-      <AnnouncementFeed announcements={announcements} canManage={true} />
-
-      {showForm && (
-        <AnnouncementForm
-          onClose={() => {
-            setShowForm(false)
-            load()
-          }}
-        />
-      )}
+      <AnnouncementFeed announcements={announcements} canManage={isManager}
+        viewerId={session?.user?.id} isAdmin={role === 'admin'} />
     </div>
   )
 }

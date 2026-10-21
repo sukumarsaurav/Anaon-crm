@@ -1,6 +1,8 @@
 'use client'
 
 import { useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import { useToast } from '@/components/ui/Toast'
 import { formatDate } from '@/lib/utils'
 import { reviewLeave, cancelLeave } from '@/lib/team/actions'
 import { LEAVE_TYPE_LABELS } from '@/types/team'
@@ -21,19 +23,21 @@ const STATUS_CONFIG = {
 
 export default function LeaveRequestCard({ request, canReview, isOwn }: Props) {
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
+  const toast = useToast()
   const cfg = STATUS_CONFIG[request.status]
 
-  function handleReview(approved: boolean) {
+  function run(fn: () => Promise<{ success: boolean; error?: string }>, done: string) {
     startTransition(async () => {
-      await reviewLeave(request.id, approved)
+      const res = await fn()
+      if (!res.success) { toast.error(res.error ?? 'Something went wrong'); return }
+      toast.success(done)
+      router.refresh()
     })
   }
 
-  function handleCancel() {
-    startTransition(async () => {
-      await cancelLeave(request.id)
-    })
-  }
+  const handleReview = (approved: boolean) => run(() => reviewLeave(request.id, approved), approved ? 'Leave approved' : 'Leave rejected')
+  const handleCancel = () => run(() => cancelLeave(request.id), 'Request withdrawn')
 
   return (
     <div className={`border rounded-xl p-4 ${cfg.border} ${cfg.bg}`}>
@@ -45,7 +49,7 @@ export default function LeaveRequestCard({ request, canReview, isOwn }: Props) {
           )}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-medium text-slate-800">
-              {LEAVE_TYPE_LABELS[request.leave_type]}
+              {LEAVE_TYPE_LABELS[request.leave_type] ?? request.leave_type}
             </span>
             <span className="text-slate-400">·</span>
             <span className="text-sm text-slate-600">

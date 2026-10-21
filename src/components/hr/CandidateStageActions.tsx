@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { updateCandidateStage, scheduleInterview, submitInterviewFeedback, makeOffer } from '@/lib/hr/actions'
 import type { CandidateStage } from '@/types/hr'
 import { ChevronRight, Calendar, Star, Gift, XCircle } from 'lucide-react'
+import { useToast } from '@/components/ui/Toast'
 
 interface Props {
   candidateId: string
@@ -18,49 +19,26 @@ export default function CandidateStageActions({ candidateId, stage, interviewers
   const router = useRouter()
   const [panel, setPanel] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const toast = useToast()
 
-  async function move(next: CandidateStage) {
+  // Every step used to ignore the result, so a failed save looked like nothing happened.
+  function submit(fn: () => Promise<{ success: boolean; error?: string }>) {
     setLoading(true)
     startTransition(async () => {
-      await updateCandidateStage(candidateId, next)
+      const res = await fn()
       setLoading(false)
+      if (!res.success) { toast.error(res.error ?? 'Could not save'); return }
       setPanel(null)
       router.refresh()
     })
   }
 
-  async function handleSchedule(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setLoading(true)
-    startTransition(async () => {
-      await scheduleInterview(candidateId, new FormData(e.currentTarget))
-      setLoading(false)
-      setPanel(null)
-      router.refresh()
-    })
-  }
-
-  async function handleFeedback(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setLoading(true)
-    startTransition(async () => {
-      await submitInterviewFeedback(candidateId, new FormData(e.currentTarget))
-      setLoading(false)
-      setPanel(null)
-      router.refresh()
-    })
-  }
-
-  async function handleOffer(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setLoading(true)
-    startTransition(async () => {
-      await makeOffer(candidateId, new FormData(e.currentTarget))
-      setLoading(false)
-      setPanel(null)
-      router.refresh()
-    })
-  }
+  const move = (next: CandidateStage) => submit(() => updateCandidateStage(candidateId, next))
+  const formHandler = (fn: (id: string, fd: FormData) => Promise<{ success: boolean; error?: string }>) =>
+    (e: React.FormEvent<HTMLFormElement>) => { e.preventDefault(); const fd = new FormData(e.currentTarget); submit(() => fn(candidateId, fd)) }
+  const handleSchedule = formHandler(scheduleInterview)
+  const handleFeedback = formHandler(submitInterviewFeedback)
+  const handleOffer = formHandler(makeOffer)
 
   const today = todayIST()
 
@@ -113,7 +91,7 @@ export default function CandidateStageActions({ candidateId, stage, interviewers
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
               <label htmlFor={`${uid}-interview-date`} className="block text-xs text-slate-600 mb-1">Date & Time</label>
-              <input id={`${uid}-interview-date`} name="interview_date" type="datetime-local" required min={today}
+              <input id={`${uid}-interview-date`} name="interview_date" type="datetime-local" required min={`${today}T00:00`}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-slate-400" />
             </div>
             <div>
@@ -210,17 +188,7 @@ export default function CandidateStageActions({ candidateId, stage, interviewers
       )}
 
       {panel === 'reject' && (
-        <form onSubmit={async e => {
-          e.preventDefault()
-          const fd = new FormData(e.currentTarget)
-          setLoading(true)
-          startTransition(async () => {
-            await updateCandidateStage(candidateId, 'rejected', fd)
-            setLoading(false)
-            setPanel(null)
-            router.refresh()
-          })
-        }} className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
+        <form onSubmit={formHandler((id, fd) => updateCandidateStage(id, 'rejected', fd))} className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
           <p className="text-xs font-semibold text-red-700">Confirm Rejection</p>
           <div>
             <label htmlFor={`${uid}-rejection-reason`} className="block text-xs text-slate-600 mb-1">Reason</label>
