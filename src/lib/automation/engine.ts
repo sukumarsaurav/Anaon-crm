@@ -44,6 +44,11 @@ function checkCondition(cond: AutomationCondition, ctx: AutomationContext): bool
   }
 }
 
+/** Each condition with the record's actual value, for the test run. */
+export function explainConditions(automation: Pick<Automation, 'conditions'>, ctx: AutomationContext) {
+  return (automation.conditions ?? []).map((c) => ({ ...c, actual: getContextValue(ctx, c.field), pass: checkCondition(c, ctx) }))
+}
+
 function passesConditions(automation: Automation, ctx: AutomationContext): boolean {
   const conditions = automation.conditions ?? []
   return conditions.every(c => checkCondition(c, ctx))
@@ -53,14 +58,30 @@ function passesConditions(automation: Automation, ctx: AutomationContext): boole
 
 type ServiceClient = ReturnType<typeof createServiceClient>
 
+/**
+ * live    — the real thing.
+ * preview — work out exactly what would happen (recipient, rendered message, who is notified, the
+ *           stage / advisor that would be set) and change nothing.
+ * self    — like preview, but WhatsApp / email / notification really go to the tester only.
+ */
+export interface ExecOptions {
+  mode: 'live' | 'preview' | 'self'
+  self?: { userId: string; phone?: string | null; email?: string | null }
+}
+
+export type ActionOutcome = { success: boolean; result?: unknown; error?: string; preview?: Record<string, unknown> }
+
 async function executeAction(
   automation: Automation,
   ctx: AutomationContext,
   supabase: ServiceClient,
   /** Idempotency key for outbound messages, so a retried run can't double-send. */
   reference?: string | null,
-): Promise<{ success: boolean; result?: unknown; error?: string }> {
+  opts: ExecOptions = { mode: 'live' },
+): Promise<ActionOutcome> {
   const payload = automation.action_payload ?? {}
+  const live = opts.mode === 'live'
+  const testRef = `test_${automation.id}_${Date.now()}`
 
   switch (automation.action_type) {
     case 'send_whatsapp': {
@@ -102,6 +123,14 @@ async function executeAction(
           overrides: payload.template_variables,
         })
         if (missing.length) return { success: false, error: `No value for template variable(s): ${missing.join(', ')}` }
+        const rendered = renderTemplate(template.body, names, Object.fromEntries(names.map((n, i) => [n, values[i]])))
+        const preview = { channel: 'whatsapp', to: phone, template: template.name, category: template.category, message: rendered }
+        if (opts.mode === 'preview') return { success: true, preview }
+        if (opts.mode === 'self') {
+          if (!opts.self?.phone) return { success: false, error: 'Add your phone number to your profile to receive test messages', preview }
+          const sent = await sendWhatsAppTemplate({ to: opts.self.phone, name: template.name, language: template.language, variables: values, reference: testRef, category: template.category })
+          return sent.success ? { success: true, preview: { ...preview, sentTo: opts.self.phone } } : { success: false, error: sent.error, preview }
+        }
         const sent = await sendWhatsAppTemplate({
           to: phone,
           name: template.name,
@@ -122,6 +151,13 @@ async function executeAction(
       if (optedOut) return OPTED_OUT
       const body = payload.message_body ? fillTokens(payload.message_body, ctx) : null
       if (!body) return { success: false, error: 'Choose a WhatsApp template or write a message' }
+      if (!live) {
+        const preview = { channel: 'whatsapp', to: phone, message: body, note: 'Free text only reaches people who messaged in the last 24 hours' }
+        if (opts.mode === 'preview') return { success: true, preview }
+        if (!opts.self?.phone) return { success: false, error: 'Add your phone number to your profile to receive test messages', preview }
+        const sent = await sendWhatsAppText({ to: opts.self.phone, text: `[TEST] ${body}`, reference: testRef })
+        return sent.success ? { success: true, preview: { ...preview, sentTo: opts.self.phone } } : { success: false, error: sent.error, preview }
+      }
       const sent = await sendWhatsAppText({ to: phone, text: body, reference: reference ?? undefined })
       if (!sent.success) {
         return { success: false, error: sent.windowClosed ? `${sent.error} (use a template for this automation)` : sent.error }
@@ -142,9 +178,18 @@ async function executeAction(
       if (!ids.size) return { success: false, error: payload.notify_assignee ? 'The lead has no assigned advisor' : 'Nobody to notify' }
 
       const userIds = [...ids]
+      const title = fillTokens(payload.notification_title ?? automation.name, ctx, 'Unknown')
+      const message = fillTokens(payload.notification_body ?? '', ctx, 'Unknown')
+      if (!live) {
+        const { data: names } = await supabase.from('profiles').select('full_name').in('id', userIds)
+        const preview = { channel: 'notification', recipients: (names ?? []).map((n) => n.full_name), title, message }
+        if (opts.mode === 'preview' || !opts.self) return { success: true, preview }
+        await notifyUsers([opts.self.userId], { title: `[TEST] ${title}`, message, type: 'automation', action_url: ctx.lead?.id ? `/leads/${ctx.lead.id}` : undefined })
+        return { success: true, preview: { ...preview, sentTo: 'you' } }
+      }
       await notifyUsers(userIds, {
-        title: fillTokens(payload.notification_title ?? automation.name, ctx, 'Unknown'),
-        message: fillTokens(payload.notification_body ?? '', ctx, 'Unknown'),
+        title,
+        message,
         type: 'automation',
         related_type: ctx.lead ? 'lead' : ctx.booking ? 'booking' : null,
         related_id: ctx.lead?.id ?? ctx.booking?.id ?? null,
@@ -160,6 +205,7 @@ async function executeAction(
       if (!ctx.lead?.id) return { success: false, error: 'No lead in context' }
       const hours = Number(payload.followup_hours) > 0 ? Number(payload.followup_hours) : 24
       const scheduledAt = new Date(Date.now() + hours * 3600000).toISOString()
+      if (!live) return { success: true, preview: { change: 'next follow-up', lead: ctx.lead.full_name, at: scheduledAt, note: payload.followup_note ? fillTokens(payload.followup_note, ctx) : null } }
       const { error } = await supabase.from('leads')
         .update({ next_followup_at: scheduledAt, followup_reminder_sent_at: null, updated_at: new Date().toISOString() })
         .eq('id', ctx.lead.id)
@@ -173,6 +219,7 @@ async function executeAction(
 
     case 'change_lead_stage': {
       if (!ctx.lead?.id || !payload.new_stage) return { success: false, error: 'Missing lead or stage' }
+      if (!live) return { success: true, preview: { change: 'stage', lead: ctx.lead.full_name, from: ctx.lead.stage ?? null, to: payload.new_stage } }
       const { error } = await supabase
         .from('leads')
         .update({ stage: payload.new_stage, updated_at: new Date().toISOString() })
@@ -204,6 +251,10 @@ async function executeAction(
       }
 
       if (!advisorId) return { success: false, error: 'No advisor available' }
+      if (!live) {
+        const { data: adv } = await supabase.from('profiles').select('full_name').eq('id', advisorId).maybeSingle()
+        return { success: true, preview: { change: 'assign', lead: ctx.lead.full_name, to: adv?.full_name ?? advisorId, mode: payload.assignment_mode ?? 'specific' } }
+      }
       const { error } = await supabase
         .from('leads')
         .update({ assigned_to: advisorId, updated_at: new Date().toISOString() })
@@ -231,10 +282,18 @@ async function executeAction(
         to = ctx.client.email ?? (await supabase.from('clients').select('email').eq('id', ctx.client.id).maybeSingle()).data?.email ?? null
       }
       if (!to) return { success: false, error: who === 'custom' ? 'No email address set on the automation' : `The ${who} has no email address` }
-      if (!emailConfigured()) return { success: false, error: 'Email not configured' }
-
       const subject = fillTokens(payload.email_subject ?? 'A message from ANON INDIA', ctx)
       const message = fillTokens(payload.email_body ?? '', ctx)
+      const preview = { channel: 'email', to, subject, message }
+      if (opts.mode === 'preview') return { success: true, preview }
+      if (!emailConfigured()) return { success: false, error: 'Email not configured', preview }
+      if (opts.mode === 'self') {
+        if (!opts.self?.email) return { success: false, error: 'Your profile has no email address', preview }
+        const t = genericEmail(`[TEST] ${subject}`, message)
+        const r = await sendEmail({ to: opts.self.email, subject: t.subject, html: t.html })
+        return r.success ? { success: true, preview: { ...preview, sentTo: opts.self.email } } : { success: false, error: r.error, preview }
+      }
+
       const tpl = genericEmail(subject, message)
       const sent = await sendEmail({ to, subject: tpl.subject, html: tpl.html })
       if (!sent.success) return { success: false, error: sent.error }
@@ -244,6 +303,17 @@ async function executeAction(
     default:
       return { success: false, error: `Unknown action type: ${automation.action_type}` }
   }
+}
+
+/**
+ * Test run: conditions with actual values, then the action in preview or send-to-me mode. Nothing
+ * is logged to automation_logs and run_count is untouched. Plain module — the server action checks
+ * the caller.
+ */
+export async function testAutomationRun(automation: Automation, ctx: AutomationContext, opts: ExecOptions) {
+  const conditions = explainConditions(automation, ctx)
+  const outcome = await executeAction(automation, ctx, createServiceClient(), null, opts)
+  return { conditions, wouldRun: conditions.every((c) => c.pass), ...outcome }
 }
 
 // ── Main fire function ────────────────────────────────────────────────────────

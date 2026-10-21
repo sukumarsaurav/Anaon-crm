@@ -5,7 +5,9 @@ import { getPayrollRuns, getPayrollSlips } from '@/lib/hr/queries'
 import { MONTH_NAMES } from '@/types/hr'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import PayrollRunActions, { FinalizeRunButton } from '@/components/hr/PayrollRunActions'
-import { ArrowLeft, IndianRupee, Users, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, IndianRupee, Users, CheckCircle2, Download, FileText } from 'lucide-react'
+import { loadBankRows } from '@/lib/hr/payrollExport'
+import { splitPayable } from '@/lib/hr/bankExport'
 import SlipAdjustButton from '@/components/hr/SlipAdjustButton'
 import { getProfile } from '@/lib/supabase/getProfile'
 
@@ -29,6 +31,9 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
 
   const existingMonths = runs.map(r => ({ year: r.year, month: r.month }))
   const canAdjust = latestRun?.status !== 'completed'
+  // Bank file pre-check: who would be left out of the transfer and why.
+  const bank = latestRun?.status === 'completed' ? await loadBankRows(latestRun.id) : null
+  const heldBack = bank ? splitPayable(bank.rows).missing : []
 
   return (
     <div className="p-6 space-y-6">
@@ -67,6 +72,12 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                 {latestRun.status !== 'completed' && (
                   <FinalizeRunButton runId={latestRun.id} />
                 )}
+                {latestRun.status === 'completed' && (
+                  <a href={`/api/hr/payroll/${latestRun.id}/bank-export?format=generic`}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50">
+                    <Download size={13} /> Bank transfer file (CSV)
+                  </a>
+                )}
               </div>
             </div>
 
@@ -83,6 +94,15 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
               ))}
             </div>
           </div>
+
+          {heldBack.length > 0 && (
+            <div role="alert" className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+              <p className="font-medium">Not in the bank file ({heldBack.length}) — pay these separately or fix their bank details in HR → Employees:</p>
+              <ul className="mt-1 list-disc pl-5">
+                {heldBack.map((m) => <li key={m.name}>{m.name}: {m.reason} ({formatCurrency(m.amount, { mode: 'exact' })})</li>)}
+              </ul>
+            </div>
+          )}
 
           {latestSlips.length > 0 && (
             <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
@@ -103,7 +123,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                       <th scope="col" className="px-4 py-2.5 text-right">Prof Tax</th>
                       <th scope="col" className="px-4 py-2.5 text-right">Incentives</th>
                       <th scope="col" className="px-4 py-2.5 text-right">Net Pay</th>
-                      {canAdjust && <th scope="col" className="px-4 py-2.5"><span className="sr-only">Adjust</span></th>}
+                      <th scope="col" className="px-4 py-2.5"><span className="sr-only">Actions</span></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -130,12 +150,16 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                         <td className="px-4 py-3 text-right font-semibold text-slate-900">
                           {formatCurrency(slip.net_pay, { mode: 'exact' })}
                         </td>
-                        {canAdjust && (
-                          <td className="px-2 py-3 text-right">
+                        <td className="px-2 py-3 text-right whitespace-nowrap">
+                          <a href={`/api/documents/payslip/${slip.id}`} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs text-primary-600 hover:underline">
+                            <FileText size={12} /> PDF
+                          </a>
+                          {canAdjust && (
                             <SlipAdjustButton slipId={slip.id} name={slip.employee?.full_name ?? 'Employee'}
                               presentDays={slip.present_days} workingDays={slip.working_days} incentives={slip.incentives} />
-                          </td>
-                        )}
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -149,7 +173,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                       <td className="px-4 py-3 text-right text-slate-900">
                         {formatCurrency(latestSlips.reduce((s, sl) => s + sl.net_pay, 0), { mode: 'exact' })}
                       </td>
-                      {canAdjust && <td />}
+                      <td />
                     </tr>
                   </tfoot>
                 </table>

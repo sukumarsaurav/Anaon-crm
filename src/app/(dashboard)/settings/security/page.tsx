@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import ActiveSessions from '@/components/security/ActiveSessions'
 import { getActiveSessions } from '@/lib/security/actions'
 
@@ -26,6 +27,14 @@ export default async function SecuritySettingsPage() {
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Security Settings</h1>
         <p className="text-sm text-slate-500 mt-1">Manage your account security and active sessions</p>
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between gap-3 text-sm">
+        <div>
+          <p className="font-medium text-slate-700">Password</p>
+          <p className="text-slate-500">Choose a new password for your account.</p>
+        </div>
+        <Link href="/change-password" className="px-3 py-1.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50">Change password</Link>
       </div>
 
       {/* Last login info */}

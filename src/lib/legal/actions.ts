@@ -36,6 +36,9 @@ export async function updateProjectRERA(projectId: string, formData: FormData) {
   const website = (formData.get('rera_website_url') as string)?.trim() || null
   if (website && !/^https?:\/\//i.test(website)) return { success: false, error: 'The RERA website must start with http:// or https://' }
 
+  const contactEmail = (formData.get('legal_contact_email') as string)?.trim().toLowerCase() || null
+  if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) return { success: false, error: 'Enter a valid legal contact email' }
+
   // Extra disclosure (key → value). It was parsed and then never saved.
   const extraKey = (formData.get('disclosure_key') as string)?.trim()
   const extraVal = (formData.get('disclosure_value') as string)?.trim()
@@ -52,6 +55,7 @@ export async function updateProjectRERA(projectId: string, formData: FormData) {
     rera_authority_name:       formData.get('rera_authority_name') as string || null,
     rera_website_url:          website,
     legal_contact:             formData.get('legal_contact') as string || null,
+    legal_contact_email:       contactEmail,
     carpet_area_sqft:          carpetArea ? parseFloat(carpetArea as string) : null,
     fsi_approved:              fsi ? parseFloat(fsi as string) : null,
     total_approved_units:      units ? parseInt(units as string, 10) : null,

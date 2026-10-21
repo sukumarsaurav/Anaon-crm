@@ -160,7 +160,7 @@ export async function getProjectRERADetail(projectId: string) {
   const supabase = await createClient()
   const [projectRes, docsRes] = await Promise.all([
     supabase.from('projects')
-      .select('id, name, rera_number, rera_registration_date, rera_expiry_date, rera_authority_name, rera_website_url, carpet_area_sqft, fsi_approved, total_approved_units, quarterly_report_last_submitted, quarterly_report_due_date, rera_disclosures, legal_contact')
+      .select('id, name, rera_number, rera_registration_date, rera_expiry_date, rera_authority_name, rera_website_url, carpet_area_sqft, fsi_approved, total_approved_units, quarterly_report_last_submitted, quarterly_report_due_date, rera_disclosures, legal_contact, legal_contact_email')
       .eq('id', projectId)
       .single(),
     supabase.from('project_documents')

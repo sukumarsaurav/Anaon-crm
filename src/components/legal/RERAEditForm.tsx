@@ -17,6 +17,7 @@ interface RERAData {
   quarterly_report_last_submitted: string | null
   quarterly_report_due_date: string | null
   rera_disclosures?: Record<string, string> | null
+  legal_contact_email?: string | null
 }
 
 interface Props { projectId: string; data: RERAData }
@@ -150,8 +151,13 @@ export default function RERAEditForm({ projectId, data }: Props) {
       {/* Legal contact */}
       <div>
         <h3 className="text-sm font-semibold text-slate-700 mb-3 pb-2 border-b border-slate-100">Legal Contact</h3>
-        <input aria-label="Adv. Sharma — +91 98765 43210" name="legal_contact" defaultValue={data.legal_contact ?? ''} placeholder="Adv. Sharma — +91 98765 43210"
-          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input aria-label="Adv. Sharma — +91 98765 43210" name="legal_contact" defaultValue={data.legal_contact ?? ''} placeholder="Adv. Sharma — +91 98765 43210"
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+          <input aria-label="Legal contact email" type="email" name="legal_contact_email" defaultValue={data.legal_contact_email ?? ''} placeholder="Email for compliance alerts"
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+        </div>
+        <p className="text-xs text-slate-500 mt-1">The email gets the daily digest of expiry and report reminders for this project.</p>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

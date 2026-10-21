@@ -5,16 +5,21 @@ import { useState, startTransition, useId } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateCandidateStage, scheduleInterview, submitInterviewFeedback, makeOffer } from '@/lib/hr/actions'
 import type { CandidateStage } from '@/types/hr'
-import { ChevronRight, Calendar, Star, Gift, XCircle } from 'lucide-react'
+import { ChevronRight, Calendar, Star, Gift, XCircle, UserPlus } from 'lucide-react'
+import ConvertCandidateDialog, { type ConvertCandidate } from './ConvertCandidateDialog'
 import { useToast } from '@/components/ui/Toast'
 
 interface Props {
   candidateId: string
   stage: CandidateStage
   interviewers: { id: string; full_name: string }[]
+  /** For "Joined": create the CRM login from the application. */
+  candidate?: ConvertCandidate
+  teams?: { id: string; name: string }[]
+  viewerRole?: string
 }
 
-export default function CandidateStageActions({ candidateId, stage, interviewers }: Props) {
+export default function CandidateStageActions({ candidateId, stage, interviewers, candidate, teams = [], viewerRole = '' }: Props) {
   const uid = useId()
   const router = useRouter()
   const [panel, setPanel] = useState<string | null>(null)
@@ -71,10 +76,19 @@ export default function CandidateStageActions({ candidateId, stage, interviewers
           </button>
         )}
         {stage === 'offer' && (
-          <button onClick={() => move('joined')} disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
-            <ChevronRight size={13} /> Mark Joined
-          </button>
+          <>
+            {candidate && (
+              <button onClick={() => setPanel('convert')} disabled={loading}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
+                <UserPlus size={13} /> Joined — create login
+              </button>
+            )}
+            <button onClick={() => move('joined')} disabled={loading}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-green-300 text-green-700 rounded-lg hover:bg-green-50 disabled:opacity-50"
+              title="For roles that don't use the CRM">
+              <ChevronRight size={13} /> Joined (no CRM login)
+            </button>
+          </>
         )}
         {!['joined', 'rejected'].includes(stage) && (
           <button onClick={() => setPanel('reject')}
@@ -85,6 +99,9 @@ export default function CandidateStageActions({ candidateId, stage, interviewers
       </div>
 
       {/* Panels */}
+      {panel === 'convert' && candidate && (
+        <ConvertCandidateDialog candidate={candidate} teams={teams} viewerRole={viewerRole} onClose={() => setPanel(null)} />
+      )}
       {panel === 'schedule' && (
         <form onSubmit={handleSchedule} className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
           <p className="text-xs font-semibold text-slate-700">Schedule Interview</p>

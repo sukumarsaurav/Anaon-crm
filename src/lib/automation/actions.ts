@@ -4,7 +4,10 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { AUTOMATION_TEMPLATES, TRIGGER_OPTIONS } from '@/types/automation'
-import type { TriggerEvent, ActionType, DelayUnit, AutomationCondition, AutomationActionPayload } from '@/types/automation'
+import type { TriggerEvent, ActionType, DelayUnit, AutomationCondition, AutomationActionPayload, Automation } from '@/types/automation'
+import { buildContext, listSamples, TRIGGER_SUBJECT, SUBJECT_LABEL } from './context'
+import { testAutomationRun } from './engine'
+import { writeAuditLog } from '@/lib/security/audit'
 
 async function getAuthUser() {
   const user = (await getProfile())?.user
@@ -180,5 +183,58 @@ export async function installTemplate(templateKey: string) {
     return { success: true }
   } catch (e) {
     return { success: false, error: (e as Error).message }
+  }
+}
+
+// ── Test run ───────────────────────────────────────────────────────────────
+
+/** Recent records the automation can be tried on (scoped by the caller's access). */
+export async function listTestRecords(trigger: TriggerEvent) {
+  try {
+    await getAuthUser()
+    if (!TRIGGER_SUBJECT[trigger]) return { success: false as const, error: 'Unknown trigger' }
+    const supabase = await createClient()
+    return { success: true as const, kind: SUBJECT_LABEL[TRIGGER_SUBJECT[trigger]], records: await listSamples(supabase, TRIGGER_SUBJECT[trigger]) }
+  } catch (e) {
+    return { success: false as const, error: (e as Error).message }
+  }
+}
+
+/**
+ * Try an automation on a real record. `preview` changes nothing; `self` really sends the WhatsApp /
+ * email / notification, but only to the person testing. Pass `draft` (the builder's form data) to test
+ * unsaved changes. Not written to automation_logs and never counted as a run.
+ */
+export async function testAutomation(input: { automationId?: string; recordId: string; mode: 'preview' | 'self' }, draft?: FormData) {
+  try {
+    const user = await getAuthUser()
+    const supabase = await createClient()
+
+    let automation: Automation | null = null
+    if (draft) {
+      const parsed = readAutomation(draft)
+      if ('error' in parsed) return { success: false as const, error: parsed.error }
+      automation = { id: input.automationId ?? 'draft', is_active: true, run_count: 0, ...parsed.values } as unknown as Automation
+    } else if (input.automationId) {
+      const { data } = await supabase.from('automations').select('*').eq('id', input.automationId).maybeSingle()
+      automation = data as Automation | null
+    }
+    if (!automation) return { success: false as const, error: 'Automation not found' }
+
+    const ctx = await buildContext(supabase, automation.trigger_event, input.recordId)
+    if (!ctx) return { success: false as const, error: 'Record not found, or not one you can see' }
+
+    const { data: me } = await supabase.from('profiles').select('phone, email').eq('id', user.id).maybeSingle()
+    const result = await testAutomationRun(automation, ctx, {
+      mode: input.mode === 'self' ? 'self' : 'preview',
+      self: { userId: user.id, phone: me?.phone ?? null, email: me?.email ?? user.email ?? null },
+    })
+    await writeAuditLog({
+      userId: user.id, action: 'automation_tested', tableName: 'automations', recordId: input.automationId,
+      metadata: { mode: input.mode, record_id: input.recordId, success: result.success },
+    })
+    return { success: true as const, result }
+  } catch (e) {
+    return { success: false as const, error: (e as Error).message }
   }
 }

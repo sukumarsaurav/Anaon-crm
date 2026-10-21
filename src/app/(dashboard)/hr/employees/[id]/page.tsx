@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { getEmployeeById, getEmployees } from '@/lib/hr/queries'
 import EmployeeForm from '@/components/hr/EmployeeForm'
+import ResetPasswordButton from '@/components/hr/ResetPasswordButton'
 import ActionButton from '@/components/ui/ActionButton'
 import { deactivateEmployee, reactivateEmployee } from '@/lib/hr/actions'
 import { decryptPii } from '@/lib/security/pii'
@@ -60,7 +61,8 @@ export default async function EmployeeDetailPage({ params }: PageProps) {
           </p>
         </div>
         {isSelf ? null : employee.is_active ? (
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            {isAdmin && <ResetPasswordButton employeeId={id} name={employee.full_name} />}
             <ActionButton label="Deactivate employee" tone="danger"
               promptLabel="Reason for deactivating (recorded as the termination reason):"
               action={deactivate} />

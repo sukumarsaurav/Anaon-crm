@@ -9,6 +9,7 @@ import { fireAutomations } from '@/lib/automation/engine'
 import { notifyUsers } from '@/lib/notifications/notify'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { writeAuditLog } from '@/lib/security/audit'
+import { MUST_CHANGE_PASSWORD } from '@/lib/security/passwordPolicy'
 
 async function getAuth() {
   const supabase = await createClient()
@@ -166,7 +167,7 @@ export async function grantBrokerPortalAccess(brokerId: string) {
     email: broker.email,
     password: tempPassword,
     email_confirm: true,
-    app_metadata: { role: 'broker' },
+    app_metadata: { role: 'broker', [MUST_CHANGE_PASSWORD]: true }, // replaced on first sign-in
     user_metadata: { full_name: broker.full_name },
   })
   if (error || !created.user) {

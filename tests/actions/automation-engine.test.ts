@@ -12,7 +12,7 @@ vi.mock('@/lib/whatsapp/send', () => ({
 vi.mock('@/lib/email/client', () => ({ emailConfigured: () => true, sendEmail: async (a: any) => { sent.email.push(a); return { success: true, id: 'e1' } } }))
 vi.mock('@/lib/notifications/notify', () => ({ notifyUsers: async (ids: string[], input: any) => { sent.notify.push({ ids, input }) } }))
 
-const { fireAutomations, runAutomation } = await import('@/lib/automation/engine')
+const { fireAutomations, runAutomation, testAutomationRun } = await import('@/lib/automation/engine')
 
 const automation = (o: any = {}) => ({ id: 'A1', name: 'Auto', trigger_event: 'lead_created', is_active: true, conditions: [], delay_value: 0, delay_unit: 'minutes', action_type: 'send_whatsapp', action_payload: { recipient: 'lead', message_body: 'Hi {{lead_name}}' }, run_count: 0, ...o })
 const lead = (o: any = {}) => ({ id: 'L1', full_name: 'Ravi', phone: '9810001025', source: 'facebook_ads', utm_source: 'facebook', stage: 'new_lead', assigned_to: 'a1', project_id: 'P1', ...o })
@@ -207,5 +207,47 @@ describe('delays and de-duplication', () => {
     world.db.rows('automations').push(automation({ action_type: 'send_notification', action_payload: {} }))
     ;(world.db as any).from = () => { throw new Error('db down') }
     await expect(fireAutomations('lead_created', { lead: lead() }, 'lead', 'L1')).resolves.toBeUndefined()
+  })
+})
+
+describe('test run (preview / send to me)', () => {
+  const me = { userId: 'adm', phone: '9999900000', email: 'me@anon.in' }
+  const snapshot = () => JSON.stringify({ leads: world.db.rows('leads'), acts: world.db.rows('lead_activities'), logs: world.db.rows('automation_logs') })
+
+  it('preview changes nothing and sends nothing, for every action', async () => {
+    world.db.tables.whatsapp_templates = [{ id: 't', name: 'welcome', language: 'en', category: 'marketing', status: 'approved', body: 'Hi {{name}}', variable_names: ['name'] }]
+    const actions = [
+      { action_type: 'send_whatsapp', action_payload: { recipient: 'lead', template_name: 'welcome' } },
+      { action_type: 'send_whatsapp', action_payload: { recipient: 'lead', message_body: 'Hello {{lead_name}}' } },
+      { action_type: 'send_notification', action_payload: { notify_roles: ['admin'], notification_body: 'x' } },
+      { action_type: 'create_followup', action_payload: { followup_hours: 4 } },
+      { action_type: 'change_lead_stage', action_payload: { new_stage: 'contacted' } },
+      { action_type: 'assign_to_advisor', action_payload: { advisor_id: 'a2' } },
+      { action_type: 'send_email', action_payload: { email_recipient: 'custom', email_to: 'c@x.in', email_body: 'Hi {{lead_name}}' } },
+    ]
+    const before = snapshot()
+    for (const a of actions) {
+      const r = await testAutomationRun(automation(a) as never, { lead: lead() }, { mode: 'preview', self: me })
+      expect(r.success, a.action_type).toBe(true)
+      expect(r.preview, a.action_type).toBeTruthy()
+    }
+    expect(snapshot()).toBe(before)
+    expect(sent.text.length + sent.template.length + sent.email.length + sent.notify.length).toBe(0)
+  })
+  it('preview shows the rendered message and the conditions with actual values', async () => {
+    const a = automation({ conditions: [{ field: 'utm_source', operator: 'equals', value: 'google' }], action_payload: { recipient: 'lead', message_body: 'Hi {{lead_name}}' } })
+    const r = await testAutomationRun(a as never, { lead: lead() }, { mode: 'preview', self: me })
+    expect(r.wouldRun).toBe(false)
+    expect(r.conditions[0]).toMatchObject({ actual: 'facebook', pass: false })
+    expect(r.preview).toMatchObject({ channel: 'whatsapp', to: '9810001025', message: 'Hi Ravi' })
+  })
+  it('send to me goes only to the tester', async () => {
+    await testAutomationRun(automation({ action_payload: { recipient: 'lead', message_body: 'Hi {{lead_name}}' } }) as never, { lead: lead() }, { mode: 'self', self: me })
+    expect(sent.text).toHaveLength(1)
+    expect(sent.text[0]).toMatchObject({ to: '9999900000', text: '[TEST] Hi Ravi' })
+    expect(sent.outbound).toHaveLength(0) // not recorded in the lead's WhatsApp thread
+    await testAutomationRun(automation({ action_type: 'send_email', action_payload: { email_recipient: 'custom', email_to: 'c@x.in', email_body: 'Hi' } }) as never, { lead: lead() }, { mode: 'self', self: me })
+    expect(sent.email[0].to).toBe('me@anon.in')
+    expect(world.db.rows('automation_logs')).toHaveLength(0)
   })
 })

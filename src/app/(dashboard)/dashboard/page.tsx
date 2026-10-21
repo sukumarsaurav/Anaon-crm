@@ -13,7 +13,7 @@ import {
   BarChart2, Megaphone, UserCheck, Briefcase,
   Scale, Bot, MessageCircle, BookOpen,
 } from 'lucide-react'
-import { formatInIST } from '@/lib/datetime'
+import { formatInIST, todayIST } from '@/lib/datetime'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { Card, StatCard } from '@/components/ui/Card'
 import PageHeader from '@/components/ui/PageHeader'
@@ -51,12 +51,18 @@ export default async function DashboardHome() {
 
   // The bookings/loans/approvals sections only render for managers; advisors and telecallers
   // were paying for five queries (incl. a full booking join) whose results were thrown away.
-  const [leadStats, bookingStats, loanStats, pendingApprovals] = await Promise.all([
+  const supabase = await createClient()
+  const [leadStats, bookingStats, loanStats, pendingApprovals, expiredRes] = await Promise.all([
     getLeadStats(user.id, role, branchId),
     isManager ? getBookingStats() : null,
     isManager ? getLoanStats() : null,
     isManager ? getPendingApprovals() : [],
+    // Active projects selling under a lapsed RERA registration (bookings on them are blocked).
+    isManager
+      ? supabase.from('projects').select('id, name, rera_expiry_date').eq('is_active', true).lt('rera_expiry_date', todayIST()).order('rera_expiry_date')
+      : Promise.resolve({ data: [] as { id: string; name: string; rera_expiry_date: string }[] }),
   ])
+  const expiredProjects = expiredRes.data ?? []
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'there'
   const now = new Date()
@@ -114,6 +120,17 @@ export default async function DashboardHome() {
           />
         </div>
       </div>
+
+      {expiredProjects.length > 0 && (
+        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <p className="font-semibold">RERA registration expired — bookings are blocked on {expiredProjects.length === 1 ? 'this project' : 'these projects'}:</p>
+          <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+            {expiredProjects.map((p) => (
+              <li key={p.id}><Link href={`/legal/${p.id}`} className="underline hover:no-underline">{p.name}</Link> (expired {formatDate(p.rera_expiry_date)})</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Booking + Loan stats — managers only */}
       {isManager && bookingStats && loanStats && (

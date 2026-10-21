@@ -8,17 +8,21 @@ import CandidateStageActions from '@/components/hr/CandidateStageActions'
 import { ArrowLeft, Star, Phone, Mail, Building2 } from 'lucide-react'
 import Link from 'next/link'
 import AddCandidateForm from '@/components/hr/AddCandidateForm'
+import { getTeamsData } from '@/lib/team/teams'
 import { formatInIST } from '@/lib/datetime'
 
 export const metadata = { title: 'Recruitment' }
 
 export default async function RecruitmentPage() {
   const supabase = await createClient()
-  const [candidates, profilesRes] = await Promise.all([
+  const [candidates, profilesRes, teamsData] = await Promise.all([
     getCandidates(),
     supabase.from('profiles').select('id, full_name').eq('is_active', true)
       .in('role', ['admin', 'manager', 'sales_advisor', 'telecaller']).order('full_name'),
+    getTeamsData(),
   ])
+  // Teams the viewer may add a new employee to (the same rule as Team → Add junior).
+  const manageableTeams = (teamsData?.teams ?? []).filter((t) => teamsData?.manageableTeamIds.includes(t.id)).map((t) => ({ id: t.id, name: t.name }))
   const interviewers = profilesRes.data ?? []
 
   const grouped = CANDIDATE_STAGES.reduce((acc, s) => {
@@ -38,7 +42,10 @@ export default async function RecruitmentPage() {
           <h1 className="text-xl font-bold text-slate-900">Recruitment Pipeline</h1>
           <p className="text-sm text-slate-500">{activeCount} active candidates · {candidates.filter(c => c.stage === 'joined').length} joined</p>
         </div>
-        <div className="ml-auto"><AddCandidateForm /></div>
+        <div className="ml-auto flex items-center gap-2">
+          <Link href="/hr/recruitment/openings" className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50">Openings</Link>
+          <AddCandidateForm />
+        </div>
       </div>
 
       {/* Stage summary bar */}
@@ -82,6 +89,7 @@ export default async function RecruitmentPage() {
                         </div>
                         <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
                           {c.listing && <span className="text-primary-600 font-medium">{c.listing.title}</span>}
+                          {c.source === 'website' && <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">website</span>}
                           {c.current_company && <span className="flex items-center gap-1"><Building2 size={11} />{c.current_company}</span>}
                           {c.experience_years && <span>{c.experience_years}y exp</span>}
                           {c.expected_ctc && <span>Expected {formatCurrency(c.expected_ctc)}</span>}
@@ -110,11 +118,20 @@ export default async function RecruitmentPage() {
                         </a>
                       )}
                     </div>
-                    <CandidateStageActions
-                      candidateId={c.id}
-                      stage={c.stage}
-                      interviewers={interviewers}
-                    />
+                    {c.profile_id ? (
+                      <Link href={`/hr/employees/${c.profile_id}`} className="inline-block text-xs text-primary-600 hover:underline">
+                        Employee record →
+                      </Link>
+                    ) : (
+                      <CandidateStageActions
+                        candidateId={c.id}
+                        stage={c.stage}
+                        interviewers={interviewers}
+                        candidate={{ id: c.id, name: c.name, phone: c.phone, email: c.email, offer_ctc: c.offer_ctc }}
+                        teams={manageableTeams}
+                        viewerRole={teamsData?.viewer.role ?? ''}
+                      />
+                    )}
                   </div>
                 ))}
               </div>
@@ -143,7 +160,7 @@ export default async function RecruitmentPage() {
 
         {candidates.length === 0 && (
           <div className="text-center py-16 text-slate-400 bg-white rounded-xl border border-dashed border-slate-200">
-            <p className="text-sm">No candidates yet. Use “Add candidate” for walk-ins, referrals and job-portal applicants.</p>
+            <p className="text-sm">No candidates yet. Applications from the website’s careers page land here; use “Add candidate” for walk-ins and referrals.</p>
           </div>
         )}
       </div>

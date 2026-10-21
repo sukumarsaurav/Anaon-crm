@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { MUST_CHANGE_PASSWORD } from '@/lib/security/passwordPolicy'
 
 const serviceSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,6 +20,8 @@ export async function getMobileUser(req: NextRequest) {
   const token = auth.slice(7)
   const { data, error } = await serviceSupabase.auth.getUser(token)
   if (error || !data.user) return null
+  // Still on a temporary password: they choose their own on the web first (/change-password).
+  if (data.user.app_metadata?.[MUST_CHANGE_PASSWORD] === true) return null
 
   const { data: profile } = await serviceSupabase
     .from('profiles')

@@ -74,10 +74,23 @@ export class FakeDb {
         return { data: { user }, error: null }
       },
       deleteUser: async (id: string) => { this.users = this.users.filter((u) => u.id !== id); this.tables.profiles = this.rows('profiles').filter((p) => p.id !== id); return { error: null } },
-      updateUserById: async (id: string, patch: any) => { const u = this.users.find((x) => x.id === id); if (u) u.banned = patch.ban_duration && patch.ban_duration !== 'none'; return { data: { user: u }, error: null } },
+      updateUserById: async (id: string, patch: any) => {
+        const u = this.users.find((x) => x.id === id)
+        if (u) {
+          if ('ban_duration' in patch) u.banned = patch.ban_duration && patch.ban_duration !== 'none'
+          if (patch.password) u.password = patch.password
+          if (patch.email) u.email = patch.email
+          // GoTrue merges app_metadata; a null value removes the key.
+          if (patch.app_metadata) {
+            u.app_metadata = { ...(u.app_metadata ?? {}) }
+            for (const [k, v] of Object.entries(patch.app_metadata)) { if (v === null) delete u.app_metadata[k]; else u.app_metadata[k] = v }
+          }
+        }
+        return { data: { user: u }, error: null }
+      },
     },
   }
-  storage = { from: () => ({ remove: async () => ({ error: null }), upload: async () => ({ error: null }), createSignedUrls: async () => ({ data: [] }), list: async () => ({ data: [], error: null }) }) }
+  storage = { from: () => ({ remove: async () => ({ error: null }), upload: async () => ({ error: null }), createSignedUrls: async () => ({ data: [] }), list: async () => ({ data: [], error: null }), createSignedUploadUrl: async (path: string) => ({ data: { signedUrl: `https://storage.test/upload/${path}?token=t`, token: 't', path }, error: null }) }) }
 }
 
 class Query implements PromiseLike<Result> {

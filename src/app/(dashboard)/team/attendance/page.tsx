@@ -85,6 +85,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
                   <th scope="col" className="px-4 py-2.5 text-right">Gross</th>
                   <th scope="col" className="px-4 py-2.5 text-right">Deductions</th>
                   <th scope="col" className="px-4 py-2.5 text-right">Net pay</th>
+                  <th scope="col" className="px-4 py-2.5"><span className="sr-only">Payslip</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -95,6 +96,9 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
                     <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(s.gross, { mode: 'exact' })}</td>
                     <td className="px-4 py-3 text-right text-slate-500">{formatCurrency(s.total_deductions, { mode: 'exact' })}</td>
                     <td className="px-4 py-3 text-right font-semibold text-slate-900">{formatCurrency(s.net_pay, { mode: 'exact' })}</td>
+                    <td className="px-4 py-3 text-right">
+                      <a href={`/api/documents/payslip/${s.id}`} target="_blank" rel="noopener noreferrer" className="text-xs text-primary-600 hover:underline">PDF</a>
+                    </td>
                   </tr>
                 ))}
               </tbody>

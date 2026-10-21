@@ -90,12 +90,13 @@ export function FinalizeRunButton({ runId }: { runId: string }) {
   const toast = useToast()
   const [loading, setLoading] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
+  const [emailEmployees, setEmailEmployees] = useState(false)
 
   function handleFinalize() {
     if (!confirmed) { setConfirmed(true); return }
     setLoading(true)
     startTransition(async () => {
-      const res = await finalizePayrollRun(runId)
+      const res = await finalizePayrollRun(runId, { emailEmployees })
       setLoading(false)
       setConfirmed(false)
       if (!res.success) { toast.error(res.error ?? 'Could not finalize'); return }
@@ -105,12 +106,20 @@ export function FinalizeRunButton({ runId }: { runId: string }) {
   }
 
   return (
-    <button onClick={handleFinalize} disabled={loading}
-      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg disabled:opacity-50 ${
-        confirmed ? 'bg-green-600 text-white hover:bg-green-700' : 'border border-green-300 text-green-700 hover:bg-green-50'
-      }`}>
-      <CheckCircle2 size={13} />
-      {loading ? 'Finalizing...' : confirmed ? 'Confirm Finalize' : 'Finalize Run'}
-    </button>
+    <div className="flex items-center gap-2">
+      {confirmed && (
+        <label className="flex items-center gap-1.5 text-xs text-slate-600">
+          <input type="checkbox" checked={emailEmployees} onChange={(e) => setEmailEmployees(e.target.checked)} className="rounded" />
+          Also email employees
+        </label>
+      )}
+      <button onClick={handleFinalize} disabled={loading}
+        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg disabled:opacity-50 ${
+          confirmed ? 'bg-green-600 text-white hover:bg-green-700' : 'border border-green-300 text-green-700 hover:bg-green-50'
+        }`}>
+        <CheckCircle2 size={13} />
+        {loading ? 'Finalizing...' : confirmed ? 'Confirm Finalize' : 'Finalize Run'}
+      </button>
+    </div>
   )
 }

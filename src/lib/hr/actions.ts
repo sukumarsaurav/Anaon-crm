@@ -5,9 +5,16 @@ import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/supabase/getProfile'
 import { decideLeave, leaveWorkingDates } from './leave'
 import { computeSlip, monthDays, salaryStructure } from './payroll'
+import { calculateCommission } from '@/lib/team/commission'
+import type { IncentiveSlab } from '@/types/team'
 import { istToIso } from '@/lib/datetime'
+import { createStaffAccount, nextEmployeeId } from '@/lib/team/provision'
+import { getTeamsData } from '@/lib/team/teams'
 import { updateStaffProfile, setStaffActive } from '@/lib/team/staff'
-import type { CandidateStage } from '@/types/hr'
+import { MONTH_NAMES, type CandidateStage } from '@/types/hr'
+import { notifyUsers } from '@/lib/notifications/notify'
+import { sendEmail, emailConfigured } from '@/lib/email/client'
+import { genericEmail } from '@/lib/email/templates'
 
 async function getAuthUser(allowedRoles = ['admin', 'manager']) {
   const session = await getProfile()
@@ -44,6 +51,60 @@ export async function addCandidate(formData: FormData) {
     revalidatePath('/hr/recruitment')
     revalidatePath('/hr')
     return { success: true }
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+}
+
+/**
+ * "Joined": create the person's CRM login from their application and link the two. Before this the
+ * stage changed and someone re-typed them into Team → Add junior, with nothing linking the records.
+ */
+export async function convertCandidateToEmployee(candidateId: string, formData: FormData) {
+  try {
+    const user = await getAuthUser()
+    const supabase = await createClient()
+    const { data: candidate } = await supabase
+      .from('career_applications').select('id, name, phone, email, stage, profile_id').eq('id', candidateId).maybeSingle()
+    if (!candidate) return { success: false, error: 'Candidate not found' }
+    if (candidate.profile_id) return { success: false, error: 'This candidate already has a CRM login' }
+    if (candidate.stage === 'rejected') return { success: false, error: 'This candidate was rejected' }
+
+    const teams = await getTeamsData()
+    if (!teams) return { success: false, error: 'Not authorized' }
+    const salary = parseFloat(formData.get('base_salary') as string)
+    const joining = (formData.get('joining_date') as string) || null
+    if (joining && !/^\d{4}-\d{2}-\d{2}$/.test(joining)) return { success: false, error: 'Choose the joining date' }
+
+    const res = await createStaffAccount(
+      { id: user.id, role: teams.viewer.role, manageableTeamIds: teams.manageableTeamIds },
+      {
+        full_name: (formData.get('full_name') as string) || candidate.name,
+        email: (formData.get('email') as string) || candidate.email || '',
+        phone: (formData.get('phone') as string) || candidate.phone,
+        role: formData.get('role') as 'manager' | 'sales_advisor' | 'telecaller',
+        designation: (formData.get('designation') as string) || undefined,
+        target_team_id: formData.get('team_id') as string,
+        mode: 'member',
+        joining_date: joining,
+        base_salary: Number.isFinite(salary) ? salary : null,
+        employee_id: ((formData.get('employee_id') as string) || '').trim() || await nextEmployeeId(),
+        department: (formData.get('department') as string) || null,
+        employment_type: (formData.get('employment_type') as string) || 'full_time',
+      },
+    )
+    if (!res.success || !res.userId) return { success: false, error: res.error ?? 'Could not create the login' }
+
+    const { error } = await supabase.from('career_applications').update({
+      stage: 'joined', profile_id: res.userId, joining_date: joining,
+      reviewed_by: user.id, reviewed_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+    }).eq('id', candidateId)
+    if (error) console.error('[hr] candidate link failed:', error.message) // the login exists; link can be retried
+
+    revalidatePath('/hr/recruitment')
+    revalidatePath('/hr/employees')
+    revalidatePath('/team/teams')
+    return { success: true, tempPassword: res.tempPassword, employeeId: res.userId }
   } catch (e) {
     return { success: false, error: (e as Error).message }
   }
@@ -247,7 +308,7 @@ export async function createPayrollRun(formData: FormData) {
     // are owed their days — and leaves out anyone joining after it.
     const { data: staff } = await supabase
       .from('profiles')
-      .select('id, full_name, base_salary, is_active, joining_date, termination_date')
+      .select('id, full_name, role, base_salary, is_active, joining_date, termination_date')
       .in('role', ['admin', 'manager', 'sales_advisor', 'telecaller'])
       .or(`is_active.eq.true,termination_date.gte.${monthStart}`)
     const employees = (staff ?? []).filter((e) => (!e.joining_date || e.joining_date <= monthEnd)
@@ -276,9 +337,30 @@ export async function createPayrollRun(formData: FormData) {
     for (const l of unpaid ?? []) for (const d of leaveWorkingDates(l.from_date, l.to_date)) if (d >= monthStart && d <= monthEnd) mark(l.user_id, d)
     for (const a of absent ?? []) if (workingDates.includes(a.date)) mark(a.user_id, a.date)
 
+    // Incentives: each advisor's / telecaller's confirmed bookings this month through the incentive slabs
+    // (Team → Incentives). Copied onto the slip, so a later slab change never alters a paid slip.
+    const sellers = payable.filter((e) => e.role === 'sales_advisor' || e.role === 'telecaller').map((e) => e.id)
+    const incentiveBy = new Map<string, number>()
+    if (sellers.length) {
+      const [{ data: sales }, { data: slabs }] = await Promise.all([
+        supabase.from('bookings').select('advisor_id, total_sale_value')
+          .in('advisor_id', sellers).eq('status', 'confirmed').gte('booking_date', monthStart).lte('booking_date', monthEnd),
+        supabase.from('incentive_slabs').select('*').eq('is_active', true).order('sort_order'),
+      ])
+      for (const id of sellers) {
+        const mine = (sales ?? []).filter((b) => b.advisor_id === id)
+        if (!mine.length) continue
+        const revenue = mine.reduce((t, b) => t + Number(b.total_sale_value ?? 0), 0)
+        const c = calculateCommission(mine.length, revenue, (slabs ?? []) as IncentiveSlab[])
+        const amount = Math.round(c.commission_amount + (c.current_slab ? c.bonus_amount : 0))
+        if (amount > 0) incentiveBy.set(id, amount)
+      }
+    }
+
+    const notes = [(formData.get('notes') as string) || null, incentiveBy.size ? 'Incentives pre-filled from the incentive slabs' : null].filter(Boolean).join(' · ') || null
     const { data: run, error } = await supabase
       .from('payroll_runs')
-      .insert({ year, month, notes: (formData.get('notes') as string) || null })
+      .insert({ year, month, notes })
       .select('id')
       .single()
     if (error) return { success: false, error: error.message }
@@ -291,7 +373,7 @@ export async function createPayrollRun(formData: FormData) {
       return {
         run_id: run.id,
         user_id: emp.id,
-        ...computeSlip({ ...salaryStructure(Number(emp.base_salary)), workingDays: workingDates.length, presentDays }),
+        ...computeSlip({ ...salaryStructure(Number(emp.base_salary)), workingDays: workingDates.length, presentDays, incentives: incentiveBy.get(emp.id) ?? 0 }),
       }
     })
 
@@ -325,7 +407,7 @@ async function updateRunTotals(supabase: Awaited<ReturnType<typeof createClient>
   }).eq('id', runId)
 }
 
-export async function finalizePayrollRun(runId: string) {
+export async function finalizePayrollRun(runId: string, opts: { emailEmployees?: boolean } = {}) {
   try {
     const user = await getAuthUser(['admin'])
     const supabase = await createClient()
@@ -339,11 +421,34 @@ export async function finalizePayrollRun(runId: string) {
       })
       .eq('id', runId)
       .neq('status', 'completed')
-      .select('id')
+      .select('id, year, month')
     if (error) return { success: false, error: error.message }
     if (!data?.length) return { success: false, error: 'This run is already finalized' }
+
+    // Tell everyone their slip is ready (in-app; by email only if asked). The email carries a link,
+    // never the figures.
+    const run = data[0]
+    const period = `${MONTH_NAMES[run.month]} ${run.year}`
+    const { data: slips } = await supabase.from('payroll_slips')
+      .select('user_id, employee:profiles!payroll_slips_user_id_fkey(email)').eq('run_id', runId)
+    const ids = (slips ?? []).map((s) => s.user_id as string)
+    await notifyUsers(ids, {
+      title: `Payslip for ${period}`, message: 'Your payslip is ready to view and download.',
+      type: 'system', action_url: '/team/attendance',
+    })
+    let emailed = 0
+    if (opts.emailEmployees && emailConfigured()) {
+      const link = `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/team/attendance`
+      for (const s of slips ?? []) {
+        const email = ((Array.isArray(s.employee) ? s.employee[0] : s.employee) as { email?: string | null } | null)?.email
+        if (!email) continue
+        const tpl = genericEmail(`Your payslip for ${period}`, `Your payslip for ${period} is ready. Sign in to the CRM to view or download it:\n${link}`)
+        const r = await sendEmail({ to: email, subject: tpl.subject, html: tpl.html })
+        if (r.success) emailed++
+      }
+    }
     revalidatePath('/hr/payroll')
-    return { success: true }
+    return { success: true, notified: ids.length, emailed }
   } catch (e) {
     return { success: false, error: (e as Error).message }
   }

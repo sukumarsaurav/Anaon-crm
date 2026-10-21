@@ -6,9 +6,10 @@ import type { Payment } from '@/types/clients'
 import type { BookingFull } from '@/types/bookings'
 
 // ── Shared formatting ─────────────────────────────────────────────
+// The built-in PDF fonts have no ₹ glyph (it printed as "¹40,000" on every letter and receipt).
 function inr(n: number | null | undefined): string {
   if (n == null) return '—'
-  return '₹' + new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(n)
+  return 'Rs. ' + new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(n)
 }
 function fmtDate(d: string | null | undefined): string {
   if (!d) return '—'
@@ -244,6 +245,104 @@ export function ReceiptDoc({ data }: { data: ReceiptData }) {
         <Text style={[s.para, { marginTop: 20, color: C.muted }]}>
           This receipt acknowledges the amount received against the above installment. For any discrepancy,
           please contact ANON INDIA accounts within 7 days.
+        </Text>
+        <Footer />
+      </Page>
+    </Document>
+  )
+}
+
+// ── Payslip ───────────────────────────────────────────────────────
+export interface PayslipData {
+  period: string // "October 2026"
+  slip: {
+    working_days: number; present_days: number; lop_days: number
+    basic: number; hra: number; allowances: number; incentives: number; gross: number
+    pf_employee: number; professional_tax: number; tds: number | null; total_deductions: number; net_pay: number
+  }
+  employee: {
+    full_name: string; employee_id: string | null; designation: string | null; department: string | null
+    joining_date: string | null; pan: string | null; bank_name: string | null; bank_account: string | null; bank_ifsc: string | null
+  }
+  netInWords: string
+}
+
+/** Earned share of a full-month component (pay is for the days worked). */
+function earned(full: number, s: PayslipData['slip']): number {
+  return s.working_days > 0 ? Math.round((full * s.present_days) / s.working_days) : 0
+}
+
+export function PayslipDoc({ data }: { data: PayslipData }) {
+  const { slip: sl, employee: e } = data
+  const earnings: [string, number][] = [
+    ['Basic', earned(sl.basic, sl)], ['House Rent Allowance', earned(sl.hra, sl)], ['Other Allowances', earned(sl.allowances, sl)],
+  ]
+  // Rounding of the three parts must still add up to the gross on the slip.
+  const drift = sl.gross - sl.incentives - earnings.reduce((t, [, v]) => t + v, 0)
+  earnings[2][1] += drift
+  if (sl.incentives > 0) earnings.push(['Incentives', sl.incentives])
+  const deductions: [string, number][] = [['Provident Fund (employee)', sl.pf_employee], ['Professional Tax', sl.professional_tax]]
+  if (sl.tds) deductions.push(['TDS', sl.tds])
+  const rows = Math.max(earnings.length, deductions.length)
+
+  return (
+    <Document>
+      <Page size="A4" style={s.page}>
+        <Brand docLabel="PAYSLIP" docNo={`${e.employee_id ?? e.full_name} · ${data.period}`} />
+        <Text style={s.title}>Payslip for {data.period}</Text>
+
+        <View style={[s.section, { flexDirection: 'row' }]}>
+          <View style={{ width: '50%', paddingRight: 10 }}>
+            <Text style={s.sectionTitle}>Employee</Text>
+            <KV label="Name" value={e.full_name} />
+            <KV label="Employee ID" value={e.employee_id ?? '—'} />
+            <KV label="Designation" value={e.designation ?? '—'} />
+            <KV label="Department" value={e.department ?? '—'} />
+            <KV label="Joined" value={fmtDate(e.joining_date)} />
+          </View>
+          <View style={{ width: '50%', paddingLeft: 10 }}>
+            <Text style={s.sectionTitle}>Pay details</Text>
+            <KV label="PAN" value={e.pan ? displayPii(e.pan) : '—'} />
+            <KV label="Bank" value={e.bank_name ?? '—'} />
+            <KV label="Account" value={e.bank_account ? displayPii(e.bank_account) : '—'} />
+            <KV label="IFSC" value={e.bank_ifsc ?? '—'} />
+            <KV label="Paid days" value={`${sl.present_days} of ${sl.working_days}${sl.lop_days ? ` (${sl.lop_days} unpaid)` : ''}`} />
+          </View>
+        </View>
+
+        <View style={[s.table, s.section]}>
+          <View style={s.trHead}>
+            <Text style={[s.th, { width: '32%' }]}>Earnings</Text>
+            <Text style={[s.th, { width: '18%', textAlign: 'right' }]}>Amount</Text>
+            <Text style={[s.th, { width: '32%' }]}>Deductions</Text>
+            <Text style={[s.th, { width: '18%', textAlign: 'right' }]}>Amount</Text>
+          </View>
+          {Array.from({ length: rows }, (_, i) => (
+            <View key={i} style={s.tr}>
+              <Text style={[s.td, { width: '32%' }]}>{earnings[i]?.[0] ?? ''}</Text>
+              <Text style={[s.td, { width: '18%', textAlign: 'right' }]}>{earnings[i] ? inr(earnings[i][1]) : ''}</Text>
+              <Text style={[s.td, { width: '32%' }]}>{deductions[i]?.[0] ?? ''}</Text>
+              <Text style={[s.td, { width: '18%', textAlign: 'right' }]}>{deductions[i] ? inr(deductions[i][1]) : ''}</Text>
+            </View>
+          ))}
+          <View style={s.totalRow}>
+            <Text style={[s.td, { width: '32%', fontFamily: 'Helvetica-Bold' }]}>Gross earnings</Text>
+            <Text style={[s.td, { width: '18%', textAlign: 'right', fontFamily: 'Helvetica-Bold' }]}>{inr(sl.gross)}</Text>
+            <Text style={[s.td, { width: '32%', fontFamily: 'Helvetica-Bold' }]}>Total deductions</Text>
+            <Text style={[s.td, { width: '18%', textAlign: 'right', fontFamily: 'Helvetica-Bold' }]}>{inr(sl.total_deductions)}</Text>
+          </View>
+        </View>
+
+        <View style={[s.section, { borderWidth: 1, borderColor: C.ink, padding: 10 }]}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 11 }}>Net pay</Text>
+            <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 11 }}>{inr(sl.net_pay)}</Text>
+          </View>
+          <Text style={{ color: C.muted, marginTop: 2 }}>{data.netInWords}</Text>
+        </View>
+
+        <Text style={[s.para, { color: C.muted, fontSize: 8 }]}>
+          This is a computer-generated payslip and does not need a signature. Please raise any discrepancy with HR within 7 days.
         </Text>
         <Footer />
       </Page>

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { MUST_CHANGE_PASSWORD } from '@/lib/security/passwordPolicy'
 import { LAST_SEEN_COOKIE } from '@/lib/security/proxyCache'
 import { createClient } from '@/lib/supabase/server'
 import {
@@ -96,7 +97,9 @@ export async function POST(req: NextRequest) {
     // Straight to the real page: '/' is only a redirect to /dashboard, and
     // bouncing through it costs a full extra proxy pass on every login.
     // Brokers sign in here too but live in their own portal.
-    const ok = NextResponse.json({ redirectTo: role === 'broker' ? '/broker-portal' : '/dashboard' })
+    // A temporary password (new or reset account) has to be replaced first.
+    const mustChange = data.user.app_metadata?.[MUST_CHANGE_PASSWORD] === true
+    const ok = NextResponse.json({ redirectTo: mustChange ? '/change-password' : role === 'broker' ? '/broker-portal' : '/dashboard' })
     // A fresh session starts its idle clock now (a stale cookie would log the user straight out).
     ok.cookies.set(LAST_SEEN_COOKIE, String(Date.now()), {
       httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 7 * 86_400,

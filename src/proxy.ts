@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getSecuritySettings, getUserGate, LAST_SEEN_COOKIE } from '@/lib/security/proxyCache'
+import { MUST_CHANGE_PASSWORD } from '@/lib/security/passwordPolicy'
 
 const PUBLIC_PATHS = [
   '/login',
@@ -10,6 +11,7 @@ const PUBLIC_PATHS = [
   '/api/cron',
   '/api/portal',
   '/api/files', // checks staff or portal-client access itself
+  '/api/public', // read-only public feeds (open positions)
   '/share',
   '/broker-portal',
   '/client-portal',
@@ -61,6 +63,17 @@ export async function proxy(request: NextRequest) {
   // which is evaluated by the database against live state.
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = (claimsData?.claims?.sub as string | undefined) ?? null
+
+  // Accounts created or reset with a temporary password must choose their own before anything else
+  // (the flag is in app_metadata, so it rides in the verified token — no database call). Applies to
+  // the broker portal too, which is otherwise a public path here.
+  const mustChange = (claimsData?.claims?.app_metadata as Record<string, unknown> | undefined)?.[MUST_CHANGE_PASSWORD] === true
+  if (userId && mustChange && pathname !== '/change-password' && !pathname.startsWith('/api/auth')) {
+    if (pathname.startsWith('/api')) {
+      return NextResponse.json({ error: 'password_change_required' }, { status: 403 })
+    }
+    return NextResponse.redirect(new URL('/change-password', request.url))
+  }
 
   // Public paths — let through, redirect logged-in users away from /login (by role).
   if (isPublic(pathname)) {

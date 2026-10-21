@@ -7,6 +7,8 @@ import { getProfile } from '@/lib/supabase/getProfile'
 import { writeAuditLog } from '@/lib/security/audit'
 import { encryptPii, decryptPii } from '@/lib/security/pii'
 import { todayIST } from '@/lib/datetime'
+import { randomBytes } from 'crypto'
+import { MUST_CHANGE_PASSWORD } from '@/lib/security/passwordPolicy'
 
 /**
  * Every change to another staff member's profile goes through here.
@@ -244,4 +246,31 @@ async function handOverTeams(svc: ReturnType<typeof createServiceClient>, leader
     if (!error) count++
   }
   return count
+}
+
+/**
+ * Admin: give someone a new temporary password (forgotten password, suspected compromise). Their
+ * sessions end, and they must choose their own password at the next sign-in. Shown to the admin once.
+ */
+export async function resetStaffPassword(targetId: string): Promise<Result & { tempPassword?: string }> {
+  const auth = await authorize(targetId)
+  if (!auth.ok) return { success: false, error: auth.error }
+  if (auth.actorRole !== 'admin') return { success: false, error: 'Only an admin can reset a password' }
+  if (targetId === auth.actorId) return { success: false, error: 'Change your own password from the change-password page' }
+  if (!auth.target.is_active) return { success: false, error: 'Reactivate the account first' }
+
+  const tempPassword = 'Anon-' + randomBytes(4).toString('hex') + '@' + new Date().getFullYear()
+  const svc = createServiceClient()
+  const { error } = await svc.auth.admin.updateUserById(targetId, {
+    password: tempPassword,
+    app_metadata: { [MUST_CHANGE_PASSWORD]: true },
+  })
+  if (error) return { success: false, error: error.message }
+  await svc.from('user_sessions')
+    .update({ is_active: false, revoked_at: new Date().toISOString(), revoked_by: auth.actorId })
+    .eq('user_id', targetId).eq('is_active', true)
+  await svc.from('profiles').update({ failed_login_count: 0, lockout_until: null, last_failed_login_at: null }).eq('id', targetId)
+
+  await writeAuditLog({ userId: auth.actorId, action: 'password_reset', tableName: 'profiles', recordId: targetId })
+  return { success: true, tempPassword }
 }

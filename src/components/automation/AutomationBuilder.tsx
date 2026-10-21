@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, startTransition } from 'react'
+import { useRef, useState, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createAutomation, updateAutomation } from '@/lib/automation/actions'
 import {
@@ -8,6 +8,7 @@ import {
   type TriggerEvent, type ActionType, type AutomationCondition, type AutomationActionPayload, type Automation
 } from '@/types/automation'
 import { Plus, X } from 'lucide-react'
+import TestRunPanel from './TestRunPanel'
 
 interface Props {
   automation?: Automation
@@ -43,15 +44,23 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
     setConditions(c => c.map((cond, idx) => idx === i ? { ...cond, ...partial } : cond))
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const fd = new FormData(e.currentTarget)
+  const formRef = useRef<HTMLFormElement>(null)
+
+  /** The form as it stands (saved or not) — used to save and to test. */
+  function currentFormData(form: HTMLFormElement | null): FormData {
+    const fd = form ? new FormData(form) : new FormData()
     fd.set('trigger_event', trigger)
     fd.set('action_type', action)
     fd.set('conditions', JSON.stringify(conditions))
     fd.set('action_payload', JSON.stringify(payload))
     fd.set('delay_value', String(delayValue))
     fd.set('delay_unit', delayUnit)
+    return fd
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const fd = currentFormData(e.currentTarget)
 
     setLoading(true)
     setError(null)
@@ -69,7 +78,7 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
   const selectCls = `${inputCls} bg-white`
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
       {/* Basic Info */}
       <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
         <h3 className="font-semibold text-slate-900">Basic Info</h3>
@@ -343,6 +352,9 @@ export default function AutomationBuilder({ automation, advisors = [], whatsappT
           </div>
         )}
       </div>
+
+      {/* Re-mounts when the trigger changes, so the sample records match it. */}
+      <TestRunPanel key={trigger} trigger={trigger} automationId={automation?.id} getDraft={() => currentFormData(formRef.current)} />
 
       {error && <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</p>}
 

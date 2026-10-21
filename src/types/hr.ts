@@ -38,6 +38,8 @@ export interface Candidate {
   created_at: string
   listing?: { title: string } | null
   interviewer?: { full_name: string } | null
+  profile_id?: string | null
+  source?: string | null
 }
 
 export interface HREmployee {
