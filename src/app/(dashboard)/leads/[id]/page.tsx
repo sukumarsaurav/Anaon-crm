@@ -41,7 +41,8 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
   const duplicatesP = Promise.all([leadP, sessionP]).then(async ([l, s]) => {
     const canMerge = ['admin', 'manager'].includes(s?.profile?.role ?? '')
     if (!l || !canMerge) return []
-    return (await checkDuplicate(l.phone, l.email ?? undefined, l.id)).leads
+    // Only ones this user can open: a merge needs both leads in their view.
+    return (await checkDuplicate(l.phone, l.email ?? undefined, l.id)).leads.filter((d) => d.can_view)
   })
 
   // The client this lead became, if it has been converted.
@@ -67,7 +68,10 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
   const profile = session?.profile
   const canMerge = ['admin', 'manager'].includes(profile?.role ?? '')
 
-  const currentStageIndex = STAGE_ORDER.indexOf(lead.stage)
+  // A lost or parked lead shows no stage as done: how far it got isn't recorded, and marking
+  // everything before it green showed Closed Won as reached on a lost lead.
+  const isParked = lead.stage === 'not_interested' || lead.stage === 'future_followup'
+  const currentStageIndex = isParked ? -1 : STAGE_ORDER.indexOf(lead.stage)
 
   return (
     <div className="p-6 space-y-6">

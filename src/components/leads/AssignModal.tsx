@@ -6,6 +6,7 @@ import Button from '@/components/ui/Button'
 import { assignLead } from '@/lib/leads/actions'
 import { getInitials } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/components/ui/Toast'
 
 interface AssignModalProps {
   leadId: string
@@ -18,11 +19,16 @@ interface AssignModalProps {
 export default function AssignModal({ leadId, currentAdvisorId, advisors, open, onClose }: AssignModalProps) {
   const [selected, setSelected] = useState(currentAdvisorId ?? '')
   const [isPending, startTransition] = useTransition()
+  const toast = useToast()
 
   const handleAssign = () => {
     if (!selected) return
     startTransition(async () => {
-      await assignLead(leadId, selected)
+      const result = await assignLead(leadId, selected)
+      if (!result.success) {
+        toast.error(result.error ?? 'Could not reassign the lead')
+        return
+      }
       onClose()
     })
   }

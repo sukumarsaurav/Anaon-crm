@@ -5,6 +5,7 @@ import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import { scheduleFollowUp } from '@/lib/leads/actions'
 import { format, addHours, addDays } from 'date-fns'
+import { useToast } from '@/components/ui/Toast'
 
 interface FollowUpModalProps {
   leadId: string
@@ -23,12 +24,21 @@ const QUICK_TIMES = [
 
 export default function FollowUpModal({ leadId, open, onClose }: FollowUpModalProps) {
   const [isPending, startTransition] = useTransition()
+  const toast = useToast()
+
+  const save = async (iso: string) => {
+    const result = await scheduleFollowUp(leadId, iso)
+    if (!result.success) {
+      toast.error(result.error ?? 'Could not schedule the follow-up')
+      return
+    }
+    onClose()
+  }
 
   const handleQuick = (getDate: () => Date) => {
     const date = getDate()
     startTransition(async () => {
-      await scheduleFollowUp(leadId, date.toISOString())
-      onClose()
+      await save(date.toISOString())
     })
   }
 
@@ -38,8 +48,7 @@ export default function FollowUpModal({ leadId, open, onClose }: FollowUpModalPr
     const value = formData.get('followup_at') as string
     if (!value) return
     startTransition(async () => {
-      await scheduleFollowUp(leadId, new Date(value).toISOString())
-      onClose()
+      await save(new Date(value).toISOString())
     })
   }
 

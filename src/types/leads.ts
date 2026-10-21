@@ -215,6 +215,8 @@ export interface DuplicateCheck {
     assigned_profile: Profile | null
     created_at: string
     match_type: 'phone' | 'email' | 'name_city'
+    /** False when the lead belongs to someone outside the viewer's team chain (no link to it). */
+    can_view?: boolean
   }>
 }
 

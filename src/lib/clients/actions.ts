@@ -231,14 +231,15 @@ export async function addPaymentInstallment(formData: FormData) {
   const bookingId = formData.get('booking_id') as string
   const clientId  = formData.get('client_id') as string
 
-  // Get next installment number
-  const { count } = await auth.supabase
-    .from('payments').select('id', { count: 'exact', head: true }).eq('booking_id', bookingId)
+  // Next installment number: max + 1 (count + 1 reused a number after a delete)
+  const { data: last } = await auth.supabase
+    .from('payments').select('installment_number').eq('booking_id', bookingId)
+    .order('installment_number', { ascending: false }).limit(1).maybeSingle()
 
   const { error } = await auth.supabase.from('payments').insert({
     booking_id:          bookingId,
     client_id:           clientId,
-    installment_number:  (count ?? 0) + 1,
+    installment_number:  Number(last?.installment_number ?? 0) + 1,
     description:         formData.get('description') as string || null,
     amount_due:          parseFloat(formData.get('amount_due') as string),
     due_date:            formData.get('due_date') as string,

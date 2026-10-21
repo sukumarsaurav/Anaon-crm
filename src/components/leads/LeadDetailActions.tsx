@@ -32,18 +32,25 @@ export default function LeadDetailActions({ lead, advisors }: LeadDetailActionsP
   // Matches the server rule in deleteLead(); the action re-checks it.
   const canDelete = role === 'admin'
 
-  const nextStages = STAGE_ORDER.filter(
-    (s) => !TERMINAL_STAGES.includes(s) && s !== lead.stage
-  ).slice(STAGE_ORDER.indexOf(lead.stage) + 1, STAGE_ORDER.indexOf(lead.stage) + 3)
-
-  const handleAdvanceStage = (stage: LeadStage) => {
-    startTransition(async () => {
-      await changeLeadStage(lead.id, stage)
-    })
-  }
+  // The next two forward stages. This used to drop the current stage from the list and then slice
+  // it with indexes from the full list, so it skipped one: Contacted never offered Interested and
+  // Negotiation never offered Token Paid. Closed Won comes from an approved booking, not a button.
+  const isParked = lead.stage === 'not_interested' || lead.stage === 'future_followup'
+  const nextStages: LeadStage[] = isParked
+    ? ['contacted', 'interested']
+    : STAGE_ORDER.slice(STAGE_ORDER.indexOf(lead.stage) + 1)
+        .filter((s) => !TERMINAL_STAGES.includes(s) && s !== 'future_followup')
+        .slice(0, 2)
 
   const askConfirm = useConfirm()
   const toast = useToast()
+
+  const handleAdvanceStage = (stage: LeadStage) => {
+    startTransition(async () => {
+      const result = await changeLeadStage(lead.id, stage)
+      if (!result.success) toast.error(result.error ?? 'Could not change the stage')
+    })
+  }
   const handleDelete = async () => {
     if (!(await askConfirm({ title: 'Delete lead', message: `Delete ${lead.full_name}? The lead is removed from lists, the pipeline and reports. It is archived rather than erased, and the deletion is recorded in the audit log.`, confirmLabel: 'Delete lead' }))) return
     startTransition(async () => {
@@ -95,7 +102,7 @@ export default function LeadDetailActions({ lead, advisors }: LeadDetailActionsP
                 )}
               >
                 <ArrowRight size={12} />
-                Move to {cfg.label}
+                {isParked ? 'Reopen as' : 'Move to'} {cfg.label}
               </button>
             )
           })}

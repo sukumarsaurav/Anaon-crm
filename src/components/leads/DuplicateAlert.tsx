@@ -44,7 +44,10 @@ export default function DuplicateAlert({ duplicate, onContinue, onCancel }: Dupl
                 </div>
                 <div className="flex items-center gap-2">
                   <StageBadge stage={lead.stage} size="sm" />
-                  <Button href={`/leads/${lead.id}`} external variant="ghost" size="xs">View</Button>
+                  {/* A lead in someone else's team can't be opened; the owner's name is what helps. */}
+                  {lead.can_view !== false && (
+                    <Button href={`/leads/${lead.id}`} external variant="ghost" size="xs">View</Button>
+                  )}
                 </div>
               </div>
             ))}

@@ -20,7 +20,7 @@ const PAGE_SIZE = 24
 
 export default async function ClientsPage({ searchParams }: PageProps) {
   const params  = await searchParams
-  const page    = parseInt(params.page ?? '1')
+  const page    = Math.max(1, parseInt(params.page ?? '1', 10) || 1)
   const offset  = (page - 1) * PAGE_SIZE
 
   const { clients, total } = await getClients({
@@ -37,6 +37,7 @@ export default async function ClientsPage({ searchParams }: PageProps) {
     .from('bookings')
     .select('client_id')
     .in('client_id', clients.map((c) => c.id))
+    .neq('status', 'cancelled')
 
   const countMap: Record<string, number> = {}
   for (const b of bookingCounts ?? []) {

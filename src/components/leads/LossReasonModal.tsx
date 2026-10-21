@@ -5,6 +5,7 @@ import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import { changeLeadStage } from '@/lib/leads/actions'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/components/ui/Toast'
 
 export const LOSS_REASONS = [
   'Budget mismatch',
@@ -21,18 +22,26 @@ interface LossReasonModalProps {
   leadId: string
   open: boolean
   onClose: () => void
+  /** Called after the stage is saved (the Kanban board uses it to move the card). */
+  onSaved?: () => void
 }
 
-export default function LossReasonModal({ leadId, open, onClose }: LossReasonModalProps) {
+export default function LossReasonModal({ leadId, open, onClose, onSaved }: LossReasonModalProps) {
   const [reason, setReason] = useState<string>('')
   const [note, setNote] = useState('')
   const [isPending, startTransition] = useTransition()
+  const toast = useToast()
 
   const submit = () => {
     if (!reason) return
     const finalReason = reason === 'Other' && note.trim() ? note.trim() : reason
     startTransition(async () => {
-      await changeLeadStage(leadId, 'not_interested', undefined, finalReason)
+      const result = await changeLeadStage(leadId, 'not_interested', undefined, finalReason)
+      if (!result.success) {
+        toast.error(result.error ?? 'Could not mark the lead Not Interested')
+        return
+      }
+      onSaved?.()
       onClose()
       setReason('')
       setNote('')

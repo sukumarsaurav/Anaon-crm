@@ -3,6 +3,7 @@
 import { todayIST } from '@/lib/datetime'
 import { decryptPii } from '@/lib/security/pii'
 import { createClient } from '@/lib/supabase/server'
+import { searchOr } from '@/lib/supabase/search'
 import { formatCurrency } from '@/lib/utils'
 import type {
   Client, Booking, Payment, ClientDocument,
@@ -25,11 +26,10 @@ export async function getClients(filters: {
     .select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
 
-  if (filters.search) {
-    query = query.or(
-      `full_name.ilike.%${filters.search}%,phone.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
-    )
-  }
+  // Quoted like the leads search: a comma in "Sharma, Rahul" broke the hand-built filter, and
+  // "+91 98…" never matched a stored phone.
+  const search = searchOr(filters.search, { text: ['full_name', 'email'], phone: ['phone'] })
+  if (search) query = query.or(search)
   if (filters.kyc_status) query = query.eq('kyc_status', filters.kyc_status)
 
   // Filter by project via bookings subquery
@@ -117,7 +117,8 @@ export async function getPaymentSummary(bookingId: string): Promise<PaymentSumma
     outstanding,
     overdue_count:   overdue.length,
     next_due_date:   pending[0]?.due_date ?? null,
-    next_due_amount: pending[0]?.amount_due ?? null,
+    // What is still owed on it: a part-paid installment showed its full amount.
+    next_due_amount: pending[0] ? Math.max(0, pending[0].amount_due - (pending[0].amount_paid ?? 0)) : null,
   }
 }
 

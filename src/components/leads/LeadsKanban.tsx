@@ -13,6 +13,7 @@ import { formatPhone, getInitials, isFollowUpOverdue, waLink } from '@/lib/utils
 import RelativeTime from '@/components/ui/RelativeTime'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/components/ui/Toast'
+import LossReasonModal from './LossReasonModal'
 
 interface LeadsKanbanProps {
   leads: Lead[]
@@ -142,7 +143,8 @@ function LeadKanbanCard({
           <div className="absolute bottom-full left-0 right-0 mb-1 bg-white rounded-lg border border-slate-200 shadow-lg z-10 overflow-hidden">
             {STAGE_ORDER.map((stage) => {
               const cfg = STAGE_CONFIG[stage]
-              if (stage === lead.stage) return null
+              // Closed Won comes from an approved booking, never from the board.
+              if (stage === lead.stage || stage === 'closed_won') return null
               return (
                 <button
                   key={stage}
@@ -169,6 +171,8 @@ export default function LeadsKanban({ leads: serverLeads, limit = 200 }: LeadsKa
   const [moved, setMoved] = useState<Record<string, LeadStage>>({})
   const [saving, setSaving] = useState<Set<string>>(new Set())
   const [dropTarget, setDropTarget] = useState<LeadStage | null>(null)
+  // Not Interested needs a loss reason, as on the lead page; the move waits for the modal.
+  const [lossLead, setLossLead] = useState<Lead | null>(null)
 
   // Fresh server data (after a save revalidates /leads) supersedes local moves.
   const [seen, setSeen] = useState(serverLeads)
@@ -181,6 +185,10 @@ export default function LeadsKanban({ leads: serverLeads, limit = 200 }: LeadsKa
   const move = useCallback(
     async (lead: Lead, stage: LeadStage) => {
       if (lead.stage === stage) return
+      if (stage === 'not_interested') {
+        setLossLead(lead)
+        return
+      }
       const previous = lead.stage
       setMoved((m) => ({ ...m, [lead.id]: stage }))
       setSaving((s) => new Set(s).add(lead.id))
@@ -209,6 +217,14 @@ export default function LeadsKanban({ leads: serverLeads, limit = 200 }: LeadsKa
       <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800" role="status">
         Showing the first {limit} leads that match. Use the filters or the table view to see the rest.
       </p>
+    )}
+    {lossLead && (
+      <LossReasonModal
+        leadId={lossLead.id}
+        open
+        onClose={() => setLossLead(null)}
+        onSaved={() => setMoved((m) => ({ ...m, [lossLead.id]: 'not_interested' }))}
+      />
     )}
     <div className="flex gap-4 overflow-x-auto pb-4" style={{ minHeight: '60vh' }}>
       {KANBAN_STAGES.map((stage) => {

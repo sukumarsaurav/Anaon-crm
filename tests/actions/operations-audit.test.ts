@@ -203,7 +203,7 @@ describe('RERA', () => {
       plots: [{ id: 'P1', status: 'available', held_by: null, project: { name: 'Anon Heights', rera_expiry_date: '2026-04-14' } }],
       bookings: [],
     }, {}, 'manager')
-    const r = await createBooking(fd({ plot_id: 'P1', project_id: 'X', client_id: 'C' }))
+    const r = await createBooking(fd({ plot_id: 'P1', project_id: 'X', client_id: 'C', total_sale_value: '1000000', booking_amount: '100000' }))
     expect(r.success).toBe(false)
     expect(r.error).toMatch(/RERA registration expired/)
     expect(world.db.rows('bookings')).toHaveLength(0)

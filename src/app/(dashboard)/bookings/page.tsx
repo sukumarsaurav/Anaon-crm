@@ -20,7 +20,7 @@ const PAGE_SIZE = 18
 
 export default async function BookingsPage({ searchParams }: PageProps) {
   const params = await searchParams
-  const page   = parseInt(params.page ?? '1')
+  const page   = Math.max(1, parseInt(params.page ?? '1', 10) || 1)
   const offset = (page - 1) * PAGE_SIZE
 
   const [{ bookings, total }, stats] = await Promise.all([
@@ -29,6 +29,14 @@ export default async function BookingsPage({ searchParams }: PageProps) {
   ])
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
+  // Status tabs keep the search, and searching keeps the status (each used to drop the other).
+  const statusHref = (status?: string) => {
+    const sp = new URLSearchParams()
+    if (params.search) sp.set('search', params.search)
+    if (status) sp.set('status', status)
+    const qs = sp.toString()
+    return qs ? `/bookings?${qs}` : '/bookings'
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -47,16 +55,17 @@ export default async function BookingsPage({ searchParams }: PageProps) {
       {/* Filters */}
       <div className="bg-white border border-slate-200 rounded-xl px-4 py-3">
         <form method="get" className="flex flex-wrap gap-3">
+          {params.status && <input type="hidden" name="status" value={params.status} />}
           <input aria-label="Search client name..." name="search" defaultValue={params.search}
             placeholder="Search client name..."
             className="flex-1 min-w-44 px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500" />
           <div className="flex gap-1 p-1 bg-slate-100 rounded-lg">
-            <Link href="/bookings"
+            <Link href={statusHref()}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                 !params.status ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
               }`}>All</Link>
             {Object.entries(BOOKING_STATUS_CONFIG).map(([v, cfg]) => (
-              <Link key={v} href={`/bookings?status=${v}`}
+              <Link key={v} href={statusHref(v)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                   params.status === v ? `bg-white ${cfg.color} shadow-sm` : 'text-slate-500 hover:text-slate-700'
                 }`}>{cfg.label}</Link>

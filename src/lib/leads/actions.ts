@@ -17,6 +17,10 @@ import { suggestNextFollowup } from '@/lib/utils'
 import { fireAutomations } from '@/lib/automation/engine'
 import { writeAuditLog } from '@/lib/security/audit'
 import { recordConsent } from '@/lib/legal/consent'
+import { createServiceClient } from '@/lib/supabase/service'
+
+/** Activity types that are a contact with the lead (a note is not). */
+const CONTACT_TYPES = new Set(['call', 'whatsapp', 'email', 'sms', 'site_visit'])
 
 export async function createLead(formData: FormData): Promise<{ success: boolean; id?: string; error?: string }> {
   const supabase = await createClient()
@@ -175,6 +179,10 @@ export async function changeLeadStage(
   const supabase = await createClient()
   const user = (await getProfile())?.user
   if (!user) return { success: false, error: 'Not authenticated' }
+  if (!VALID_STAGES.includes(newStage)) return { success: false, error: 'Unknown stage' }
+  // Same rules as the bulk path: a win comes from an approved booking, a loss needs its reason.
+  if (newStage === 'closed_won') return { success: false, error: 'Closed Won is set when a booking is approved' }
+  if (newStage === 'not_interested' && !lossReason?.trim()) return { success: false, error: 'Choose a loss reason' }
 
   // The whole row: scoring needs created_at (first-response bonus), source, budget… A partial
   // select dropped those signals, so moving a lead FORWARD could lower its score (15 → 10).
@@ -182,6 +190,7 @@ export async function changeLeadStage(
   if (!lead) return { success: false, error: 'Lead not found' }
 
   const oldStage = lead.stage as LeadStage
+  if (oldStage === newStage) return { success: true }
 
   const activities = await getLeadActivities(leadId)
   const { score, temperature } = await scoreLead(supabase, { ...lead, stage: newStage }, activities)
@@ -254,7 +263,7 @@ export async function logActivity(formData: FormData): Promise<{ success: boolea
   if (error) return { success: false, error: error.message }
 
   // Update lead: last contacted, follow-up count, next followup
-  const { data: current } = await supabase.from('leads').select('follow_up_count').eq('id', leadId).single()
+  const { data: current } = await supabase.from('leads').select('follow_up_count, next_followup_at').eq('id', leadId).single()
   const updates: Record<string, unknown> = {
     last_contacted_at: new Date().toISOString(),
     follow_up_count: (current?.follow_up_count ?? 0) + 1,
@@ -265,6 +274,11 @@ export async function logActivity(formData: FormData): Promise<{ success: boolea
     updates.followup_reminder_sent_at = null
   } else if (outcome === 'not_reachable' || outcome === 'callback_requested') {
     updates.next_followup_at = suggestNextFollowup(outcome).toISOString()
+    updates.followup_reminder_sent_at = null
+  } else if (CONTACT_TYPES.has(type) && current?.next_followup_at && new Date(current.next_followup_at) <= new Date()) {
+    // This contact was the follow-up that was due. Left in place, the past date kept the lead
+    // "overdue" for good: 26 of 33 leads were overdue although most had been called since.
+    updates.next_followup_at = null
     updates.followup_reminder_sent_at = null
   }
 
@@ -596,20 +610,31 @@ export async function mergeDuplicate(
   const dupe = pair?.find((l) => l.id === mergeLeadId)
   if (!keep || !dupe) return { success: false, error: 'One or both leads not found' }
 
-  // Re-parent child records from the duplicate onto the survivor.
-  await Promise.all([
-    supabase.from('lead_activities').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
-    supabase.from('site_visits').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
-    supabase.from('clients').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
+  // One client per lead: two converted leads are two client records, which a merge can't combine.
+  const { data: linkedClients } = await supabase.from('clients').select('lead_id').in('lead_id', [keepLeadId, mergeLeadId])
+  if ((linkedClients ?? []).length > 1) {
+    return { success: false, error: 'Both leads have already been converted to clients — merge the client records first' }
+  }
+
+  // Re-parent child records from the duplicate onto the survivor. Service role: the caller is a
+  // manager who can see both leads (checked above), but lead_activities has no UPDATE policy at
+  // all, so under the user session the timeline silently stayed on the retired lead.
+  const admin = createServiceClient()
+  const moves = await Promise.all([
+    admin.from('lead_activities').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
+    admin.from('site_visits').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
+    admin.from('clients').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
     // Left behind, these pointed at the retired lead: inbox threads and broker registrations
     // would show it as an inactive duplicate.
-    supabase.from('whatsapp_conversations').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
-    supabase.from('broker_lead_registrations').update({ crm_lead_id: keepLeadId }).eq('crm_lead_id', mergeLeadId),
+    admin.from('whatsapp_conversations').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
+    admin.from('broker_lead_registrations').update({ crm_lead_id: keepLeadId }).eq('crm_lead_id', mergeLeadId),
     // Shared albums, plot holds and broadcast history belong to the person, not the duplicate row.
-    supabase.from('property_albums').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
-    supabase.from('plot_holds_log').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
-    supabase.from('whatsapp_broadcast_recipients').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
+    admin.from('property_albums').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
+    admin.from('plot_holds_log').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
+    admin.from('whatsapp_broadcast_recipients').update({ lead_id: keepLeadId }).eq('lead_id', mergeLeadId),
   ])
+  const moveError = moves.find((m) => m.error)?.error
+  if (moveError) return { success: false, error: `Could not move the duplicate's records: ${moveError.message}` }
 
   // Backfill survivor fields that are empty, and keep the higher score.
   const backfill: Record<string, unknown> = {}

@@ -7,6 +7,10 @@ import type { Lead, LeadActivity, LeadFilters, SiteVisit, DuplicateCheck } from 
 import { computeSlaStatus } from '@/lib/utils'
 import { istDayBounds, istDayStart, istWeekStart } from '@/lib/datetime'
 import { searchOr } from '@/lib/supabase/search'
+import { createServiceClient } from '@/lib/supabase/service'
+import { normalizePhone } from './ingest'
+
+const STAFF_ROLES = new Set(['admin', 'manager', 'sales_advisor', 'telecaller'])
 
 /**
  * Columns the list views (table, kanban, overdue) actually render, plus what the SLA badge needs.
@@ -223,33 +227,49 @@ export async function checkDuplicate(
   email?: string,
   excludeId?: string
 ): Promise<DuplicateCheck> {
-  const supabase = await createClient()
+  const session = await getProfile()
+  if (!session?.user || !STAFF_ROLES.has(session.profile?.role ?? '')) return { found: false, leads: [] }
 
-  let query = supabase
+  // Stored phones come in two shapes ("+91-98100 01025" from older and imported leads, bare
+  // "9810001025" from the form), so an exact match missed 31 of 33 leads. Match on the last 10
+  // digits, as ingestLead does.
+  const digits = normalizePhone(phone) ?? phone.replace(/\D/g, '').slice(-10)
+  const cleanEmail = email?.trim().toLowerCase()
+  if (digits.length < 10 && !cleanEmail) return { found: false, leads: [] }
+
+  // Across every lead, not just the caller's: under RLS an advisor never saw that someone else
+  // already owns this number. Only the fields the warning shows are returned.
+  const admin = createServiceClient()
+  const conditions: string[] = []
+  if (digits.length >= 10) conditions.push(`phone.ilike."%${digits}"`)
+  if (cleanEmail) conditions.push(`email.ilike."${cleanEmail.replace(/["\\%]/g, '')}"`)
+
+  let query = admin
     .from('leads')
     .select(
-      `id, full_name, phone, stage, created_at,
-       assigned_profile:profiles!leads_assigned_to_fkey(id, full_name, phone, role)`
+      `id, full_name, phone, email, stage, created_at,
+       assigned_profile:profiles!leads_assigned_to_fkey(id, full_name, role)`
     )
     .eq('is_active', true)
+    .or(conditions.join(','))
+    .limit(10)
+  if (excludeId) query = query.neq('id', excludeId)
 
-  if (excludeId) {
-    query = query.neq('id', excludeId)
-  }
-
-  const orConditions: string[] = [`phone.eq.${phone}`]
-  if (email) orConditions.push(`email.eq.${email}`)
-
-  const { data, error } = await query.or(orConditions.join(','))
-
+  const { data, error } = await query
   if (error || !data?.length) {
     return { found: false, leads: [] }
   }
 
-  const leads = data.map((d: Record<string, unknown>) => ({
-    ...(d as object),
-    match_type: (d.phone as string) === phone ? 'phone' : 'email',
-  })) as DuplicateCheck['leads']
+  // Which of them the caller may open (RLS), so the warning only links to those.
+  const supabase = await createClient()
+  const { data: visible } = await supabase.from('leads').select('id').in('id', data.map((d) => d.id))
+  const visibleIds = new Set((visible ?? []).map((v) => v.id))
+
+  const leads = data.map(({ email: leadEmail, ...d }) => ({
+    ...d,
+    match_type: digits.length >= 10 && String(d.phone ?? '').replace(/\D/g, '').endsWith(digits) ? 'phone' : (leadEmail ? 'email' : 'phone'),
+    can_view: visibleIds.has(d.id),
+  })) as unknown as DuplicateCheck['leads']
 
   return { found: true, leads }
 }
@@ -269,10 +289,13 @@ export async function getActiveAdvisors(branchId?: string) {
   let query = supabase
     .from('profiles')
     .select('id, full_name, phone, email, role, branch_id, designation, photo_url, is_active')
-    .in('role', ['sales_advisor', 'manager'])
+    // Everyone who can own a lead. Admins were left out, yet 31 of 33 leads sit with the admin:
+    // they couldn't be filtered by owner or reassigned back. Telecallers own leads too.
+    .in('role', ['sales_advisor', 'manager', 'admin', 'telecaller'])
     .eq('is_active', true)
 
-  if (branchId) query = query.eq('branch_id', branchId)
+  // Branch-less users (the admin) belong to every branch.
+  if (branchId) query = query.or(`branch_id.eq.${branchId},branch_id.is.null`)
 
   const { data } = await query.order('full_name')
   return data ?? []

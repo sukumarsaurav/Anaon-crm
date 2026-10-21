@@ -19,6 +19,36 @@ async function getAuth() {
 
 const isManager = (role: string) => ['admin', 'manager'].includes(role)
 
+type Supabase = Awaited<ReturnType<typeof createClient>>
+
+/** max + 1: after a delete, count + 1 reused a number already on the schedule. */
+async function nextInstallmentNumber(supabase: Supabase, bookingId: string): Promise<number> {
+  const { data } = await supabase
+    .from('payments').select('installment_number').eq('booking_id', bookingId)
+    .order('installment_number', { ascending: false }).limit(1).maybeSingle()
+  return Number(data?.installment_number ?? 0) + 1
+}
+
+/** A cancelled sale: move the client's Closed Won lead to Not Interested, unless another confirmed booking remains. */
+async function unwinLead(supabase: Supabase, clientId: string, bookingId: string, userId: string, reason: string) {
+  const [{ data: client }, { count: otherConfirmed }] = await Promise.all([
+    supabase.from('clients').select('lead_id').eq('id', clientId).single(),
+    supabase.from('bookings').select('id', { count: 'exact', head: true })
+      .eq('client_id', clientId).eq('status', 'confirmed').neq('id', bookingId),
+  ])
+  if (!client?.lead_id || otherConfirmed) return
+  const { data: lead } = await supabase.from('leads').select('stage').eq('id', client.lead_id).single()
+  if (lead?.stage !== 'closed_won') return
+  const { error } = await supabase.from('leads')
+    .update({ stage: 'not_interested', loss_reason: 'Booking cancelled', updated_at: new Date().toISOString() })
+    .eq('id', client.lead_id)
+  if (error) return
+  await supabase.from('lead_activities').insert({
+    lead_id: client.lead_id, type: 'stage_change', stage_from: 'closed_won', stage_to: 'not_interested',
+    notes: `Booking cancelled — ${reason}`, performed_by: userId,
+  })
+}
+
 // ── Create booking ────────────────────────────────────────────
 
 export async function createBooking(formData: FormData) {
@@ -26,13 +56,20 @@ export async function createBooking(formData: FormData) {
   if (!auth.ok) return { success: false, error: 'Unauthorized' }
 
   const plotId    = formData.get('plot_id') as string
-  const projectId = formData.get('project_id') as string
   const clientId  = formData.get('client_id') as string
+  const totalSaleValue = parseFloat(formData.get('total_sale_value') as string)
+  const bookingAmount  = parseFloat(formData.get('booking_amount') as string)
+  if (!plotId || !clientId) return { success: false, error: 'Choose a client and a plot' }
+  if (!(totalSaleValue > 0)) return { success: false, error: 'Enter the total sale value' }
+  if (!(bookingAmount > 0)) return { success: false, error: 'Enter the booking amount' }
+  if (bookingAmount > totalSaleValue) return { success: false, error: 'The booking amount is more than the sale value' }
 
   // Validate plot is still available
   const { data: plot } = await auth.supabase
-    .from('plots').select('status, held_by, project:projects(name, rera_expiry_date)').eq('id', plotId).single()
+    .from('plots').select('status, held_by, project_id, project:projects(name, rera_expiry_date)').eq('id', plotId).single()
   if (!plot) return { success: false, error: 'Plot not found' }
+  // The project comes from the plot; the browser's project_id was stored as sent.
+  const projectId = plot.project_id as string
   // Selling under a lapsed RERA registration is not allowed. Two live projects were past expiry.
   const project = (Array.isArray(plot.project) ? plot.project[0] : plot.project) as { name: string; rera_expiry_date: string | null } | null
   if (reraExpired(project?.rera_expiry_date, todayIST())) {
@@ -46,6 +83,9 @@ export async function createBooking(formData: FormData) {
     return { success: false, error: 'This plot is on hold for another advisor' }
   }
 
+  const { data: client } = await auth.supabase.from('clients').select('id').eq('id', clientId).maybeSingle()
+  if (!client) return { success: false, error: 'Client not found' }
+
   const brokerId = formData.get('broker_id') as string || null
   let brokerPct: number | null = null
   let brokerAmount: number | null = null
@@ -54,16 +94,15 @@ export async function createBooking(formData: FormData) {
     const { data: broker } = await auth.supabase
       .from('brokers').select('commission_rate').eq('id', brokerId).single()
     brokerPct    = broker?.commission_rate ?? null
-    const total  = parseFloat(formData.get('total_sale_value') as string) || 0
-    brokerAmount = brokerPct ? Math.round((total * brokerPct) / 100) : null
+    brokerAmount = brokerPct ? Math.round((totalSaleValue * brokerPct) / 100) : null
   }
 
   const { data, error } = await auth.supabase.from('bookings').insert({
     client_id:               clientId,
     plot_id:                 plotId,
     project_id:              projectId,
-    total_sale_value:        parseFloat(formData.get('total_sale_value') as string),
-    booking_amount:          parseFloat(formData.get('booking_amount') as string),
+    total_sale_value:        totalSaleValue,
+    booking_amount:          bookingAmount,
     payment_plan:            formData.get('payment_plan') as string || null,
     payment_plan_type:       formData.get('payment_plan_type') as string || 'custom',
     advisor_id:              formData.get('advisor_id') as string || auth.userId,
@@ -246,9 +285,11 @@ export async function cancelBooking(bookingId: string, formData: FormData) {
   if (!auth.ok || !isManager(auth.role)) return { success: false, error: 'Forbidden' }
 
   const { data: booking } = await auth.supabase
-    .from('bookings').select('plot_id, project_id, broker_id, status').eq('id', bookingId).single()
+    .from('bookings').select('plot_id, project_id, broker_id, status, client_id').eq('id', bookingId).single()
   if (!booking) return { success: false, error: 'Booking not found' }
   if (booking.status === 'cancelled') return { success: false, error: 'Already cancelled' }
+  const reason = ((formData.get('reason') as string) ?? '').trim()
+  if (!reason) return { success: false, error: 'Enter the cancellation reason' }
 
   // Reset plot to available
   await auth.supabase.from('plots').update({
@@ -274,13 +315,17 @@ export async function cancelBooking(bookingId: string, formData: FormData) {
 
   const { error } = await auth.supabase.from('bookings').update({
     status:               'cancelled',
-    cancellation_reason:  formData.get('reason') as string,
+    cancellation_reason:  reason,
     cancellation_date:    todayIST(),
     cancellation_charges: parseFloat(formData.get('cancellation_charges') as string) || null,
     updated_at:           new Date().toISOString(),
   }).eq('id', bookingId)
 
   if (error) return { success: false, error: error.message }
+  // The won lead isn't won any more, unless this client still has another confirmed booking.
+  // Left on Closed Won, a cancelled sale kept counting in the win rate and source ROI.
+  if (booking.status === 'confirmed') await unwinLead(auth.supabase, booking.client_id, bookingId, auth.userId, reason)
+
   await writeAuditLog({
     userId: auth.userId, action: 'booking_cancelled', tableName: 'bookings', recordId: bookingId,
     oldValues: { status: booking.status }, newValues: { status: 'cancelled', reason: formData.get('reason'), charges: formData.get('cancellation_charges') || null },
@@ -300,13 +345,10 @@ export async function addBookingInstallment(formData: FormData) {
   const bookingId = formData.get('booking_id') as string
   const clientId  = formData.get('client_id') as string
 
-  const { count } = await auth.supabase
-    .from('payments').select('id', { count: 'exact', head: true }).eq('booking_id', bookingId)
-
   const { error } = await auth.supabase.from('payments').insert({
     booking_id:         bookingId,
     client_id:          clientId,
-    installment_number: (count ?? 0) + 1,
+    installment_number: await nextInstallmentNumber(auth.supabase, bookingId),
     description:        formData.get('description') as string || null,
     amount_due:         parseFloat(formData.get('amount_due') as string),
     due_date:           formData.get('due_date') as string,
@@ -324,8 +366,12 @@ export async function deleteBookingInstallment(paymentId: string, bookingId: str
   if (!auth.ok || !isManager(auth.role)) return { success: false, error: 'Forbidden' }
 
   const { data: payment } = await auth.supabase
-    .from('payments').select('status').eq('id', paymentId).single()
-  if (payment?.status === 'paid') return { success: false, error: 'Cannot delete a paid installment' }
+    .from('payments').select('status, amount_paid').eq('id', paymentId).single()
+  if (!payment) return { success: false, error: 'Installment not found' }
+  // A part-paid installment is still 'pending'; deleting it erased money already received.
+  if (payment.status === 'paid' || Number(payment.amount_paid ?? 0) > 0) {
+    return { success: false, error: 'This installment has payments recorded — it cannot be deleted' }
+  }
 
   const { error } = await auth.supabase.from('payments').delete().eq('id', paymentId)
   if (error) return { success: false, error: error.message }
